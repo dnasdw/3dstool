@@ -1,0 +1,6 @@
+AUTO_FILES("." "src" "\\.(cpp|h)$")
+if(WIN32)
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+endif()
+ADD_EXE(3dstool "${src}")
