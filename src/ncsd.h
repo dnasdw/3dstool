@@ -41,10 +41,12 @@ public:
 	static const u32 s_uSignature = CONVERT_ENDIAN('NCSD');
 	static const int kOffsetFirstNcch = 0x4000;
 private:
+	bool extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType, int a_nTypeId, bool bMediaUnitSize);
 	const char* m_pFileName;
 	const char* m_pHeaderFileName;
 	const char* m_pNcchFileName[8];
 	bool m_bVerbose;
+	FILE* m_fpNcsd;
 	SNcsdHeader m_NcsdHeader;
 	n64 m_nMediaUnitSize;
 };

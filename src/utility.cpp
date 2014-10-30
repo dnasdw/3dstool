@@ -22,6 +22,12 @@ n32 FSToN32(const string& a_sString)
 }
 
 #if _3DSTOOL_COMPILER == COMPILER_MSC
+string FSWToU8(const wstring& a_sString)
+{
+	static wstring_convert<codecvt_utf8<wchar_t>> c_cvt_u8;
+	return c_cvt_u8.to_bytes(a_sString);
+}
+
 string FSU16ToU8(const u16string& a_sString)
 {
 	static wstring_convert<codecvt_utf8_utf16<char16_t>, char16_t> c_cvt_u8_u16;
@@ -44,7 +50,23 @@ wstring FSU16ToW(const u16string& a_sString)
 {
 	return FSU8ToW(FSU16ToU8(a_sString));
 }
+
+u16string FSU8ToU16(const string& a_sString)
+{
+	static wstring_convert<codecvt_utf8_utf16<char16_t>, char16_t> c_cvt_u8_u16;
+	return c_cvt_u8_u16.from_bytes(a_sString);
+}
+
+u16string FSWToU16(const wstring& a_sString)
+{
+	return FSU8ToU16(FSWToU8(a_sString));
+}
 #else
+string FSWToU8(const wstring& a_sString)
+{
+	return FSTToT<wstring, string>(a_sString, "WCHAR_T", "UTF-8");
+}
+
 string FSU16ToU8(const u16string& a_sString)
 {
 	return FSTToT<u16string, string>(a_sString, "UTF-16LE", "UTF-8");
@@ -64,6 +86,16 @@ wstring FSU16ToW(const u16string& a_sString)
 {
 	return FSTToT<u16string, wstring>(a_sString, "UTF-16LE", "WCHAR_T");
 }
+
+u16string FSU8ToU16(const string& a_sString)
+{
+	return FSTToT<string, u16string>(a_sString, "UTF-8", "UTF-16LE");
+}
+
+u16string FSWToU16(const wstring& a_sString)
+{
+	return FSTToT<wstring, u16string>(a_sString, "WCHAR_T", "UTF-16LE");
+}
 #endif
 
 void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize)
@@ -74,8 +106,8 @@ void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize)
 	while (a_nSize > 0)
 	{
 		n64 nSize = a_nSize > nBufferSize ? nBufferSize : a_nSize;
-		fread(pBuffer, 1, (size_t)nSize, a_fpSrc);
-		fwrite(pBuffer, 1, (size_t)nSize, a_fpDest);
+		fread(pBuffer, 1, static_cast<size_t>(nSize), a_fpSrc);
+		fwrite(pBuffer, 1, static_cast<size_t>(nSize), a_fpDest);
 		a_nSize -= nSize;
 	}
 	delete[] pBuffer;
@@ -83,16 +115,14 @@ void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize)
 
 bool FCryptoFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset, bool a_bVervose)
 {
-	FILE* fpData = fopen(a_pDataFileName, "rb+");
+	FILE* fpData = FFoepn(a_pDataFileName, "rb+");
 	if (fpData == nullptr)
 	{
-		printf("ERROR: open file %s failed\n\n", a_pDataFileName);
 		return false;
 	}
-	FILE* fpXor = fopen(a_pXorFileName, "rb");
+	FILE* fpXor = FFoepn(a_pXorFileName, "rb");
 	if (fpXor == nullptr)
 	{
-		printf("ERROR: open file %s failed\n\n", a_pXorFileName);
 		return false;
 	}
 	FFseek(fpData, 0, SEEK_END);
@@ -134,14 +164,17 @@ bool FCryptoFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_
 	{
 		n64 nSize = a_nDataSize > nBufferSize ? nBufferSize : a_nDataSize;
 		FFseek(fpData, a_nDataOffset + nIndex * nBufferSize, SEEK_SET);
-		fread(pDataBuffer, 1, (size_t)nSize, fpData);
-		fread(pXorBuffer, 1, (size_t)nSize, fpXor);
-		for (n64 i = 0; i < nSize; i++)
+		fread(pDataBuffer, 1, static_cast<size_t>(nSize), fpData);
+		fread(pXorBuffer, 1, static_cast<size_t>(nSize), fpXor);
+		u64* pDataBuffer64 = reinterpret_cast<u64*>(pDataBuffer);
+		u64* pXorBuffer64 = reinterpret_cast<u64*>(pXorBuffer);
+		n64 nXorCount = FAlign(nSize, 8) / 8;
+		for (n64 i = 0; i < nXorCount; i++)
 		{
-			pDataBuffer[i] ^= pXorBuffer[i];
+			*pDataBuffer64++ ^= *pXorBuffer64++;
 		}
 		FFseek(fpData, a_nDataOffset + nIndex * nBufferSize, SEEK_SET);
-		fwrite(pDataBuffer, 1, (size_t)nSize, fpData);
+		fwrite(pDataBuffer, 1, static_cast<size_t>(nSize), fpData);
 		a_nDataSize -= nSize;
 		nIndex++;
 	}
@@ -152,10 +185,21 @@ bool FCryptoFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_
 	return true;
 }
 
-#if _3DSTOOL_COMPILER == COMPILER_MSC
-bool MakeDir(const wchar_t* a_pDirName)
+bool FGetFileSize(const String::value_type* a_pFileName, n64& a_nFileSize)
 {
-	if (_wmkdir(a_pDirName) != 0)
+	SStat st;
+	if (FStat(a_pFileName, &st) != 0)
+	{
+		a_nFileSize = 0;
+		return false;
+	}
+	a_nFileSize = st.st_size;
+	return true;
+}
+
+bool FMakeDir(const String::value_type* a_pDirName)
+{
+	if (FMkdir(a_pDirName) != 0)
 	{
 		if (errno != EEXIST)
 		{
@@ -164,21 +208,68 @@ bool MakeDir(const wchar_t* a_pDirName)
 	}
 	return true;
 }
-#else
-bool MakeDir(const char* a_pDirName)
+
+FILE* FFopenA(const char* a_pFileName, const char* a_pMode)
 {
-	if (mkdir(a_pDirName) != 0)
+	FILE* fp = fopen(a_pFileName, a_pMode);
+	if (fp == nullptr)
 	{
-		if (errno != EEXIST)
+		printf("ERROR: open file %s failed\n\n", a_pFileName);
+	}
+	return fp;
+}
+
+FILE* FFopenW(const wchar_t* a_pFileName, const wchar_t* a_pMode)
+{
+	FILE* fp = _wfopen(a_pFileName, a_pMode);
+	if (fp == nullptr)
+	{
+		wprintf(L"ERROR: open file %s failed\n\n", a_pFileName);
+	}
+	return fp;
+}
+
+bool FSeek(FILE* a_fpFile, n64 a_nOffset)
+{
+	if (fflush(a_fpFile) != 0)
+	{
+		return false;
+	}
+	int nFd = FFileno(a_fpFile);
+	if (nFd == -1)
+	{
+		return false;
+	}
+	FFseek(a_fpFile, 0, SEEK_END);
+	n64 nFileSize = FFtell(a_fpFile);
+	if (nFileSize < a_nOffset)
+	{
+		n64 nOffset = FLseek(nFd, a_nOffset - 1, SEEK_SET);
+		if (nOffset == -1)
 		{
 			return false;
 		}
+		fputc(0, a_fpFile);
+		fflush(a_fpFile);
+	}
+	else
+	{
+		FFseek(a_fpFile, a_nOffset, SEEK_SET);
 	}
 	return true;
 }
-#endif
 
 n64 FAlign(n64 a_nOffset, n64 a_nAlignment)
 {
 	return (a_nOffset + a_nAlignment - 1) / a_nAlignment * a_nAlignment;
+}
+
+size_t FU16Strlen(const char16_t* a_pString)
+{
+	size_t nLength = 0;
+	while (*a_pString++ != 0)
+	{
+		nLength++;
+	}
+	return nLength;
 }

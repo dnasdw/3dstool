@@ -71,7 +71,7 @@ int C3DSTool::ParseOptions(int a_nArgc, char* a_pArgv[])
 	}
 	for (int i = 1; i < a_nArgc; i++)
 	{
-		int nArgpc = strlen(a_pArgv[i]);
+		int nArgpc = static_cast<int>(strlen(a_pArgv[i]));
 		int nIndex = i;
 		if (a_pArgv[i][0] != '-')
 		{
@@ -158,25 +158,69 @@ int C3DSTool::CheckOptions()
 	}
 	if (m_eAction == kActionExtract)
 	{
-		if (m_pRomFsDirName == nullptr)
+		switch (m_eFileType)
 		{
-			printf("ERROR: no romfsdir\n\n");
-			return 1;
-		}
-		if (!CRomFs::IsRomFsFile(m_pFileName))
-		{
-			printf("ERROR: %s is not a romfs file\n\n", m_pFileName);
-			return 1;
-		}
-		else if (m_eFileType != kFileTypeUnknown && m_eFileType != kFileTypeRomfs && m_bVerbose)
-		{
-			printf("INFO: ignore --type option\n");
+		case C3DSTool::kFileTypeCci:
+			if (m_pHeaderFileName == nullptr)
+			{
+				bool bNull = true;
+				for (int i = 0; i < 8; i++)
+				{
+					if (m_pNcchFileName[i] != nullptr)
+					{
+						bNull = false;
+					}
+				}
+				if (bNull)
+				{
+					printf("ERROR: nothing to be extract\n\n");
+					return 1;
+				}
+			}
+			break;
+		case C3DSTool::kFileTypeCxi:
+			if (m_pHeaderFileName == nullptr && m_pExtendedHeaderFileName == nullptr && m_pAccessControlExtendedFileName == nullptr && m_pPlainRegionFileName == nullptr && m_pExeFsFileName == nullptr && m_pRomFsFileName == nullptr)
+			{
+				printf("ERROR: nothing to be extract\n\n");
+				return 1;
+			}
+			break;
+		case C3DSTool::kFileTypeRomfs:
+			if (m_pRomFsDirName == nullptr)
+			{
+				printf("ERROR: no --romfsdir option\n\n");
+				return 1;
+			}
+			if (!CRomFs::IsRomFsFile(m_pFileName))
+			{
+				printf("ERROR: %s is not a romfs file\n\n", m_pFileName);
+				return 1;
+			}
+			break;
+		default:
+			break;
 		}
 	}
 	if (m_eAction == kActionCreate)
 	{
-		printf("ERRO: not implement\n\n");
-		return 1;
+		if (m_eFileType == kFileTypeUnknown)
+		{
+			printf("ERROR: no --type option\n\n");
+			return 1;
+		}
+		else if (m_eFileType == kFileTypeRomfs)
+		{
+			if (m_pRomFsDirName == nullptr)
+			{
+				printf("ERROR: no --romfsdir option\n\n");
+				return 1;
+			}
+		}
+		else
+		{
+			printf("ERRO: not implement\n\n");
+			return 1;
+		}
 	}
 	if (m_eAction == kActionCrypto)
 	{
@@ -252,6 +296,14 @@ int C3DSTool::Action()
 		if (!extractFile())
 		{
 			printf("ERROR: extract file failed\n\n");
+			return 1;
+		}
+	}
+	if (m_eAction == kActionCreate)
+	{
+		if (!createFile())
+		{
+			printf("ERROR: create file failed\n\n");
 			return 1;
 		}
 	}
@@ -546,6 +598,28 @@ bool C3DSTool::extractFile()
 	return bResult;
 }
 
+bool C3DSTool::createFile()
+{
+	bool bResult = false;
+	switch (m_eFileType)
+	{
+	case C3DSTool::kFileTypeCci:
+		break;
+	case C3DSTool::kFileTypeCxi:
+		break;
+	case C3DSTool::kFileTypeRomfs:
+	{
+		CRomFs romFs;
+		romFs.SetFileName(m_pFileName);
+		romFs.SetRomFsDirName(m_pRomFsDirName);
+		romFs.SetVerbose(m_bVerbose);
+		bResult = romFs.CreateFile();
+	}
+		break;
+	}
+	return bResult;
+}
+
 bool C3DSTool::cryptoFile()
 {
 	bool bResult = false;
@@ -576,6 +650,7 @@ int main(int argc, char* argv[])
 	}
 	if (tool.CheckOptions() != 0)
 	{
+		return 1;
 	}
 	return tool.Action();
 }

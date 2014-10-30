@@ -12,6 +12,7 @@ CNcch::CNcch()
 	, m_pExeFsFileName(nullptr)
 	, m_pRomFsFileName(nullptr)
 	, m_bVerbose(false)
+	, m_fpNcch(nullptr)
 	, m_nMediaUnitSize(1 << 9)
 	, m_nExtendedHeaderOffset(0)
 	, m_nExtendedHeaderSize(0)
@@ -88,256 +89,77 @@ void CNcch::SetVerbose(bool a_bVerbose)
 
 bool CNcch::CryptoFile()
 {
-	FILE* fp = fopen(m_pFileName, "rb");
-	if (fp == nullptr)
+	bool bResult = true;
+	m_fpNcch = FFoepn(m_pFileName, "rb");
+	if (m_fpNcch == nullptr)
 	{
-		printf("ERROR: open file %s failed\n\n", m_pFileName);
 		return false;
 	}
-	fread(&m_NcchHeader, sizeof(m_NcchHeader), 1, fp);
-	fclose(fp);
+	fread(&m_NcchHeader, sizeof(m_NcchHeader), 1, m_fpNcch);
+	fclose(m_fpNcch);
 	calculateOffsetSize();
-	if (m_pExtendedHeaderXorFileName != nullptr)
+	if (!cryptoFile(m_pExtendedHeaderXorFileName, m_nExtendedHeaderOffset, m_nExtendedHeaderSize, 0, "extendedheader"))
 	{
-		if (m_nExtendedHeaderSize != 0)
-		{
-			FCryptoFile(m_pFileName, m_pExtendedHeaderXorFileName, m_nExtendedHeaderOffset, m_nExtendedHeaderSize, false, 0, m_bVerbose);
-		}
-		else if (m_bVerbose)
-		{
-			printf("INFO: extendedheader is not exists\n");
-		}
-		if (m_nAccessControlExtendedSize != 0)
-		{
-			FCryptoFile(m_pFileName, m_pExtendedHeaderXorFileName, m_nAccessControlExtendedOffset, m_nAccessControlExtendedSize, false, m_nExtendedHeaderSize, m_bVerbose);
-		}
-		else if (m_bVerbose)
-		{
-			printf("INFO: accesscontrolextended is not exists\n");
-		}
+		bResult = false;
 	}
-	else if (m_nExtendedHeaderSize != 0 && m_bVerbose)
+	if (!cryptoFile(m_pExtendedHeaderXorFileName, m_nAccessControlExtendedOffset, m_nAccessControlExtendedSize, m_nExtendedHeaderSize, "accesscontrolextended"))
 	{
-		printf("INFO: extendedheader is not decrypt or encrypt\n");
+		bResult = false;
 	}
-	else if (m_nAccessControlExtendedSize != 0 && m_bVerbose)
+	if (!cryptoFile(m_pExeFsXorFileName, m_nExeFsOffset, m_nExeFsSize, 0, "exefs"))
 	{
-		printf("INFO: accesscontrolextended is not decrypt or encrypt\n");
+		bResult = false;
 	}
-	if (m_pExeFsXorFileName != nullptr)
+	if (!cryptoFile(m_pRomFsXorFileName, m_nRomFsOffset, m_nRomFsSize, 0, "romfs"))
 	{
-		if (m_nExeFsSize != 0)
-		{
-			FCryptoFile(m_pFileName, m_pExeFsXorFileName, m_nExeFsOffset, m_nExeFsSize, false, 0, m_bVerbose);
-		}
-		else if (m_bVerbose)
-		{
-			printf("INFO: exefs is not exists\n");
-		}
-	}
-	else if (m_nExeFsSize != 0 && m_bVerbose)
-	{
-		printf("INFO: exefs is not decrypt or encrypt\n");
-	}
-	if (m_pRomFsXorFileName != nullptr)
-	{
-		if (m_nRomFsSize != 0)
-		{
-			FCryptoFile(m_pFileName, m_pRomFsXorFileName, m_nRomFsOffset, m_nRomFsSize, false, 0, m_bVerbose);
-		}
-		else if (m_bVerbose)
-		{
-			printf("INFO: romfs is not exists\n");
-		}
-	}
-	else if (m_nRomFsSize != 0 && m_bVerbose)
-	{
-		printf("INFO: romfs is not decrypt or encrypt\n");
+		bResult = false;
 	}
 	return true;
 }
 
 bool CNcch::ExtractFile()
 {
-	FILE* fp = fopen(m_pFileName, "rb");
-	if (fp == nullptr)
+	bool bResult = true;
+	m_fpNcch = FFoepn(m_pFileName, "rb");
+	if (m_fpNcch == nullptr)
 	{
-		printf("ERROR: open file %s failed\n\n", m_pFileName);
 		return false;
 	}
-	fread(&m_NcchHeader, sizeof(m_NcchHeader), 1, fp);
+	fread(&m_NcchHeader, sizeof(m_NcchHeader), 1, m_fpNcch);
 	calculateOffsetSize();
-	if (m_pHeaderFileName != nullptr)
+	if (!extractFile(m_pHeaderFileName, 0, kExtendedHeaderOffset, "ncch header"))
 	{
-		FILE* fpHeader = fopen(m_pHeaderFileName, "wb");
-		if (fpHeader == nullptr)
-		{
-			printf("ERROR: create file %s failed\n\n", m_pHeaderFileName);
-		}
-		else
-		{
-			if (m_bVerbose)
-			{
-				printf("create: %s\n", m_pHeaderFileName);
-			}
-			FCopyFile(fpHeader, fp, 0, kExtendedHeaderOffset);
-			fclose(fpHeader);
-		}
+		bResult = false;
 	}
-	else if (m_bVerbose)
+	if (!extractFile(m_pExtendedHeaderFileName, m_nExtendedHeaderOffset, m_nExtendedHeaderSize, "extendedheader"))
 	{
-		printf("INFO: ncch header is not extract\n");
+		bResult = false;
 	}
-	if (m_pExtendedHeaderFileName != nullptr)
+	if (!extractFile(m_pAccessControlExtendedFileName, m_nAccessControlExtendedOffset, m_nAccessControlExtendedSize, "accesscontrolextended"))
 	{
-		if (m_nExtendedHeaderSize != 0)
-		{
-			FILE* fpExtendedHeader = fopen(m_pExtendedHeaderFileName, "wb");
-			if (fpExtendedHeader == nullptr)
-			{
-				printf("ERROR: create file %s failed\n\n", m_pExtendedHeaderFileName);
-			}
-			else
-			{
-				if (m_bVerbose)
-				{
-					printf("create: %s\n", m_pExtendedHeaderFileName);
-				}
-				FCopyFile(fpExtendedHeader, fp, m_nExtendedHeaderOffset, m_nExtendedHeaderSize);
-				fclose(fpExtendedHeader);
-			}
-		}
-		else if (m_bVerbose)
-		{
-			printf("INFO: extendedheader is not exists, %s will not be create\n", m_pExtendedHeaderFileName);
-		}
+		bResult = false;
 	}
-	else if (m_nExtendedHeaderSize != 0 && m_bVerbose)
+	if (!extractFile(m_pPlainRegionFileName, m_nPlainRegionOffset, m_nPlainRegionSize, "plainregion"))
 	{
-		printf("INFO: extendedheader is not extract\n");
+		bResult = false;
 	}
-	if (m_pAccessControlExtendedFileName != nullptr)
+	if (!extractFile(m_pExeFsFileName, m_nExeFsOffset, m_nExeFsSize, "exefs"))
 	{
-		if (m_nAccessControlExtendedSize != 0)
-		{
-			FILE* fpAccessControlExtended = fopen(m_pAccessControlExtendedFileName, "wb");
-			if (fpAccessControlExtended == nullptr)
-			{
-				printf("ERROR: create file %s failed\n\n", m_pAccessControlExtendedFileName);
-			}
-			else
-			{
-				if (m_bVerbose)
-				{
-					printf("create: %s\n", m_pAccessControlExtendedFileName);
-				}
-				FCopyFile(fpAccessControlExtended, fp, m_nAccessControlExtendedOffset, m_nAccessControlExtendedSize);
-				fclose(fpAccessControlExtended);
-			}
-		}
-		else if (m_bVerbose)
-		{
-			printf("INFO: accesscontrolextended is not exists, %s will not be create\n", m_pAccessControlExtendedFileName);
-		}
+		bResult = false;
 	}
-	else if (m_nAccessControlExtendedSize != 0 && m_bVerbose)
+	if (!extractFile(m_pRomFsFileName, m_nRomFsOffset, m_nRomFsSize, "romfs"))
 	{
-		printf("INFO: accesscontrolextended is not extract\n");
+		bResult = false;
 	}
-	if (m_pPlainRegionFileName != nullptr)
-	{
-		if (m_nPlainRegionSize != 0)
-		{
-			FILE* fpPlainRegion = fopen(m_pPlainRegionFileName, "wb");
-			if (fpPlainRegion == nullptr)
-			{
-				printf("ERROR: create file %s failed\n\n", m_pPlainRegionFileName);
-			}
-			else
-			{
-				if (m_bVerbose)
-				{
-					printf("create: %s\n", m_pPlainRegionFileName);
-				}
-				FCopyFile(fpPlainRegion, fp, m_nPlainRegionOffset, m_nPlainRegionSize);
-				fclose(fpPlainRegion);
-			}
-		}
-		else if (m_bVerbose)
-		{
-			printf("INFO: plainregion is not exists, %s will not be create\n", m_pPlainRegionFileName);
-		}
-	}
-	else if (m_nPlainRegionSize != 0 && m_bVerbose)
-	{
-		printf("INFO: plainregion is not extract\n");
-	}
-	if (m_pExeFsFileName != nullptr)
-	{
-		if (m_nExeFsSize != 0)
-		{
-			FILE* fpExeFs = fopen(m_pExeFsFileName, "wb");
-			if (fpExeFs == nullptr)
-			{
-				printf("ERROR: create file %s failed\n\n", m_pExeFsFileName);
-			}
-			else
-			{
-				if (m_bVerbose)
-				{
-					printf("create: %s\n", m_pExeFsFileName);
-				}
-				FCopyFile(fpExeFs, fp, m_nExeFsOffset, m_nExeFsSize);
-				fclose(fpExeFs);
-			}
-		}
-		else if (m_bVerbose)
-		{
-			printf("INFO: exefs is not exists, %s will not be create\n", m_pExeFsFileName);
-		}
-	}
-	else if (m_nExeFsSize != 0 && m_bVerbose)
-	{
-		printf("INFO: exefs is not extract\n");
-	}
-	if (m_pRomFsFileName != nullptr)
-	{
-		if (m_nRomFsSize != 0)
-		{
-			FILE* fpRomFs = fopen(m_pRomFsFileName, "wb");
-			if (fpRomFs == nullptr)
-			{
-				printf("ERROR: create file %s failed\n\n", m_pRomFsFileName);
-			}
-			else
-			{
-				if (m_bVerbose)
-				{
-					printf("create: %s\n", m_pRomFsFileName);
-				}
-				FCopyFile(fpRomFs, fp, m_nRomFsOffset, m_nRomFsSize);
-				fclose(fpRomFs);
-			}
-		}
-		else if (m_bVerbose)
-		{
-			printf("INFO: romfs is not exists, %s will not be create\n", m_pRomFsFileName);
-		}
-	}
-	else if (m_nRomFsSize != 0 && m_bVerbose)
-	{
-		printf("INFO: romfs is not extract\n");
-	}
-	fclose(fp);
-	return true;
+	fclose(m_fpNcch);
+	return bResult;
 }
 
 bool CNcch::IsNcchFile(const char* a_pFileName)
 {
-	FILE* fp = fopen(a_pFileName, "rb");
+	FILE* fp = FFoepn(a_pFileName, "rb");
 	if (fp == nullptr)
 	{
-		printf("ERROR: open file %s failed\n\n", a_pFileName);
 		return false;
 	}
 	SNcchHeader ncchHeader;
@@ -363,4 +185,59 @@ void CNcch::calculateOffsetSize()
 	m_nExeFsSize = m_NcchHeader.Ncch.ExeFsSize * m_nMediaUnitSize;
 	m_nRomFsOffset = m_NcchHeader.Ncch.RomFsOffset * m_nMediaUnitSize;
 	m_nRomFsSize = m_NcchHeader.Ncch.RomFsSize * m_nMediaUnitSize;
+}
+
+bool CNcch::cryptoFile(const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType)
+{
+	bool bResult = true;
+	if (a_pXorFileName != nullptr)
+	{
+		if (a_nSize != 0)
+		{
+			bResult = FCryptoFile(m_pFileName, a_pXorFileName, a_nOffset, a_nSize, false, a_nXorOffset, m_bVerbose);
+		}
+		else if (m_bVerbose)
+		{
+			printf("INFO: %s is not exists\n", a_pType);
+		}
+	}
+	else if (a_nSize != 0 && m_bVerbose)
+	{
+		printf("INFO: %s is not decrypt or encrypt\n", a_pType);
+	}
+	return bResult;
+}
+
+bool CNcch::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType)
+{
+	bool bResult = true;
+	if (a_pFileName != nullptr)
+	{
+		if (a_nSize != 0)
+		{
+			FILE* fp = FFoepn(a_pFileName, "wb");
+			if (fp == nullptr)
+			{
+				bResult = false;
+			}
+			else
+			{
+				if (m_bVerbose)
+				{
+					printf("save: %s\n", a_pFileName);
+				}
+				FCopyFile(fp, m_fpNcch, a_nOffset, a_nSize);
+				fclose(fp);
+			}
+		}
+		else if (m_bVerbose)
+		{
+			printf("INFO: %s is not exists, %s will not be create\n", a_pType, a_pFileName);
+		}
+	}
+	else if (a_nSize != 0 && m_bVerbose)
+	{
+		printf("INFO: %s is not extract\n", a_pType);
+	}
+	return bResult;
 }

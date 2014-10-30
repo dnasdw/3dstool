@@ -25,7 +25,7 @@ struct SRomFsHeader
 {
 	u32 Signature;
 	u32 Id;
-	u32 Level0HashSize;
+	u32 Level0Size;
 	SRomFsLevel Level1;
 	SRomFsLevel Level2;
 	SRomFsLevel Level3;
@@ -33,16 +33,16 @@ struct SRomFsHeader
 	u32 Reserved;
 } GNUC_PACKED;
 
-struct SRomFsLevel3Section
+struct SRomFsMetaInfoSection
 {
 	u32 Offset;
 	u32 Size;
 } GNUC_PACKED;
 
-struct SRomFsLevel3Header
+struct SRomFsMetaInfo
 {
 	u32 Size;
-	SRomFsLevel3Section Section[kSectionTypeCount];
+	SRomFsMetaInfoSection Section[kSectionTypeCount];
 	u32 DataOffset;
 } GNUC_PACKED;
 
@@ -53,7 +53,7 @@ struct SCommonDirEntry
 	n32 ChildDirOffset;
 	n32 ChildFileOffset;
 	n32 PrevDirOffset;
-	n32 DirNameSize;
+	n32 NameSize;
 } GNUC_PACKED;
 
 struct SCommonFileEntry
@@ -63,35 +63,56 @@ struct SCommonFileEntry
 	n64 FileOffset;
 	n64 FileSize;
 	n32 PrevFileOffset;
-	n32 FileNameSize;
+	n32 NameSize;
 } GNUC_PACKED;
 #include MSC_POP_PACKED
+
+union UCommonEntry
+{
+	SCommonDirEntry Dir;
+	SCommonFileEntry File;
+};
 
 enum EExtractState
 {
 	kExtractStateBegin,
-	kExtractStateChildFile,
 	kExtractStateChildDir,
+	kExtractStateSiblingDir,
 	kExtractStateEnd
 };
 
-struct SStackElement
+struct SExtractStackElement
 {
 	bool IsDir;
 	n64 EntryOffset;
-	union UEntry
-	{
-		SCommonDirEntry Dir;
-		SCommonFileEntry File;
-	} Entry;
-#if _3DSTOOL_COMPILER == COMPILER_MSC
-	wstring EntryName;
-	wstring Prefix;
-#else
-	string EntryName;
-	string Prefix;
-#endif
+	UCommonEntry Entry;
+	String EntryName;
+	String Prefix;
 	EExtractState ExtractState;
+};
+
+struct SEntry
+{
+	String Path;
+	u16string EntryName;
+	int EntryNameSize;
+	n32 EntryOffset;
+	n32 BucketIndex;
+	UCommonEntry Entry;
+};
+
+struct SCreateStackElement
+{
+	int EntryOffset;
+	vector<int> ChildOffset;
+	int ChildIndex;
+};
+
+struct SLevelBuffer
+{
+	vector<u8> Data;
+	int DataPos;
+	n64 FilePos;
 };
 
 class CRomFs
@@ -103,25 +124,54 @@ public:
 	void SetRomFsDirName(const char* a_pRomFsDirName);
 	void SetVerbose(bool a_bVerbose);
 	bool ExtractFile();
-	bool ExtractDirEntry();
-	bool ExtractFileEntry();
+	bool CreateFile();
 	static bool IsRomFsFile(const char* a_pFileName);
 	static const u32 s_uSignature = CONVERT_ENDIAN('IVFC');
-	static const int s_nLevel0BlockSize = 0x1000;
+	static const int s_nBlockSizePower = 0xC;
+	static const int s_nBlockSize = 1 << s_nBlockSizePower;
+	static const int s_nSHA256BlockSize = 0x20;
 	static const n32 s_nInvalidOffset = -1;
+	static const int s_nEntryNameAlignment = 4;
+	static const n64 s_nFileSizeAlignment = 0x10;
 private:
+	bool extractDirEntry();
+	bool extractFileEntry();
+	void readEntry(SExtractStackElement& a_Element);
+	void pushExtractStackElement(bool a_bIsDir, n64 a_nEntryOffset, const String& a_sPrefix);
+	void setupCreate();
+	void pushDirEntry(const String& a_sEntryName, n32 a_nParentDirOffset);
+	bool pushFileEntry(const String& a_sEntryName, n32 a_nParentDirOffset);
+	void pushCreateStackElement(int a_nEntryOffset);
+	bool createEntryList();
+	void removeEmptyDirEntry();
+	void removeDirEntry(int a_nIndex);
+	void subDirOffset(n32& a_nOffset, int a_nIndex);
+	void createHash();
+	u32 computeBucketCount(u32 a_uEntries);
+	u32 hash(n32 a_nParentOffset, u16string& a_sEntryName);
+	void redirectOffset();
+	void redirectOffset(n32& a_nOffset, bool a_bIsDir);
+	void createMetaInfo();
+	void createHeader();
+	void initLevelBuffer();
+	bool updateLevelBuffer();
+	void writeBuffer(int a_nLevel, const void* a_pSrc, n64 a_nSize);
+	bool writeBufferFromFile(int a_nLevel, const String& a_sPath, n64 a_nSize);
+	void alignBuffer(int a_nLevel, int a_nAlignment);
 	const char* m_pFileName;
-#if _3DSTOOL_COMPILER == COMPILER_MSC
-	wstring m_sRomFsDirName;
-#else
-	string m_sRomFsDirName;
-#endif
+	String m_sRomFsDirName;
 	bool m_bVerbose;
-	FILE* m_fpRomFsBin;
+	FILE* m_fpRomFs;
 	SRomFsHeader m_RomFsHeader;
 	n64 m_nLevel3Offset;
-	SRomFsLevel3Header m_RomFsLevel3Header;
-	stack<SStackElement> m_sExtractStack;
+	SRomFsMetaInfo m_RomFsMetaInfo;
+	stack<SExtractStackElement> m_sExtractStack;
+	stack<SCreateStackElement> m_sCreateStack;
+	vector<SEntry> m_vCreateDir;
+	vector<SEntry> m_vCreateFile;
+	vector<n32> m_vDirBucket;
+	vector<n32> m_vFileBucket;
+	SLevelBuffer m_LevelBuffer[4];
 };
 
 #endif	// ROMFS_H_

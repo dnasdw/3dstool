@@ -47,6 +47,7 @@ private:
 	EParseOptionReturn parseOptions(int a_nKey, int& a_nIndex, int a_nArgc, char* a_pArgv[]);
 	bool checkFileType();
 	bool extractFile();
+	bool createFile();
 	bool cryptoFile();
 	EAction m_eAction;
 	EFileType m_eFileType;

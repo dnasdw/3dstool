@@ -10,14 +10,21 @@
 #define _3DSTOOL_COMPILER COMPILER_GNUC
 #endif
 
+#if _3DSTOOL_COMPILER == COMPILER_MSC
+#include <Windows.h>
+#endif
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if _3DSTOOL_COMPILER != COMPILER_MSC
+#if _3DSTOOL_COMPILER == COMPILER_MSC
+#include <io.h>
+#else
 #include <iconv.h>
+#include <unistd.h>
 #endif
+#include <sys/stat.h>
 #include <stack>
 #include <string>
 #include <vector>
@@ -37,24 +44,40 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 
 #if _3DSTOOL_COMPILER == COMPILER_MSC
+typedef wstring String;
+typedef struct _stat64 SStat;
+#define STR(x) L##x
+#define FStat _wstat64
+#define FMkdir _wmkdir
+#define FFoepn FFopenA
+#define FFopenUnicode FFopenW
 #define FFseek _fseeki64
 #define FFtell _ftelli64
-#else
-#define FFseek fseeko
-#define FFtell ftello
-#endif
-
-#define CONVERT_ENDIAN(n) ((n) >> 24 & 0xFF) | ((n) >> 8 & 0xFF00) | ((n) << 8 & 0xFF0000) | ((n) << 24 & 0xFF000000)
-
-#if _3DSTOOL_COMPILER == COMPILER_MSC
+#define FFileno _fileno
+#define FLseek _lseeki64
+#define FPrintf wprintf
 #define MSC_PUSH_PACKED <pshpack1.h>
 #define MSC_POP_PACKED <poppack.h>
 #define GNUC_PACKED
 #else
+typedef string String;
+typedef struct stat SStat;
+#define STR(x) x
+#define FStat stat
+#define FMkdir mkdir
+#define FFopen FFopenA
+#define FFopenUnicode FFopenA
+#define FFseek fseeko
+#define FFtell ftello
+#define FFileno fileno
+#define FLseek lseek
+#define FPrintf printf
 #define MSC_PUSH_PACKED <stdlib.h>
 #define MSC_POP_PACKED <stdlib.h>
 #define GNUC_PACKED __attribute__((packed))
 #endif
+
+#define CONVERT_ENDIAN(n) ((n) >> 24 & 0xFF) | ((n) >> 8 & 0xFF00) | ((n) << 8 & 0xFF0000) | ((n) << 24 & 0xFF000000)
 
 void FSetLocale();
 
@@ -101,7 +124,7 @@ TDest FSTToT(const TSrc& a_sString, const string& a_sSrcType, const string& a_sD
 		char* pBuffer = buffer;
 		size_t nBufferLeft = c_kConvertBufferSize;
 		n32 nError = iconv(cvt, reinterpret_cast<char**>(&pString), &nStringLeft, &pBuffer, &nBufferLeft);
-		if (nError == 0 || (nError == (size_t)-1 && errno == E2BIG))
+		if (nError == 0 || (nError == static_cast<size_t>(-1) && errno == E2BIG))
 		{
 			*reinterpret_cast<typename TDest::value_type*>(buffer + c_kConvertBufferSize - nBufferLeft) = 0;
 			sConverted += reinterpret_cast<typename TDest::value_type*>(buffer);
@@ -120,10 +143,23 @@ TDest FSTToT(const TSrc& a_sString, const string& a_sSrcType, const string& a_sD
 }
 #endif
 
+string FSWToU8(const wstring& a_sString);
 string FSU16ToU8(const u16string& a_sString);
 wstring FSU8ToW(const string& a_sString);
 wstring FSAToW(const string& a_sString);
 wstring FSU16ToW(const u16string& a_sString);
+u16string FSU8ToU16(const string& a_sString);
+u16string FSWToU16(const wstring& a_sString);
+
+#if _3DSTOOL_COMPILER == COMPILER_MSC
+#define FSAToUnicode(x) FSAToW(x)
+#define FSU16ToUnicode(x) FSU16ToW(x)
+#define FSUnicodeToU16(x) FSWToU16(x)
+#else
+#define FSAToUnicode(x) (x)
+#define FSU16ToUnicode(x) FSU16ToU8(x)
+#define FSUnicodeToU16(x) FSU8ToU16(x)
+#endif
 
 template<typename T>
 bool FSStartsWith(const T& a_sString, const T& a_sPrefix, typename T::size_type a_stStart = 0)
@@ -139,12 +175,18 @@ void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize);
 
 bool FCryptoFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset, bool a_bVerbose);
 
-#if _3DSTOOL_COMPILER == COMPILER_MSC
-bool MakeDir(const wchar_t* a_pDirName);
-#else
-bool MakeDir(const char* a_pDirName);
-#endif
+bool FGetFileSize(const String::value_type* a_pFileName, n64& a_nFileSize);
+
+bool FMakeDir(const String::value_type* a_pDirName);
+
+FILE* FFopenA(const char* a_pFileName, const char* a_pMode);
+
+FILE* FFopenW(const wchar_t* a_pFileName, const wchar_t* a_pMode);
+
+bool FSeek(FILE* a_fpFile, n64 a_nOffset);
 
 n64 FAlign(n64 a_nOffset, n64 a_nAlignment);
+
+size_t FU16Strlen(const char16_t* a_pString);
 
 #endif	// UTILITY_H_

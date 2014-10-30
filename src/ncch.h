@@ -65,6 +65,8 @@ public:
 	static const int kExtendedHeaderOffset = sizeof(SNcchHeader);
 private:
 	void calculateOffsetSize();
+	bool cryptoFile(const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
+	bool extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType);
 	const char* m_pFileName;
 	const char* m_pExtendedHeaderXorFileName;
 	const char* m_pExeFsXorFileName;
@@ -76,6 +78,7 @@ private:
 	const char* m_pExeFsFileName;
 	const char* m_pRomFsFileName;
 	bool m_bVerbose;
+	FILE* m_fpNcch;
 	SNcchHeader m_NcchHeader;
 	n64 m_nMediaUnitSize;
 	n64 m_nExtendedHeaderOffset;
