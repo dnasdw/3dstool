@@ -18,7 +18,7 @@ SET /P openssl_version=<"%rootdir%openssl.txt"
 RD /S /Q "%rootdir%%openssl_version%"
 MD "%rootdir%%openssl_version%"
 XCOPY "%rootdir%..\%openssl_version%" "%rootdir%%openssl_version%" /S /Y
-CD /D "%rootdir%..\%openssl_version%"
+CD /D "%rootdir%%openssl_version%"
 perl Configure VC-WIN64A --prefix="%prefix%" --openssldir="%openssldir%"
 CALL ms\do_win64a.bat
 nmake -f ms\ntdll.mak
