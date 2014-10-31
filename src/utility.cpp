@@ -150,10 +150,11 @@ bool FCryptoFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_
 	n64 nXorSize = FFtell(fpXor);
 	if (nXorSize - a_nXorOffset < a_nDataSize)
 	{
-		fclose(fpXor);
-		fclose(fpData);
-		printf("ERROR: xor file %s size less than data size\n\n", a_pXorFileName);
-		return false;
+		if (a_bVervose)
+		{
+			printf("INFO: xor file %s size less than data size\n\n", a_pXorFileName);
+		}
+		a_nDataSize = nXorSize - a_nXorOffset;
 	}
 	FFseek(fpXor, a_nXorOffset, SEEK_SET);
 	n64 nIndex = 0;
