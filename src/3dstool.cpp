@@ -255,8 +255,12 @@ int C3DSTool::Help()
 	printf("3dstool %s by dnasdw\n\n", _3DS_TOOL_VERSION);
 	printf("usage: 3dstool [option...] [FILE]...\n");
 	printf("example:\n");
-	printf("  3dstool -xvtf 3ds input.3ds\n\n");
-	printf("option:\n");
+	printf("  3dstool -xvt0f 3ds app.cxi input.3ds --header header.bin\n");
+	printf("  3dstool -evtf cxi app.cxi --romfsxor CTR-P-XXXX0.romfs.xorpad\n");
+	printf("  3dstool -xvtf cxi app.cxi --romfs romfs.bin\n");
+	printf("  3dstool -xvtf romfs romfs.bin --romfsdir romfs\n");
+	printf("  3dstool -cvtf romfs romfsnew.bin --romfsdir romfs\n");
+	printf("\noption:\n");
 	SOption* pOption = s_Option;
 	while (pOption->m_pName != nullptr && pOption->m_pDoc != nullptr)
 	{
