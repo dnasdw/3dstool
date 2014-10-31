@@ -86,7 +86,7 @@ bool CRomFs::CreateFile()
 	{
 		return false;
 	}
-	FSeek(m_fpRomFs, 0x100000);// nFileSize);
+	FSeek(m_fpRomFs, nFileSize);
 	if (!updateLevelBuffer())
 	{
 		bResult = false;
