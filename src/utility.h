@@ -11,9 +11,14 @@
 #endif
 
 #if _3DSTOOL_COMPILER == COMPILER_MSC
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <direct.h>
+#else
+#include <dirent.h>
 #endif
 #include <errno.h>
+#include <locale.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +30,8 @@
 #include <unistd.h>
 #endif
 #include <sys/stat.h>
+#include <algorithm>
+#include <map>
 #include <stack>
 #include <string>
 #include <vector>
@@ -49,7 +56,7 @@ typedef struct _stat64 SStat;
 #define STR(x) L##x
 #define FStat _wstat64
 #define FMkdir _wmkdir
-#define FFoepn FFopenA
+#define FFopen FFopenA
 #define FFopenUnicode FFopenW
 #define FFseek _fseeki64
 #define FFtell _ftelli64
@@ -64,7 +71,7 @@ typedef string String;
 typedef struct stat SStat;
 #define STR(x) x
 #define FStat stat
-#define FMkdir mkdir
+#define FMkdir(x) mkdir((x), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
 #define FFopen FFopenA
 #define FFopenUnicode FFopenA
 #define FFseek fseeko
@@ -77,7 +84,7 @@ typedef struct stat SStat;
 #define GNUC_PACKED __attribute__((packed))
 #endif
 
-#define CONVERT_ENDIAN(n) ((n) >> 24 & 0xFF) | ((n) >> 8 & 0xFF00) | ((n) << 8 & 0xFF0000) | ((n) << 24 & 0xFF000000)
+#define CONVERT_ENDIAN(n) ((n) >> 24 & 0xFF) | ((n) >> 8 & 0xFF00) | (((n) & 0xFF00) << 8) | (((n) & 0xFF) << 24)
 
 void FSetLocale();
 
@@ -173,6 +180,8 @@ bool FSStartsWith(const T& a_sString, const T& a_sPrefix, typename T::size_type 
 
 void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize);
 
+void FPadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData);
+
 bool FCryptoFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset, bool a_bVerbose);
 
 bool FGetFileSize(const String::value_type* a_pFileName, n64& a_nFileSize);
@@ -181,7 +190,9 @@ bool FMakeDir(const String::value_type* a_pDirName);
 
 FILE* FFopenA(const char* a_pFileName, const char* a_pMode);
 
+#if _3DSTOOL_COMPILER == COMPILER_MSC
 FILE* FFopenW(const wchar_t* a_pFileName, const wchar_t* a_pMode);
+#endif
 
 bool FSeek(FILE* a_fpFile, n64 a_nOffset);
 

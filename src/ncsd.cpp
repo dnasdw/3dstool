@@ -1,5 +1,9 @@
 #include "ncsd.h"
 
+const u32 CNcsd::s_uSignature = CONVERT_ENDIAN('NCSD');
+const n64 CNcsd::s_nOffsetFirstNcch = 0x4000;
+const int CNcsd::s_nBlockSize = 0x1000;
+
 CNcsd::CNcsd()
 	: m_pFileName(nullptr)
 	, m_pHeaderFileName(nullptr)
@@ -9,6 +13,7 @@ CNcsd::CNcsd()
 {
 	memset(m_pNcchFileName, 0, sizeof(m_pNcchFileName));
 	memset(&m_NcsdHeader, 0, sizeof(m_NcsdHeader));
+	memset(&m_CardInfo, 0, sizeof(m_CardInfo));
 }
 
 CNcsd::~CNcsd()
@@ -38,14 +43,14 @@ void CNcsd::SetVerbose(bool a_bVerbose)
 bool CNcsd::ExtractFile()
 {
 	bool bResult = true;
-	m_fpNcsd = FFoepn(m_pFileName, "rb");
+	m_fpNcsd = FFopen(m_pFileName, "rb");
 	if (m_fpNcsd == nullptr)
 	{
 		return false;
 	}
 	fread(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
-	m_nMediaUnitSize = 1LL << (m_NcsdHeader.Ncsd.Flags[6] + 9);
-	if (!extractFile(m_pHeaderFileName, 0, kOffsetFirstNcch, "ncsd header", -1, false))
+	calculateMediaUnitSize();
+	if (!extractFile(m_pHeaderFileName, 0, s_nOffsetFirstNcch, "ncsd header", -1, false))
 	{
 		bResult = false;
 	}
@@ -60,9 +65,49 @@ bool CNcsd::ExtractFile()
 	return bResult;
 }
 
+bool CNcsd::CreateFile()
+{
+	bool bResult = true;
+	m_fpNcsd = FFopen(m_pFileName, "wb");
+	if (m_fpNcsd == nullptr)
+	{
+		return false;
+	}
+	if (!createHeader())
+	{
+		fclose(m_fpNcsd);
+		return false;
+	}
+	calculateMediaUnitSize();
+	for (int i = 0; i < 8; i++)
+	{
+		if (!createNcch(i))
+		{
+			bResult = false;
+		}
+	}
+	n64 nFileSize = FFtell(m_fpNcsd);
+	*reinterpret_cast<n64*>(m_CardInfo.Reserved1 + 248) = nFileSize;
+	m_NcsdHeader.Ncsd.MediaSize = static_cast<u32>((1LL << 27) / m_nMediaUnitSize);
+	for (int i = 27; i < 64; i++)
+	{
+		if (nFileSize <= 1LL << i)
+		{
+			m_NcsdHeader.Ncsd.MediaSize = static_cast<u32>((1LL << i) / m_nMediaUnitSize);
+			break;
+		}
+	}
+	FPadFile(m_fpNcsd, m_NcsdHeader.Ncsd.MediaSize * m_nMediaUnitSize - nFileSize, 0xFF);
+	FFseek(m_fpNcsd, 0, SEEK_SET);
+	fwrite(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
+	fwrite(&m_CardInfo, sizeof(m_CardInfo), 1, m_fpNcsd);
+	fclose(m_fpNcsd);
+	return bResult;
+}
+
 bool CNcsd::IsNcsdFile(const char* a_pFileName)
 {
-	FILE* fp = FFoepn(a_pFileName, "rb");
+	FILE* fp = FFopen(a_pFileName, "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -73,6 +118,11 @@ bool CNcsd::IsNcsdFile(const char* a_pFileName)
 	return ncsdHeader.Ncsd.Signature == s_uSignature;
 }
 
+void CNcsd::calculateMediaUnitSize()
+{
+	m_nMediaUnitSize = 1LL << (m_NcsdHeader.Ncsd.Flags[6] + 9);
+}
+
 bool CNcsd::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType, int a_nTypeId, bool bMediaUnitSize)
 {
 	bool bResult = true;
@@ -80,7 +130,7 @@ bool CNcsd::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, con
 	{
 		if (a_nOffset != 0 || a_nSize != 0)
 		{
-			FILE* fp = FFoepn(a_pFileName, "wb");
+			FILE* fp = FFopen(a_pFileName, "wb");
 			if (fp == nullptr)
 			{
 				bResult = false;
@@ -124,4 +174,84 @@ bool CNcsd::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, con
 		}
 	}
 	return bResult;
+}
+
+bool CNcsd::createHeader()
+{
+	FILE* fp = FFopen(m_pHeaderFileName, "rb");
+	if (fp == nullptr)
+	{
+		return false;
+	}
+	FFseek(fp, 0, SEEK_END);
+	n64 nFileSize = FFtell(fp);
+	if (nFileSize < sizeof(m_NcsdHeader) + sizeof(m_CardInfo))
+	{
+		fclose(fp);
+		printf("ERROR: ncsd header is too short\n\n");
+		return false;
+	}
+	if (m_bVerbose)
+	{
+		printf("load: %s\n", m_pHeaderFileName);
+	}
+	FFseek(fp, 0, SEEK_SET);
+	fread(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, fp);
+	fread(&m_CardInfo, sizeof(m_CardInfo), 1, fp);
+	fclose(fp);
+	fwrite(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
+	fwrite(&m_CardInfo, sizeof(m_CardInfo), 1, m_fpNcsd);
+	FPadFile(m_fpNcsd, s_nOffsetFirstNcch - FFtell(m_fpNcsd), 0xFF);
+	return true;
+}
+
+bool CNcsd::createNcch(int a_nIndex)
+{
+	if (m_pNcchFileName[a_nIndex] != nullptr)
+	{
+		FILE* fp = FFopen(m_pNcchFileName[a_nIndex], "rb");
+		if (fp == nullptr)
+		{
+			clearNcch(a_nIndex);
+			return false;
+		}
+		if (m_bVerbose)
+		{
+			printf("load: %s\n", m_pNcchFileName[a_nIndex]);
+		}
+		FFseek(fp, 0, SEEK_END);
+		n64 nFileSize = FFtell(fp);
+		if (a_nIndex == 0)
+		{
+			if (nFileSize < sizeof(SNcchHeader))
+			{
+				fclose(fp);
+				clearNcch(a_nIndex);
+				return false;
+			}
+			FFseek(fp, sizeof(SNcchHeader) - sizeof(NcchCommonHeaderStruct), SEEK_SET);
+			fread(&m_CardInfo.NcchHeader, 1, sizeof(m_CardInfo.NcchHeader), fp);
+		}
+		FFseek(fp, 0, SEEK_SET);
+		m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2] = static_cast<u32>(FFtell(m_fpNcsd) / m_nMediaUnitSize);
+		m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2 + 1] = static_cast<u32>(FAlign(nFileSize, s_nBlockSize) / m_nMediaUnitSize);
+		FCopyFile(m_fpNcsd, fp, 0, nFileSize);
+		fclose(fp);
+	}
+	else
+	{
+		clearNcch(a_nIndex);
+	}
+	return true;
+}
+
+void CNcsd::clearNcch(int a_nIndex)
+{
+	m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2] = 0;
+	m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2 + 1] = 0;
+	memset(&m_NcsdHeader.Ncsd.PartitionId[a_nIndex], 0, sizeof(m_NcsdHeader.Ncsd.PartitionId[a_nIndex]));
+	if (a_nIndex == 0)
+	{
+		memset(&m_CardInfo.NcchHeader, 0, sizeof(m_CardInfo.NcchHeader));
+	}
 }

@@ -45,6 +45,7 @@ struct SRomFsMetaInfo
 	SRomFsMetaInfoSection Section[kSectionTypeCount];
 	u32 DataOffset;
 } GNUC_PACKED;
+#include MSC_POP_PACKED
 
 struct SCommonDirEntry
 {
@@ -54,7 +55,7 @@ struct SCommonDirEntry
 	n32 ChildFileOffset;
 	n32 PrevDirOffset;
 	n32 NameSize;
-} GNUC_PACKED;
+};
 
 struct SCommonFileEntry
 {
@@ -64,8 +65,7 @@ struct SCommonFileEntry
 	n64 FileSize;
 	n32 PrevFileOffset;
 	n32 NameSize;
-} GNUC_PACKED;
-#include MSC_POP_PACKED
+};
 
 union UCommonEntry
 {
@@ -84,7 +84,7 @@ enum EExtractState
 struct SExtractStackElement
 {
 	bool IsDir;
-	n64 EntryOffset;
+	n32 EntryOffset;
 	UCommonEntry Entry;
 	String EntryName;
 	String Prefix;
@@ -126,18 +126,18 @@ public:
 	bool ExtractFile();
 	bool CreateFile();
 	static bool IsRomFsFile(const char* a_pFileName);
-	static const u32 s_uSignature = CONVERT_ENDIAN('IVFC');
-	static const int s_nBlockSizePower = 0xC;
-	static const int s_nBlockSize = 1 << s_nBlockSizePower;
-	static const int s_nSHA256BlockSize = 0x20;
-	static const n32 s_nInvalidOffset = -1;
-	static const int s_nEntryNameAlignment = 4;
-	static const n64 s_nFileSizeAlignment = 0x10;
+	static const u32 s_uSignature;
+	static const int s_nBlockSizePower;
+	static const int s_nBlockSize;
+	static const int s_nSHA256BlockSize;
+	static const n32 s_nInvalidOffset;
+	static const int s_nEntryNameAlignment;
+	static const n64 s_nFileSizeAlignment;
 private:
 	bool extractDirEntry();
 	bool extractFileEntry();
 	void readEntry(SExtractStackElement& a_Element);
-	void pushExtractStackElement(bool a_bIsDir, n64 a_nEntryOffset, const String& a_sPrefix);
+	void pushExtractStackElement(bool a_bIsDir, n32 a_nEntryOffset, const String& a_sPrefix);
 	void setupCreate();
 	void pushDirEntry(const String& a_sEntryName, n32 a_nParentDirOffset);
 	bool pushFileEntry(const String& a_sEntryName, n32 a_nParentDirOffset);

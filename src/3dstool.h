@@ -31,9 +31,9 @@ public:
 	};
 	struct SOption
 	{
-		const char* m_pName;
-		int m_nKey;
-		const char* m_pDoc;
+		const char* Name;
+		int Key;
+		const char* Doc;
 	};
 	C3DSTool();
 	~C3DSTool();
@@ -63,6 +63,9 @@ private:
 	const char* m_pPlainRegionFileName;
 	const char* m_pExeFsFileName;
 	const char* m_pRomFsFileName;
+	bool m_bNotUpdateExtendedHeaderHash;
+	bool m_bNotUpdateExeFsHash;
+	bool m_bNotUpdateRomFsHash;
 	const char* m_pRomFsDirName;
 	bool m_bVerbose;
 	const char* m_pMessage;

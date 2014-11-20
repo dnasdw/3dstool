@@ -1,12 +1,23 @@
 #include "romfs.h"
 #include <openssl/sha.h>
 
+const u32 CRomFs::s_uSignature = CONVERT_ENDIAN('IVFC');
+const int CRomFs::s_nBlockSizePower = 0xC;
+const int CRomFs::s_nBlockSize = 1 << s_nBlockSizePower;
+const int CRomFs::s_nSHA256BlockSize = 0x20;
+const n32 CRomFs::s_nInvalidOffset = -1;
+const int CRomFs::s_nEntryNameAlignment = 4;
+const n64 CRomFs::s_nFileSizeAlignment = 0x10;
+
 CRomFs::CRomFs()
 	: m_pFileName(nullptr)
 	, m_bVerbose(false)
 	, m_fpRomFs(nullptr)
 	, m_nLevel3Offset(s_nBlockSize)
 {
+	memset(&m_RomFsHeader, 0, sizeof(m_RomFsHeader));
+	memset(&m_RomFsMetaInfo, 0, sizeof(m_RomFsMetaInfo));
+	memset(m_LevelBuffer, 0, sizeof(m_LevelBuffer));
 }
 
 CRomFs::~CRomFs()
@@ -31,7 +42,7 @@ void CRomFs::SetVerbose(bool a_bVerbose)
 bool CRomFs::ExtractFile()
 {
 	bool bResult = true;
-	m_fpRomFs = FFoepn(m_pFileName, "rb");
+	m_fpRomFs = FFopen(m_pFileName, "rb");
 	if (m_fpRomFs == nullptr)
 	{
 		return false;
@@ -57,7 +68,6 @@ bool CRomFs::ExtractFile()
 		}
 	}
 	fclose(m_fpRomFs);
-	m_fpRomFs = nullptr;
 	return bResult;
 }
 
@@ -81,7 +91,7 @@ bool CRomFs::CreateFile()
 	createHeader();
 	initLevelBuffer();
 	n64 nFileSize = FAlign(m_LevelBuffer[2].FilePos + m_RomFsHeader.Level2.Size, s_nBlockSize);
-	m_fpRomFs = FFoepn(m_pFileName, "wb");
+	m_fpRomFs = FFopen(m_pFileName, "wb");
 	if (m_fpRomFs == nullptr)
 	{
 		return false;
@@ -97,7 +107,7 @@ bool CRomFs::CreateFile()
 
 bool CRomFs::IsRomFsFile(const char* a_pFileName)
 {
-	FILE* fp = FFoepn(a_pFileName, "rb");
+	FILE* fp = FFopen(a_pFileName, "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -215,7 +225,7 @@ void CRomFs::readEntry(SExtractStackElement& a_Element)
 	}
 }
 
-void CRomFs::pushExtractStackElement(bool a_bIsDir, n64 a_nEntryOffset, const String& a_sPrefix)
+void CRomFs::pushExtractStackElement(bool a_bIsDir, n32 a_nEntryOffset, const String& a_sPrefix)
 {
 	if (a_nEntryOffset != s_nInvalidOffset)
 	{
@@ -252,9 +262,9 @@ void CRomFs::pushDirEntry(const String& a_sEntryName, n32 a_nParentDirOffset)
 	}
 	else
 	{
-		currentEntry.Path = m_vCreateDir[a_nParentDirOffset].Path + L"/" + a_sEntryName;
+		currentEntry.Path = m_vCreateDir[a_nParentDirOffset].Path + STR("/") + a_sEntryName;
 	}
-	currentEntry.EntryName = FSWToU16(a_sEntryName);
+	currentEntry.EntryName = FSUnicodeToU16(a_sEntryName);
 	currentEntry.Entry.Dir.ParentDirOffset = a_nParentDirOffset;
 	currentEntry.Entry.Dir.SiblingDirOffset = s_nInvalidOffset;
 	currentEntry.Entry.Dir.ChildDirOffset = s_nInvalidOffset;
@@ -273,7 +283,7 @@ bool CRomFs::pushFileEntry(const String& a_sEntryName, n32 a_nParentDirOffset)
 	bool bResult = true;
 	m_vCreateFile.push_back(SEntry());
 	SEntry& currentEntry = m_vCreateFile.back();
-	currentEntry.Path = m_vCreateDir[a_nParentDirOffset].Path + L"/" + a_sEntryName;
+	currentEntry.Path = m_vCreateDir[a_nParentDirOffset].Path + STR("/") + a_sEntryName;
 	currentEntry.EntryName = FSUnicodeToU16(a_sEntryName);
 	currentEntry.EntryOffset = static_cast<n32>(FAlign(m_RomFsMetaInfo.Section[kSectionTypeFile].Size, s_nEntryNameAlignment));
 	currentEntry.Entry.File.ParentDirOffset = a_nParentDirOffset;
@@ -340,6 +350,48 @@ bool CRomFs::createEntryList()
 					pushDirEntry(ffd.cFileName, current.EntryOffset);
 				}
 			} while (FindNextFileW(hFind, &ffd) != 0);
+		}
+#else
+		DIR* pDir = opendir(m_vCreateDir[current.EntryOffset].Path.c_str());
+		if (pDir != nullptr)
+		{
+			map<string, string> mDir;
+			map<string, string> mFile;
+			dirent* pDirent = nullptr;
+			while ((pDirent = readdir(pDir)) != nullptr)
+			{
+				string nameUpper = pDirent->d_name;
+				transform(nameUpper.begin(), nameUpper.end(), nameUpper.begin(), ::toupper);
+				if (pDirent->d_type == DT_REG)
+				{
+					mFile.insert(make_pair(nameUpper, pDirent->d_name));
+				}
+				else if (pDirent->d_type == DT_DIR && strcmp(pDirent->d_name, ".") != 0 && strcmp(pDirent->d_name, "..") != 0)
+				{
+					mDir.insert(make_pair(nameUpper, pDirent->d_name));
+				}
+			}
+			closedir(pDir);
+			for (auto it = mDir.begin(); it != mDir.end(); ++it)
+			{
+				if (m_vCreateDir[current.EntryOffset].Entry.Dir.ChildDirOffset == s_nInvalidOffset)
+				{
+					m_vCreateDir[current.EntryOffset].Entry.Dir.ChildDirOffset = static_cast<n32>(m_vCreateDir.size());
+				}
+				current.ChildOffset.push_back(static_cast<int>(m_vCreateDir.size()));
+				pushDirEntry(it->second, current.EntryOffset);
+			}
+			for (auto it = mFile.begin(); it != mFile.end(); ++it)
+			{
+				if (m_vCreateDir[current.EntryOffset].Entry.Dir.ChildFileOffset == s_nInvalidOffset)
+				{
+					m_vCreateDir[current.EntryOffset].Entry.Dir.ChildFileOffset = static_cast<n32>(m_vCreateFile.size());
+				}
+				if (!pushFileEntry(it->second, current.EntryOffset))
+				{
+					bResult = false;
+				}
+			}
 		}
 #endif
 		current.ChildIndex = 0;

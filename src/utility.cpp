@@ -113,14 +113,28 @@ void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize)
 	delete[] pBuffer;
 }
 
+void FPadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData)
+{
+	const n64 nBufferSize = 0x100000;
+	u8* pBuffer = new u8[nBufferSize];
+	memset(pBuffer, a_uPadData, nBufferSize);
+	while (a_nPadSize > 0)
+	{
+		n64 nSize = a_nPadSize > nBufferSize ? nBufferSize : a_nPadSize;
+		fwrite(pBuffer, 1, static_cast<size_t>(nSize), a_fpFile);
+		a_nPadSize -= nSize;
+	}
+	delete[] pBuffer;
+}
+
 bool FCryptoFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset, bool a_bVervose)
 {
-	FILE* fpData = FFoepn(a_pDataFileName, "rb+");
+	FILE* fpData = FFopen(a_pDataFileName, "rb+");
 	if (fpData == nullptr)
 	{
 		return false;
 	}
-	FILE* fpXor = FFoepn(a_pXorFileName, "rb");
+	FILE* fpXor = FFopen(a_pXorFileName, "rb");
 	if (fpXor == nullptr)
 	{
 		return false;
@@ -220,6 +234,7 @@ FILE* FFopenA(const char* a_pFileName, const char* a_pMode)
 	return fp;
 }
 
+#if _3DSTOOL_COMPILER == COMPILER_MSC
 FILE* FFopenW(const wchar_t* a_pFileName, const wchar_t* a_pMode)
 {
 	FILE* fp = _wfopen(a_pFileName, a_pMode);
@@ -229,6 +244,7 @@ FILE* FFopenW(const wchar_t* a_pFileName, const wchar_t* a_pMode)
 	}
 	return fp;
 }
+#endif
 
 bool FSeek(FILE* a_fpFile, n64 a_nOffset)
 {

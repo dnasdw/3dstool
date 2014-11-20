@@ -20,19 +20,23 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 	{ "partition6", '6', "the cxi file of cci file at partition 6" },
 	{ "partition7", '7', "the cxi file of cci file at partition 7" },
 	{ "xor", 0, "the xor data file for crypto the FILE" },
-	{ "exhxor", 0, "short for extendedheaderxor" },
-	{ "extendedheaderxor", 0, "the xor data file for crypto the extendedheader of the cxi file" },
-	{ "exefsxor", 0, "the xor data file for crypto the exefs part of the cxi file" },
-	{ "romfsxor", 0, "the xor data file for crypto the romfs part of the cxi file" },
+	{ "exh-xor", 0, "short for extendedheader-xor" },
+	{ "extendedheader-xor", 0, "the xor data file for crypto the extendedheader of the cxi file" },
+	{ "exefs-xor", 0, "the xor data file for crypto the exefs part of the cxi file" },
+	{ "romfs-xor", 0, "the xor data file for crypto the romfs part of the cxi file" },
 	{ "exh", 0, "short for extendedheader" },
 	{ "extendedheader", 0, "the extendedheader file of the cxi file" },
-	{ "ace", 0, "short for accesscontrolextended file of the cxi file" },
+	{ "ace", 0, "short for accesscontrolextended" },
 	{ "accesscontrolextended", 0, "the accesscontrolextended file of the cxi file" },
 	{ "plain", 0, "short for plainregion" },
 	{ "plainregion", 0, "the plainregion file of the cxi file" },
 	{ "exefs", 0, "the exefs file of the cxi file" },
 	{ "romfs", 0, "the romfs file of the cxi file" },
-	{ "romfsdir", 0, "the romfs dir for the romfs file" },
+	{ "not-update-exh-hash", 0, "short for not-update-extendedheader-hash"},
+	{ "not-update-extendedheader-hash", 0, "do not update the extendedheader hash"},
+	{ "not-update-exefs-hash", 0, "do not update the exefs super block hash"},
+	{ "not-update-romfs-hash", 0, "do not update the romfs super block hash"},
+	{ "romfs-dir", 0, "the romfs dir for the romfs file" },
 	{ "verbose", 'v', "show progress" },
 	{ "help", 'h', "show this help" },
 	{ nullptr, 0, nullptr }
@@ -52,6 +56,9 @@ C3DSTool::C3DSTool()
 	, m_pPlainRegionFileName(nullptr)
 	, m_pExeFsFileName(nullptr)
 	, m_pRomFsFileName(nullptr)
+	, m_bNotUpdateExtendedHeaderHash(false)
+	, m_bNotUpdateExeFsHash(false)
+	, m_bNotUpdateRomFsHash(false)
 	, m_pRomFsDirName(nullptr)
 	, m_bVerbose(false)
 	, m_pMessage(nullptr)
@@ -188,12 +195,7 @@ int C3DSTool::CheckOptions()
 		case C3DSTool::kFileTypeRomfs:
 			if (m_pRomFsDirName == nullptr)
 			{
-				printf("ERROR: no --romfsdir option\n\n");
-				return 1;
-			}
-			if (!CRomFs::IsRomFsFile(m_pFileName))
-			{
-				printf("ERROR: %s is not a romfs file\n\n", m_pFileName);
+				printf("ERROR: no --romfs-dir option\n\n");
 				return 1;
 			}
 			break;
@@ -208,18 +210,39 @@ int C3DSTool::CheckOptions()
 			printf("ERROR: no --type option\n\n");
 			return 1;
 		}
+		else if (m_eFileType == kFileTypeCxi)
+		{
+			if (m_pHeaderFileName == nullptr)
+			{
+				printf("ERROR: no --header option\n\n");
+				return 1;
+			}
+			if (m_pAccessControlExtendedFileName != nullptr && m_pExtendedHeaderFileName == nullptr)
+			{
+				printf("ERROR: no --extendedheader option\n\n");
+				return 1;
+			}
+		}
+		else if (m_eFileType == kFileTypeCci)
+		{
+			if (m_pHeaderFileName == nullptr)
+			{
+				printf("ERROR: no --header option\n\n");
+				return 1;
+			}
+			if (m_pNcchFileName[0] == nullptr)
+			{
+				printf("ERROR: no --partition0 option\n\n");
+				return 1;
+			}
+		}
 		else if (m_eFileType == kFileTypeRomfs)
 		{
 			if (m_pRomFsDirName == nullptr)
 			{
-				printf("ERROR: no --romfsdir option\n\n");
+				printf("ERROR: no --romfs-dir option\n\n");
 				return 1;
 			}
-		}
-		else
-		{
-			printf("ERRO: not implement\n\n");
-			return 1;
 		}
 	}
 	if (m_eAction == kActionCrypto)
@@ -233,7 +256,7 @@ int C3DSTool::CheckOptions()
 		{
 			if (m_pXorFileName != nullptr)
 			{
-				printf("ERROR: --xor can not with --extendedheaderxor or --exefsxor or --romfsxor\n\n");
+				printf("ERROR: --xor can not with --extendedheader-xor or --exefs-xor or --romfs-xor\n\n");
 				return 1;
 			}
 			if (!CNcch::IsNcchFile(m_pFileName))
@@ -255,30 +278,33 @@ int C3DSTool::Help()
 	printf("3dstool %s by dnasdw\n\n", _3DS_TOOL_VERSION);
 	printf("usage: 3dstool [option...] [FILE]...\n");
 	printf("example:\n");
-	printf("  3dstool -xvt0f 3ds app.cxi input.3ds --header header.bin\n");
-	printf("  3dstool -evtf cxi app.cxi --romfsxor CTR-P-XXXX0.romfs.xorpad\n");
-	printf("  3dstool -xvtf cxi app.cxi --romfs romfs.bin\n");
-	printf("  3dstool -xvtf romfs romfs.bin --romfsdir romfs\n");
-	printf("  3dstool -cvtf romfs romfsnew.bin --romfsdir romfs\n");
+	printf("  3dstool -xvt0f 3ds app.cxi input.3ds --header ncsdheader.bin\n");
+	printf("  3dstool -evtf cxi app.cxi --romfs-xor CTR-P-XXXX0.romfs.xorpad\n");
+	printf("  3dstool -xvtf cxi app.cxi --header ncchheader.bin --exh exh.bin --ace ace.bin --plain plain.bin --exefs exefs.bin --romfs romfs.bin");
+	printf("  3dstool -xvtf romfs romfs.bin --romfs-dir romfs\n");
+	printf("  3dstool -cvtf romfs romfsnew.bin --romfs-dir romfs\n");
+	printf("  3dstool -cvtf cxi appnew.cxi --header ncchheader.bin --exh exh.bin --ace ace.bin --plain plain.bin --exefs exefs.bin --romfs romfsnew.bin --not-update-exh-hash --not-update-exefs-hash");
+	printf("  3dstool -evtf cxi appnew.cxi --romfs-xor CTR-P-XXXX0.romfs.xorpad");
+	printf("  3dstool -cvt0f 3ds appnew.cxi output.3ds --header ncsdheader.bin");
 	printf("\noption:\n");
 	SOption* pOption = s_Option;
-	while (pOption->m_pName != nullptr && pOption->m_pDoc != nullptr)
+	while (pOption->Name != nullptr && pOption->Doc != nullptr)
 	{
 		printf("  ");
-		if (pOption->m_nKey != 0)
+		if (pOption->Key != 0)
 		{
-			printf("-%c,", pOption->m_nKey);
+			printf("-%c,", pOption->Key);
 		}
 		else
 		{
 			printf("   ");
 		}
-		printf(" --%s", pOption->m_pName);
-		if (strlen(pOption->m_pName) >= 8)
+		printf(" --%s", pOption->Name);
+		if (strlen(pOption->Name) >= 8)
 		{
 			printf("\n\t");
 		}
-		printf("\t%s\n", pOption->m_pDoc);
+		printf("\t%s\n", pOption->Doc);
 		pOption++;
 	}
 	return 0;
@@ -419,7 +445,7 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_pXorFileName = a_pArgv[++a_nIndex];
 	}
-	else if (strcmp(a_pName, "extendedheaderxor") == 0 || strcmp(a_pName, "exhxor") == 0)
+	else if (strcmp(a_pName, "extendedheader-xor") == 0 || strcmp(a_pName, "exh-xor") == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
@@ -427,7 +453,7 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_pExtendedHeaderXorFileName = a_pArgv[++a_nIndex];
 	}
-	else if (strcmp(a_pName, "exefsxor") == 0)
+	else if (strcmp(a_pName, "exefs-xor") == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
@@ -435,7 +461,7 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_pExeFsXorFileName = a_pArgv[++a_nIndex];
 	}
-	else if (strcmp(a_pName, "romfsxor") == 0)
+	else if (strcmp(a_pName, "romfs-xor") == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
@@ -483,7 +509,19 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_pRomFsFileName = a_pArgv[++a_nIndex];
 	}
-	else if (strcmp(a_pName, "romfsdir") == 0)
+	else if (strcmp(a_pName, "not-update-extendedheader-hash") == 0 || strcmp(a_pName, "not-update-exh-hash") == 0)
+	{
+		m_bNotUpdateExtendedHeaderHash = true;
+	}
+	else if (strcmp(a_pName, "not-update-exefs-hash") == 0)
+	{
+		m_bNotUpdateExeFsHash = true;
+	}
+	else if (strcmp(a_pName, "not-update-romfs-hash") == 0)
+	{
+		m_bNotUpdateRomFsHash = true;
+	}
+	else if (strcmp(a_pName, "romfs-dir") == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
@@ -504,11 +542,11 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 
 C3DSTool::EParseOptionReturn C3DSTool::parseOptions(int a_nKey, int& a_nIndex, int m_nArgc, char* a_pArgv[])
 {
-	for (SOption* pOption = s_Option; pOption->m_pName != nullptr || pOption->m_nKey != 0 || pOption->m_pDoc != nullptr; pOption++)
+	for (SOption* pOption = s_Option; pOption->Name != nullptr || pOption->Key != 0 || pOption->Doc != nullptr; pOption++)
 	{
-		if (pOption->m_nKey == a_nKey)
+		if (pOption->Key == a_nKey)
 		{
-			return parseOptions(pOption->m_pName, a_nIndex, m_nArgc, a_pArgv);
+			return parseOptions(pOption->Name, a_nIndex, m_nArgc, a_pArgv);
 		}
 	}
 	return kParseOptionReturnIllegalOption;
@@ -608,8 +646,31 @@ bool C3DSTool::createFile()
 	switch (m_eFileType)
 	{
 	case C3DSTool::kFileTypeCci:
+	{
+		CNcsd ncsd;
+		ncsd.SetFileName(m_pFileName);
+		ncsd.SetHeaderFileName(m_pHeaderFileName);
+		ncsd.SetNcchFileName(m_pNcchFileName);
+		ncsd.SetVerbose(m_bVerbose);
+		bResult = ncsd.CreateFile();
+	}
 		break;
 	case C3DSTool::kFileTypeCxi:
+	{
+		CNcch ncch;
+		ncch.SetFileName(m_pFileName);
+		ncch.SetHeaderFileName(m_pHeaderFileName);
+		ncch.SetExtendedHeaderFileName(m_pExtendedHeaderFileName);
+		ncch.SetAccessControlExtendedFileName(m_pAccessControlExtendedFileName);
+		ncch.SetPlainRegionFileName(m_pPlainRegionFileName);
+		ncch.SetExeFsFileName(m_pExeFsFileName);
+		ncch.SetRomFsFileName(m_pRomFsFileName);
+		ncch.SetNotUpdateExtendedHeaderHash(m_bNotUpdateExtendedHeaderHash);
+		ncch.SetNotUpdateExeFsHash(m_bNotUpdateExeFsHash);
+		ncch.SetNotUpdateRomFsHash(m_bNotUpdateRomFsHash);
+		ncch.SetVerbose(m_bVerbose);
+		bResult = ncch.CreateFile();
+	}
 		break;
 	case C3DSTool::kFileTypeRomfs:
 	{
