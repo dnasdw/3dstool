@@ -88,6 +88,10 @@ typedef struct stat SStat;
 
 void FSetLocale();
 
+u8 FCHexToU8(char a_cHex);
+
+bool FSHexToU8(string a_sHex, u8* a_pArray);
+
 n32 FSToN32(const string& a_sString);
 
 template<typename T>
@@ -180,9 +184,15 @@ bool FSStartsWith(const T& a_sString, const T& a_sPrefix, typename T::size_type 
 
 void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize);
 
+void FCryptoAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, u8 a_uKey[16], u8 a_uAesCtr[16], n64 a_nSrcOffset, n64 a_nSize, bool a_bVerbose);
+
+bool FCryptoXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const char* a_pXorFileName, n64 a_nSrcOffset, n64 a_nSize, n64 a_nXorOffset, bool a_bVerbose);
+
 void FPadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData);
 
-bool FCryptoFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset, bool a_bVerbose);
+bool FCryptoAesCtrFile(const char* a_pDataFileName, u8 a_uKey[16], u8 a_uAesCtr[16], n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, bool a_bVerbose);
+
+bool FCryptoXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset, bool a_bVerbose);
 
 bool FGetFileSize(const String::value_type* a_pFileName, n64& a_nFileSize);
 

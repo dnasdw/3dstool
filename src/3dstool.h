@@ -12,7 +12,7 @@ public:
 		kParseOptionReturnIllegalOption,
 		kParseOptionReturnNoArgument,
 		kParseOptionReturnUnknownArgument,
-		kParseOptionReturnActionConflict
+		kParseOptionReturnOptionConflict
 	};
 	enum EAction
 	{
@@ -54,12 +54,16 @@ private:
 	const char* m_pFileName;
 	const char* m_pHeaderFileName;
 	const char* m_pNcchFileName[8];
+	int m_nCryptoMode;
+	u8 m_uKey[16];
+	string m_sCounter;
 	const char* m_pXorFileName;
 	const char* m_pExtendedHeaderXorFileName;
 	const char* m_pExeFsXorFileName;
 	const char* m_pRomFsXorFileName;
 	const char* m_pExtendedHeaderFileName;
 	const char* m_pAccessControlExtendedFileName;
+	const char* m_pLogoRegionFileName;
 	const char* m_pPlainRegionFileName;
 	const char* m_pExeFsFileName;
 	const char* m_pRomFsFileName;

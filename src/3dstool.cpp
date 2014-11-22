@@ -19,20 +19,25 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 	{ "partition5", '5', "the cxi file of cci file at partition 5" },
 	{ "partition6", '6', "the cxi file of cci file at partition 6" },
 	{ "partition7", '7', "the cxi file of cci file at partition 7" },
+	{ "key0", 0, "short for --key 00000000000000000000000000000000" },
+	{ "key", 0, "the hex string for extract/create or crypto the FILE" },
+	{ "counter", 0, "the hex string for crypto the FILE by AES CTR mode" },
 	{ "xor", 0, "the xor data file for crypto the FILE" },
-	{ "exh-xor", 0, "short for extendedheader-xor" },
+	{ "exh-xor", 0, "short for --extendedheader-xor" },
 	{ "extendedheader-xor", 0, "the xor data file for crypto the extendedheader of the cxi file" },
 	{ "exefs-xor", 0, "the xor data file for crypto the exefs part of the cxi file" },
 	{ "romfs-xor", 0, "the xor data file for crypto the romfs part of the cxi file" },
-	{ "exh", 0, "short for extendedheader" },
+	{ "exh", 0, "short for --extendedheader" },
 	{ "extendedheader", 0, "the extendedheader file of the cxi file" },
-	{ "ace", 0, "short for accesscontrolextended" },
+	{ "ace", 0, "short for --accesscontrolextended" },
 	{ "accesscontrolextended", 0, "the accesscontrolextended file of the cxi file" },
-	{ "plain", 0, "short for plainregion" },
+	{ "logo", 0, "short for --logoregion" },
+	{ "logoregion", 0, "the logoregion file of the cxi file" },
+	{ "plain", 0, "short for --plainregion" },
 	{ "plainregion", 0, "the plainregion file of the cxi file" },
 	{ "exefs", 0, "the exefs file of the cxi file" },
 	{ "romfs", 0, "the romfs file of the cxi file" },
-	{ "not-update-exh-hash", 0, "short for not-update-extendedheader-hash"},
+	{ "not-update-exh-hash", 0, "short for --not-update-extendedheader-hash"},
 	{ "not-update-extendedheader-hash", 0, "do not update the extendedheader hash"},
 	{ "not-update-exefs-hash", 0, "do not update the exefs super block hash"},
 	{ "not-update-romfs-hash", 0, "do not update the romfs super block hash"},
@@ -47,12 +52,14 @@ C3DSTool::C3DSTool()
 	, m_eFileType(kFileTypeUnknown)
 	, m_pFileName(nullptr)
 	, m_pHeaderFileName(nullptr)
+	, m_nCryptoMode(CNcch::kCryptoModeNone)
 	, m_pXorFileName(nullptr)
 	, m_pExtendedHeaderXorFileName(nullptr)
 	, m_pExeFsXorFileName(nullptr)
 	, m_pRomFsXorFileName(nullptr)
 	, m_pExtendedHeaderFileName(nullptr)
 	, m_pAccessControlExtendedFileName(nullptr)
+	, m_pLogoRegionFileName(nullptr)
 	, m_pPlainRegionFileName(nullptr)
 	, m_pExeFsFileName(nullptr)
 	, m_pRomFsFileName(nullptr)
@@ -64,6 +71,7 @@ C3DSTool::C3DSTool()
 	, m_pMessage(nullptr)
 {
 	memset(m_pNcchFileName, 0, sizeof(m_pNcchFileName));
+	memset(m_uKey, 0, sizeof(m_uKey));
 }
 
 C3DSTool::~C3DSTool()
@@ -97,8 +105,8 @@ int C3DSTool::ParseOptions(int a_nArgc, char* a_pArgv[])
 				case kParseOptionReturnUnknownArgument:
 					printf("ERROR: unknown argument \"%s\"\n\n", m_pMessage);
 					return 1;
-				case kParseOptionReturnActionConflict:
-					printf("ERROR: action conflict\n\n");
+				case kParseOptionReturnOptionConflict:
+					printf("ERROR: option conflict\n\n");
 					return 1;
 				}
 			}
@@ -120,8 +128,8 @@ int C3DSTool::ParseOptions(int a_nArgc, char* a_pArgv[])
 				case kParseOptionReturnUnknownArgument:
 					printf("ERROR: unknown argument \"%s\"\n\n", m_pMessage);
 					return 1;
-				case kParseOptionReturnActionConflict:
-					printf("ERROR: action conflict\n\n");
+				case kParseOptionReturnOptionConflict:
+					printf("ERROR: option conflict\n\n");
 					return 1;
 				}
 			}
@@ -141,8 +149,8 @@ int C3DSTool::ParseOptions(int a_nArgc, char* a_pArgv[])
 			case kParseOptionReturnUnknownArgument:
 				printf("ERROR: unknown argument \"%s\"\n\n", m_pMessage);
 				return 1;
-			case kParseOptionReturnActionConflict:
-				printf("ERROR: action conflict\n\n");
+			case kParseOptionReturnOptionConflict:
+				printf("ERROR: option conflict\n\n");
 				return 1;
 			}
 		}
@@ -247,26 +255,29 @@ int C3DSTool::CheckOptions()
 	}
 	if (m_eAction == kActionCrypto)
 	{
-		if (m_pXorFileName == nullptr && m_pExtendedHeaderXorFileName == nullptr && m_pExeFsXorFileName == nullptr && m_pRomFsXorFileName == nullptr)
+		if (m_nCryptoMode == CNcch::kCryptoModeNone)
 		{
-			printf("ERROR: no xor data file\n\n");
+			printf("ERROR: no key or xor data file\n\n");
 			return 1;
 		}
-		if (m_pExtendedHeaderXorFileName != nullptr || m_pExeFsXorFileName != nullptr || m_pRomFsXorFileName != nullptr)
+		else if (m_nCryptoMode == CNcch::kCryptoModeXor)
 		{
-			if (m_pXorFileName != nullptr)
+			if (m_pExtendedHeaderXorFileName != nullptr || m_pExeFsXorFileName != nullptr || m_pRomFsXorFileName != nullptr)
 			{
-				printf("ERROR: --xor can not with --extendedheader-xor or --exefs-xor or --romfs-xor\n\n");
-				return 1;
-			}
-			if (!CNcch::IsNcchFile(m_pFileName))
-			{
-				printf("ERROR: %s is not a ncch file\n\n", m_pFileName);
-				return 1;
-			}
-			else if (m_eFileType != kFileTypeUnknown && m_eFileType != kFileTypeCxi && m_bVerbose)
-			{
-				printf("INFO: ignore --type option\n");
+				if (m_pXorFileName != nullptr)
+				{
+					printf("ERROR: --xor can not with --extendedheader-xor or --exefs-xor or --romfs-xor\n\n");
+					return 1;
+				}
+				if (!CNcch::IsNcchFile(m_pFileName))
+				{
+					printf("ERROR: %s is not a ncch file\n\n", m_pFileName);
+					return 1;
+				}
+				else if (m_eFileType != kFileTypeUnknown && m_eFileType != kFileTypeCxi && m_bVerbose)
+				{
+					printf("INFO: ignore --type option\n");
+				}
 			}
 		}
 	}
@@ -358,7 +369,7 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		}
 		else if (m_eAction != kActionHelp)
 		{
-			return kParseOptionReturnActionConflict;
+			return kParseOptionReturnOptionConflict;
 		}
 	}
 	else if (strcmp(a_pName, "create") == 0)
@@ -369,7 +380,7 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		}
 		else if (m_eAction != kActionHelp)
 		{
-			return kParseOptionReturnActionConflict;
+			return kParseOptionReturnOptionConflict;
 		}
 	}
 	else if (strcmp(a_pName, "crypto") == 0)
@@ -380,7 +391,7 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		}
 		else if (m_eAction != kActionHelp)
 		{
-			return kParseOptionReturnActionConflict;
+			return kParseOptionReturnOptionConflict;
 		}
 	}
 	else if (strcmp(a_pName, "type") == 0)
@@ -437,11 +448,71 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_pNcchFileName[nIndex] = a_pArgv[++a_nIndex];
 	}
+	else if (strcmp(a_pName, "key0") == 0)
+	{
+		if (m_nCryptoMode == CNcch::kCryptoModeNone)
+		{
+			m_nCryptoMode = CNcch::kCryptoModeAesCtr;
+		}
+		else if (m_nCryptoMode != CNcch::kCryptoModeAesCtr)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+		FSHexToU8("00000000000000000000000000000000", m_uKey);
+	}
+	else if (strcmp(a_pName, "key") == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		if (m_nCryptoMode == CNcch::kCryptoModeNone)
+		{
+			m_nCryptoMode = CNcch::kCryptoModeAesCtr;
+		}
+		else if (m_nCryptoMode != CNcch::kCryptoModeAesCtr)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+		string sKey = a_pArgv[++a_nIndex];
+		if (sKey.size() != 32 || sKey.find_first_not_of("0123456789ABCDEFabcdef") != string::npos || !FSHexToU8(sKey, m_uKey))
+		{
+			return kParseOptionReturnUnknownArgument;
+		}
+	}
+	else if (strcmp(a_pName, "counter") == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		if (m_nCryptoMode == CNcch::kCryptoModeNone)
+		{
+			m_nCryptoMode = CNcch::kCryptoModeAesCtr;
+		}
+		else if (m_nCryptoMode != CNcch::kCryptoModeAesCtr)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+		m_sCounter = a_pArgv[++a_nIndex];
+		if (m_sCounter.size() != 32 || m_sCounter.find_first_not_of("0123456789ABCDEFabcdef") != string::npos)
+		{
+			return kParseOptionReturnUnknownArgument;
+		}
+	}
 	else if (strcmp(a_pName, "xor") == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
+		}
+		if (m_nCryptoMode == CNcch::kCryptoModeNone)
+		{
+			m_nCryptoMode = CNcch::kCryptoModeXor;
+		}
+		else if (m_nCryptoMode != CNcch::kCryptoModeXor)
+		{
+			return kParseOptionReturnOptionConflict;
 		}
 		m_pXorFileName = a_pArgv[++a_nIndex];
 	}
@@ -451,6 +522,14 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
+		if (m_nCryptoMode == CNcch::kCryptoModeNone)
+		{
+			m_nCryptoMode = CNcch::kCryptoModeXor;
+		}
+		else if (m_nCryptoMode != CNcch::kCryptoModeXor)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
 		m_pExtendedHeaderXorFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "exefs-xor") == 0)
@@ -459,6 +538,14 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
+		if (m_nCryptoMode == CNcch::kCryptoModeNone)
+		{
+			m_nCryptoMode = CNcch::kCryptoModeXor;
+		}
+		else if (m_nCryptoMode != CNcch::kCryptoModeXor)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
 		m_pExeFsXorFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "romfs-xor") == 0)
@@ -466,6 +553,14 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
+		}
+		if (m_nCryptoMode == CNcch::kCryptoModeNone)
+		{
+			m_nCryptoMode = CNcch::kCryptoModeXor;
+		}
+		else if (m_nCryptoMode != CNcch::kCryptoModeXor)
+		{
+			return kParseOptionReturnOptionConflict;
 		}
 		m_pRomFsXorFileName = a_pArgv[++a_nIndex];
 	}
@@ -484,6 +579,14 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnNoArgument;
 		}
 		m_pAccessControlExtendedFileName = a_pArgv[++a_nIndex];
+	}
+	else if (strcmp(a_pName, "logoregion") == 0 || strcmp(a_pName, "logo") == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		m_pLogoRegionFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "plainregion") == 0 || strcmp(a_pName, "plain") == 0)
 	{
@@ -617,9 +720,15 @@ bool C3DSTool::extractFile()
 	{
 		CNcch ncch;
 		ncch.SetFileName(m_pFileName);
+		ncch.SetCryptoMode(m_nCryptoMode);
+		ncch.SetKey(m_uKey);
+		ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
+		ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
+		ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
 		ncch.SetHeaderFileName(m_pHeaderFileName);
 		ncch.SetExtendedHeaderFileName(m_pExtendedHeaderFileName);
 		ncch.SetAccessControlExtendedFileName(m_pAccessControlExtendedFileName);
+		ncch.SetLogoRegionFileName(m_pLogoRegionFileName);
 		ncch.SetPlainRegionFileName(m_pPlainRegionFileName);
 		ncch.SetExeFsFileName(m_pExeFsFileName);
 		ncch.SetRomFsFileName(m_pRomFsFileName);
@@ -659,6 +768,11 @@ bool C3DSTool::createFile()
 	{
 		CNcch ncch;
 		ncch.SetFileName(m_pFileName);
+		ncch.SetCryptoMode(m_nCryptoMode);
+		ncch.SetKey(m_uKey);
+		ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
+		ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
+		ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
 		ncch.SetHeaderFileName(m_pHeaderFileName);
 		ncch.SetExtendedHeaderFileName(m_pExtendedHeaderFileName);
 		ncch.SetAccessControlExtendedFileName(m_pAccessControlExtendedFileName);
@@ -688,14 +802,25 @@ bool C3DSTool::createFile()
 bool C3DSTool::cryptoFile()
 {
 	bool bResult = false;
-	if (m_pXorFileName != nullptr)
+	if (m_nCryptoMode == CNcch::kCryptoModeAesCtr && !m_sCounter.empty())
 	{
-		bResult = FCryptoFile(m_pFileName, m_pXorFileName, 0, 0, true, 0, m_bVerbose);
+		u8 uAesCtr[16] = {};
+		bResult = FSHexToU8(m_sCounter, uAesCtr);
+		if (bResult)
+		{
+			bResult = FCryptoAesCtrFile(m_pFileName, m_uKey, uAesCtr, 0, 0, true, m_bVerbose);
+		}
+	}
+	else if (m_nCryptoMode == CNcch::kCryptoModeXor && m_pXorFileName != nullptr)
+	{
+		bResult = FCryptoXorFile(m_pFileName, m_pXorFileName, 0, 0, true, 0, m_bVerbose);
 	}
 	else
 	{
 		CNcch ncch;
 		ncch.SetFileName(m_pFileName);
+		ncch.SetCryptoMode(m_nCryptoMode);
+		ncch.SetKey(m_uKey);
 		ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
 		ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 		ncch.SetRomFsXorFileName(m_pRomFsXorFileName);

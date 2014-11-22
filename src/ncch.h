@@ -14,7 +14,8 @@ struct NcchCommonHeaderStruct
 	u8 Reserved0[4];
 	u64 ProgramId;
 	u8 TempFlag;
-	u8 Reserved1[47];
+	u8 Reserved1[15];
+	u8 LogoRegionHash[32];
 	u8 ProductCode[16];
 	u8 ExtendedHeaderHash[32];
 	u32 ExtendedHeaderSize;
@@ -22,7 +23,8 @@ struct NcchCommonHeaderStruct
 	u8 Flags[8];
 	u32 PlainRegionOffset;
 	u32 PlainRegionSize;
-	u8 Reserved3[8];
+	u32 LogoRegionOffset;
+	u32 LogoRegionSize;
 	u32 ExeFsOffset;
 	u32 ExeFsSize;
 	u32 ExeFsHashRegionSize;
@@ -42,18 +44,40 @@ struct SNcchHeader
 } GNUC_PACKED;
 #include MSC_POP_PACKED
 
+enum Flag
+{
+	FixedCryptoKey,
+	NoMountRomFs,
+	NoEncrypto
+};
+
 class CNcch
 {
 public:
+	enum ECryptoMode
+	{
+		kCryptoModeNone,
+		kCryptoModeAesCtr,
+		kCryptoModeXor
+	};
+	enum EAesCtrType
+	{
+		kAesCtrTypeExtendedHeader = 1,
+		kAesCtrTypeExeFs,
+		kAesCtrTypeRomFs
+	};
 	CNcch();
 	~CNcch();
 	void SetFileName(const char* a_pFileName);
+	void SetCryptoMode(int a_nCryptoMode);
+	void SetKey(u8 a_uKey[16]);
 	void SetExtendedHeaderXorFileName(const char* a_pExtendedHeaderXorFileName);
 	void SetExeFsXorFileName(const char* a_pExeFsXorFileName);
 	void SetRomFsXorFileName(const char* a_pRomFsXorFileName);
 	void SetHeaderFileName(const char* a_pHeaderFileName);
 	void SetExtendedHeaderFileName(const char* a_pExtendedHeaderFileName);
 	void SetAccessControlExtendedFileName(const char* a_pAccessControlExtendedFileName);
+	void SetLogoRegionFileName(const char* a_pLogoRegionFileName);
 	void SetPlainRegionFileName(const char* a_pPlainRegionFileName);
 	void SetExeFsFileName(const char* a_pExeFsFileName);
 	void SetRomFsFileName(const char* a_pRomFsFileName);
@@ -70,26 +94,33 @@ public:
 private:
 	void calculateMediaUnitSize();
 	void calculateOffsetSize();
-	bool cryptoFile(const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
-	bool extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType);
+	bool cryptoAesCtrFile(n64 a_nOffset, n64 a_nSize, const char* a_pType);
+	bool cryptoXorFile(const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType);
+	bool extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const char* a_pType);
 	bool createHeader();
 	bool createExtendedHeader();
 	bool createAccessControlExtended();
+	bool createLogoRegion();
 	bool createPlainRegion();
 	bool createExeFs();
 	bool createRomFs();
 	void clearExtendedHeader();
+	void clearLogoRegion();
 	void clearPlainRegion();
 	void clearExeFs();
 	void clearRomFs();
 	void alignFileSize(n64 a_nAlignment);
+	static void getAesCounter(NcchCommonHeaderStruct* a_pNcch, EAesCtrType a_eAesCtrType, n64 a_nMediaUnitSize, u8 a_uAesCtr[16]);
 	const char* m_pFileName;
+	int m_nCryptoMode;
+	u8 m_uKey[16];
 	const char* m_pExtendedHeaderXorFileName;
 	const char* m_pExeFsXorFileName;
 	const char* m_pRomFsXorFileName;
 	const char* m_pHeaderFileName;
 	const char* m_pExtendedHeaderFileName;
 	const char* m_pAccessControlExtendedFileName;
+	const char* m_pLogoRegionFileName;
 	const char* m_pPlainRegionFileName;
 	const char* m_pExeFsFileName;
 	const char* m_pRomFsFileName;
@@ -104,12 +135,17 @@ private:
 	n64 m_nExtendedHeaderSize;
 	n64 m_nAccessControlExtendedOffset;
 	n64 m_nAccessControlExtendedSize;
+	n64 m_nLogoRegionOffset;
+	n64 m_nLogoRegionSize;
 	n64 m_nPlainRegionOffset;
 	n64 m_nPlainRegionSize;
 	n64 m_nExeFsOffset;
 	n64 m_nExeFsSize;
 	n64 m_nRomFsOffset;
 	n64 m_nRomFsSize;
+	u8 m_uAesCtr[16];
+	const char* m_pXorFileName;
+	n64 m_nXorOffset;
 };
 
 #endif	// NCCH_H_
