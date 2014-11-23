@@ -62,6 +62,7 @@ typedef struct _stat64 SStat;
 #define FFtell _ftelli64
 #define FFileno _fileno
 #define FLseek _lseeki64
+#define FChsize _chsize_s
 #define FPrintf wprintf
 #define MSC_PUSH_PACKED <pshpack1.h>
 #define MSC_POP_PACKED <poppack.h>
@@ -78,6 +79,7 @@ typedef struct stat SStat;
 #define FFtell ftello
 #define FFileno fileno
 #define FLseek lseek
+#define FChsize ftruncate
 #define FPrintf printf
 #define MSC_PUSH_PACKED <stdlib.h>
 #define MSC_POP_PACKED <stdlib.h>

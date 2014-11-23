@@ -47,30 +47,38 @@ class CNcsd
 public:
 	CNcsd();
 	~CNcsd();
+	void SetLastPartitionIndex(int a_nLastPartitionIndex);
 	void SetFileName(const char* a_pFileName);
 	void SetHeaderFileName(const char* a_pHeaderFileName);
 	void SetNcchFileName(const char* a_pNcchFileName[]);
+	void SetNotPad(bool a_bNotPad);
 	void SetVerbose(bool a_bVerbose);
 	bool ExtractFile();
 	bool CreateFile();
+	bool RipFile();
+	bool PadFile();
 	static bool IsNcsdFile(const char* a_pFileName);
 	static const u32 s_uSignature;
 	static const n64 s_nOffsetFirstNcch;
 	static const int s_nBlockSize;
 private:
 	void calculateMediaUnitSize();
+	void calculateValidSize();
 	bool extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType, int a_nTypeId, bool bMediaUnitSize);
 	bool createHeader();
 	bool createNcch(int a_nIndex);
 	void clearNcch(int a_nIndex);
+	int m_nLastPartitionIndex;
 	const char* m_pFileName;
 	const char* m_pHeaderFileName;
 	const char* m_pNcchFileName[8];
+	bool m_bNotPad;
 	bool m_bVerbose;
 	FILE* m_fpNcsd;
 	SNcsdHeader m_NcsdHeader;
 	CardInfoHeaderStruct m_CardInfo;
 	n64 m_nMediaUnitSize;
+	n64 m_nValidSize;
 };
 
 #endif	// NCSD_H_

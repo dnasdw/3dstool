@@ -8,6 +8,9 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 	{ "extract", 'x', "extract the FILE" },
 	{ "create", 'c', "create the FILE" },
 	{ "crypto", 'e', "decrypt/encrypt the FILE or decrypt/encrypt the part of the cxi file" },
+	{ "rip", 0, "short for --rip-after-partition 7" },
+	{ "rip-after-partition", 0, "rip the data after partition N[0~7]" },
+	{ "pad", 0, "add the pad data behind the 3ds FILE" },
 	{ "type", 't', "[[cci|ncsd|3ds]|[cxi|ncch]|romfs]\n\t\tthe type of FILE, optional" },
 	{ "file", 'f', "the source of extract or the destination of create FILE, required" },
 	{ "header", 0, "the header file of FILE" },
@@ -41,6 +44,7 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 	{ "not-update-extendedheader-hash", 0, "do not update the extendedheader hash"},
 	{ "not-update-exefs-hash", 0, "do not update the exefs super block hash"},
 	{ "not-update-romfs-hash", 0, "do not update the romfs super block hash"},
+	{ "not-pad", 0, "do not add the pad data" },
 	{ "romfs-dir", 0, "the romfs dir for the romfs file" },
 	{ "verbose", 'v', "show progress" },
 	{ "help", 'h', "show this help" },
@@ -49,6 +53,7 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 
 C3DSTool::C3DSTool()
 	: m_eAction(kActionNone)
+	, m_nLastPartitionIndex(7)
 	, m_eFileType(kFileTypeUnknown)
 	, m_pFileName(nullptr)
 	, m_pHeaderFileName(nullptr)
@@ -66,6 +71,7 @@ C3DSTool::C3DSTool()
 	, m_bNotUpdateExtendedHeaderHash(false)
 	, m_bNotUpdateExeFsHash(false)
 	, m_bNotUpdateRomFsHash(false)
+	, m_bNotPad(false)
 	, m_pRomFsDirName(nullptr)
 	, m_bVerbose(false)
 	, m_pMessage(nullptr)
@@ -281,6 +287,18 @@ int C3DSTool::CheckOptions()
 			}
 		}
 	}
+	if (m_eAction == kActionRip || m_eAction == kActionPad)
+	{
+		if (!CNcsd::IsNcsdFile(m_pFileName))
+		{
+			printf("ERROR: %s is not a ncsd file\n\n", m_pFileName);
+			return 1;
+		}
+		else if (m_eFileType != kFileTypeUnknown && m_eFileType != kFileTypeCci && m_bVerbose)
+		{
+			printf("INFO: ignore --type option\n");
+		}
+	}
 	return 0;
 }
 
@@ -356,6 +374,22 @@ int C3DSTool::Action()
 			return 1;
 		}
 	}
+	if (m_eAction == kActionRip)
+	{
+		if (!ripFile())
+		{
+			printf("ERROR: rip file failed\n\n");
+			return 1;
+		}
+	}
+	if (m_eAction == kActionPad)
+	{
+		if (!padFile())
+		{
+			printf("ERROR: pad file failed\n\n");
+			return 1;
+		}
+	}
 	return 0;
 }
 
@@ -367,18 +401,18 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		{
 			m_eAction = kActionExtract;
 		}
-		else if (m_eAction != kActionHelp)
+		else if (m_eAction != kActionExtract && m_eAction != kActionHelp)
 		{
 			return kParseOptionReturnOptionConflict;
 		}
 	}
 	else if (strcmp(a_pName, "create") == 0)
 	{
-		if (m_eAction == kActionNone)
+		if (m_eAction == kActionNone || m_eAction == kActionRip)
 		{
 			m_eAction = kActionCreate;
 		}
-		else if (m_eAction != kActionHelp)
+		else if (m_eAction != kActionCreate && m_eAction != kActionHelp)
 		{
 			return kParseOptionReturnOptionConflict;
 		}
@@ -389,7 +423,50 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		{
 			m_eAction = kActionCrypto;
 		}
-		else if (m_eAction != kActionHelp)
+		else if (m_eAction != kActionCrypto && m_eAction != kActionHelp)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+	}
+	else if (strcmp(a_pName, "rip") == 0)
+	{
+		if (m_eAction == kActionNone)
+		{
+			m_eAction = kActionRip;
+		}
+		else if (m_eAction != kActionCreate && m_eAction != kActionRip && m_eAction != kActionHelp)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+		m_nLastPartitionIndex = 7;
+	}
+	else if (strcmp(a_pName, "rip-after-partition") == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		if (m_eAction == kActionNone)
+		{
+			m_eAction = kActionRip;
+		}
+		else if (m_eAction != kActionCreate && m_eAction != kActionRip && m_eAction != kActionHelp)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+		m_nLastPartitionIndex = FSToN32(a_pArgv[++a_nIndex]);
+		if (m_nLastPartitionIndex < 0 || m_nLastPartitionIndex >= 8)
+		{
+			return kParseOptionReturnIllegalOption;
+		}
+	}
+	else if (strcmp(a_pName, "pad") == 0)
+	{
+		if (m_eAction == kActionNone)
+		{
+			m_eAction = kActionPad;
+		}
+		else if (m_eAction != kActionPad && m_eAction != kActionHelp)
 		{
 			return kParseOptionReturnOptionConflict;
 		}
@@ -624,6 +701,10 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 	{
 		m_bNotUpdateRomFsHash = true;
 	}
+	else if (strcmp(a_pName, "not-pad") == 0)
+	{
+		m_bNotPad = true;
+	}
 	else if (strcmp(a_pName, "romfs-dir") == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
@@ -757,9 +838,11 @@ bool C3DSTool::createFile()
 	case C3DSTool::kFileTypeCci:
 	{
 		CNcsd ncsd;
+		ncsd.SetLastPartitionIndex(m_nLastPartitionIndex);
 		ncsd.SetFileName(m_pFileName);
 		ncsd.SetHeaderFileName(m_pHeaderFileName);
 		ncsd.SetNcchFileName(m_pNcchFileName);
+		ncsd.SetNotPad(m_bNotPad);
 		ncsd.SetVerbose(m_bVerbose);
 		bResult = ncsd.CreateFile();
 	}
@@ -827,6 +910,25 @@ bool C3DSTool::cryptoFile()
 		ncch.SetVerbose(m_bVerbose);
 		bResult = ncch.CryptoFile();
 	}
+	return bResult;
+}
+
+bool C3DSTool::ripFile()
+{
+	CNcsd ncsd;
+	ncsd.SetLastPartitionIndex(m_nLastPartitionIndex);
+	ncsd.SetFileName(m_pFileName);
+	ncsd.SetVerbose(m_bVerbose);
+	bool bResult = ncsd.RipFile();
+	return bResult;
+}
+
+bool C3DSTool::padFile()
+{
+	CNcsd ncsd;
+	ncsd.SetFileName(m_pFileName);
+	ncsd.SetVerbose(m_bVerbose);
+	bool bResult = ncsd.PadFile();
 	return bResult;
 }
 

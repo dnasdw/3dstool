@@ -20,6 +20,8 @@ public:
 		kActionExtract,
 		kActionCreate,
 		kActionCrypto,
+		kActionRip,
+		kActionPad,
 		kActionHelp
 	};
 	enum EFileType
@@ -49,7 +51,10 @@ private:
 	bool extractFile();
 	bool createFile();
 	bool cryptoFile();
+	bool ripFile();
+	bool padFile();
 	EAction m_eAction;
+	int m_nLastPartitionIndex;
 	EFileType m_eFileType;
 	const char* m_pFileName;
 	const char* m_pHeaderFileName;
@@ -70,6 +75,7 @@ private:
 	bool m_bNotUpdateExtendedHeaderHash;
 	bool m_bNotUpdateExeFsHash;
 	bool m_bNotUpdateRomFsHash;
+	bool m_bNotPad;
 	const char* m_pRomFsDirName;
 	bool m_bVerbose;
 	const char* m_pMessage;
