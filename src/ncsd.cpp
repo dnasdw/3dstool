@@ -125,7 +125,7 @@ bool CNcsd::CreateFile()
 	return bResult;
 }
 
-bool CNcsd::RipFile()
+bool CNcsd::TrimFile()
 {
 	m_fpNcsd = FFopen(m_pFileName, "rb+");
 	if (m_fpNcsd == nullptr)

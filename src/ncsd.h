@@ -55,7 +55,7 @@ public:
 	void SetVerbose(bool a_bVerbose);
 	bool ExtractFile();
 	bool CreateFile();
-	bool RipFile();
+	bool TrimFile();
 	bool PadFile();
 	static bool IsNcsdFile(const char* a_pFileName);
 	static const u32 s_uSignature;

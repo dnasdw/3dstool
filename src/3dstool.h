@@ -20,7 +20,7 @@ public:
 		kActionExtract,
 		kActionCreate,
 		kActionCrypto,
-		kActionRip,
+		kActionTrim,
 		kActionPad,
 		kActionHelp
 	};
@@ -51,7 +51,7 @@ private:
 	bool extractFile();
 	bool createFile();
 	bool cryptoFile();
-	bool ripFile();
+	bool trimFile();
 	bool padFile();
 	EAction m_eAction;
 	int m_nLastPartitionIndex;

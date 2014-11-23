@@ -8,8 +8,8 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 	{ "extract", 'x', "extract the FILE" },
 	{ "create", 'c', "create the FILE" },
 	{ "crypto", 'e', "decrypt/encrypt the FILE or decrypt/encrypt the part of the cxi file" },
-	{ "rip", 0, "short for --rip-after-partition 7" },
-	{ "rip-after-partition", 0, "rip the data after partition N[0~7]" },
+	{ "trim", 0, "short for --trim-after-partition 7" },
+	{ "trim-after-partition", 0, "trim the data after partition N[0~7]" },
 	{ "pad", 0, "add the pad data behind the 3ds FILE" },
 	{ "type", 't', "[[cci|ncsd|3ds]|[cxi|ncch]|romfs]\n\t\tthe type of FILE, optional" },
 	{ "file", 'f', "the source of extract or the destination of create FILE, required" },
@@ -287,7 +287,7 @@ int C3DSTool::CheckOptions()
 			}
 		}
 	}
-	if (m_eAction == kActionRip || m_eAction == kActionPad)
+	if (m_eAction == kActionTrim || m_eAction == kActionPad)
 	{
 		if (!CNcsd::IsNcsdFile(m_pFileName))
 		{
@@ -374,11 +374,11 @@ int C3DSTool::Action()
 			return 1;
 		}
 	}
-	if (m_eAction == kActionRip)
+	if (m_eAction == kActionTrim)
 	{
-		if (!ripFile())
+		if (!trimFile())
 		{
-			printf("ERROR: rip file failed\n\n");
+			printf("ERROR: trim file failed\n\n");
 			return 1;
 		}
 	}
@@ -408,7 +408,7 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 	}
 	else if (strcmp(a_pName, "create") == 0)
 	{
-		if (m_eAction == kActionNone || m_eAction == kActionRip)
+		if (m_eAction == kActionNone || m_eAction == kActionTrim)
 		{
 			m_eAction = kActionCreate;
 		}
@@ -428,19 +428,19 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnOptionConflict;
 		}
 	}
-	else if (strcmp(a_pName, "rip") == 0)
+	else if (strcmp(a_pName, "trim") == 0)
 	{
 		if (m_eAction == kActionNone)
 		{
-			m_eAction = kActionRip;
+			m_eAction = kActionTrim;
 		}
-		else if (m_eAction != kActionCreate && m_eAction != kActionRip && m_eAction != kActionHelp)
+		else if (m_eAction != kActionCreate && m_eAction != kActionTrim && m_eAction != kActionHelp)
 		{
 			return kParseOptionReturnOptionConflict;
 		}
 		m_nLastPartitionIndex = 7;
 	}
-	else if (strcmp(a_pName, "rip-after-partition") == 0)
+	else if (strcmp(a_pName, "trim-after-partition") == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
@@ -448,9 +448,9 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		}
 		if (m_eAction == kActionNone)
 		{
-			m_eAction = kActionRip;
+			m_eAction = kActionTrim;
 		}
-		else if (m_eAction != kActionCreate && m_eAction != kActionRip && m_eAction != kActionHelp)
+		else if (m_eAction != kActionCreate && m_eAction != kActionTrim && m_eAction != kActionHelp)
 		{
 			return kParseOptionReturnOptionConflict;
 		}
@@ -913,13 +913,13 @@ bool C3DSTool::cryptoFile()
 	return bResult;
 }
 
-bool C3DSTool::ripFile()
+bool C3DSTool::trimFile()
 {
 	CNcsd ncsd;
 	ncsd.SetLastPartitionIndex(m_nLastPartitionIndex);
 	ncsd.SetFileName(m_pFileName);
 	ncsd.SetVerbose(m_bVerbose);
-	bool bResult = ncsd.RipFile();
+	bool bResult = ncsd.TrimFile();
 	return bResult;
 }
 
