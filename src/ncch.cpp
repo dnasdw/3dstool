@@ -401,7 +401,7 @@ bool CNcch::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, boo
 				{
 					printf("save: %s\n", a_pFileName);
 				}
-				if (a_bPlainData || m_nCryptoMode == kCryptoModeNone)
+				if (a_bPlainData || m_nCryptoMode == kCryptoModeNone || (m_nCryptoMode == kCryptoModeXor && m_pXorFileName == nullptr))
 				{
 					FCopyFile(fp, m_fpNcch, a_nOffset, a_nSize);
 				}
@@ -488,7 +488,7 @@ bool CNcch::createExtendedHeader()
 			SHA256(pBuffer, m_NcchHeader.Ncch.ExtendedHeaderSize, m_NcchHeader.Ncch.ExtendedHeaderHash);
 		}
 		delete[] pBuffer;
-		if (m_nCryptoMode == kCryptoModeNone)
+		if (m_nCryptoMode == kCryptoModeNone || (m_nCryptoMode == kCryptoModeXor && m_pXorFileName == nullptr))
 		{
 			FCopyFile(m_fpNcch, fp, 0, m_NcchHeader.Ncch.ExtendedHeaderSize);
 		}
@@ -529,7 +529,7 @@ bool CNcch::createAccessControlExtended()
 		}
 		FFseek(fp, 0, SEEK_END);
 		n64 nFileSize = FFtell(fp);
-		if (m_nCryptoMode == kCryptoModeNone)
+		if (m_nCryptoMode == kCryptoModeNone || (m_nCryptoMode == kCryptoModeXor && m_pXorFileName == nullptr))
 		{
 			FCopyFile(m_fpNcch, fp, 0, nFileSize);
 		}
@@ -661,7 +661,7 @@ bool CNcch::createExeFs()
 			SHA256(pBuffer, static_cast<size_t>(nSuperBlockSize), m_NcchHeader.Ncch.ExeFsSuperBlockHash);
 		}
 		delete[] pBuffer;
-		if (m_nCryptoMode == kCryptoModeNone)
+		if (m_nCryptoMode == kCryptoModeNone || (m_nCryptoMode == kCryptoModeXor && m_pXorFileName == nullptr))
 		{
 			FCopyFile(m_fpNcch, fp, 0, nFileSize);
 		}
@@ -733,7 +733,7 @@ bool CNcch::createRomFs()
 			SHA256(pBuffer, static_cast<size_t>(nSuperBlockSize), m_NcchHeader.Ncch.RomFsSuperBlockHash);
 		}
 		delete[] pBuffer;
-		if (m_nCryptoMode == kCryptoModeNone)
+		if (m_nCryptoMode == kCryptoModeNone || (m_nCryptoMode == kCryptoModeXor && m_pXorFileName == nullptr))
 		{
 			FCopyFile(m_fpNcch, fp, 0, nFileSize);
 		}
