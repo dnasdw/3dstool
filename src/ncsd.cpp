@@ -5,11 +5,11 @@ const n64 CNcsd::s_nOffsetFirstNcch = 0x4000;
 const int CNcsd::s_nBlockSize = 0x1000;
 
 CNcsd::CNcsd()
-	: m_nLastPartitionIndex(7)
-	, m_pFileName(nullptr)
+	: m_pFileName(nullptr)
+	, m_bVerbose(false)
 	, m_pHeaderFileName(nullptr)
 	, m_bNotPad(false)
-	, m_bVerbose(false)
+	, m_nLastPartitionIndex(7)
 	, m_fpNcsd(nullptr)
 	, m_nMediaUnitSize(1 << 9)
 	, m_nValidSize(0)
@@ -23,14 +23,14 @@ CNcsd::~CNcsd()
 {
 }
 
-void CNcsd::SetLastPartitionIndex(int a_nLastPartitionIndex)
-{
-	m_nLastPartitionIndex = a_nLastPartitionIndex;
-}
-
 void CNcsd::SetFileName(const char* a_pFileName)
 {
 	m_pFileName = a_pFileName;
+}
+
+void CNcsd::SetVerbose(bool a_bVerbose)
+{
+	m_bVerbose = a_bVerbose;
 }
 
 void CNcsd::SetHeaderFileName(const char* a_pHeaderFileName)
@@ -48,9 +48,9 @@ void CNcsd::SetNotPad(bool a_bNotPad)
 	m_bNotPad = a_bNotPad;
 }
 
-void CNcsd::SetVerbose(bool a_bVerbose)
+void CNcsd::SetLastPartitionIndex(int a_nLastPartitionIndex)
 {
-	m_bVerbose = a_bVerbose;
+	m_nLastPartitionIndex = a_nLastPartitionIndex;
 }
 
 bool CNcsd::ExtractFile()
@@ -101,14 +101,22 @@ bool CNcsd::CreateFile()
 	}
 	n64 nFileSize = FFtell(m_fpNcsd);
 	*reinterpret_cast<n64*>(m_CardInfo.Reserved1 + 248) = nFileSize;
+	if (m_bNotPad && m_NcsdHeader.Ncsd.Flags[MEDIA_TYPE_INDEX] == CARD2)
+	{
+		m_bNotPad = false;
+		if (m_bVerbose)
+		{
+			printf("INFO: not support --not-pad with CARD2 type\n");
+		}
+	}
 	if (m_bNotPad)
 	{
 		m_NcsdHeader.Ncsd.MediaSize = static_cast<u32>(nFileSize / m_nMediaUnitSize);
 	}
 	else
 	{
-		m_NcsdHeader.Ncsd.MediaSize = static_cast<u32>((1LL << 27) / m_nMediaUnitSize);
-		for (int i = 27; i < 64; i++)
+		int nMinPower = m_NcsdHeader.Ncsd.Flags[MEDIA_TYPE_INDEX] == CARD1 ? 27 : 29;
+		for (int i = nMinPower; i < 64; i++)
 		{
 			if (nFileSize <= 1LL << i)
 			{
@@ -133,7 +141,17 @@ bool CNcsd::TrimFile()
 		return false;
 	}
 	fread(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
+	if (m_NcsdHeader.Ncsd.Flags[MEDIA_TYPE_INDEX] == CARD2)
+	{
+		if (m_bVerbose)
+		{
+			printf("INFO: not support --trim with CARD2 type\n");
+		}
+		fclose(m_fpNcsd);
+		return false;
+	}
 	fread(&m_CardInfo, sizeof(m_CardInfo), 1, m_fpNcsd);
+	calculateMediaUnitSize();
 	for (int i = m_nLastPartitionIndex + 1; i < 8; i++)
 	{
 		clearNcch(i);
@@ -157,10 +175,19 @@ bool CNcsd::PadFile()
 		return false;
 	}
 	fread(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
+	if (m_NcsdHeader.Ncsd.Flags[MEDIA_TYPE_INDEX] == CARD2)
+	{
+		if (m_bVerbose)
+		{
+			printf("INFO: not support --pad with CARD2 type\n");
+		}
+		fclose(m_fpNcsd);
+		return false;
+	}
 	fread(&m_CardInfo, sizeof(m_CardInfo), 1, m_fpNcsd);
+	calculateMediaUnitSize();
 	calculateValidSize();
 	*reinterpret_cast<n64*>(m_CardInfo.Reserved1 + 248) = m_nValidSize;
-	m_NcsdHeader.Ncsd.MediaSize = static_cast<u32>((1LL << 27) / m_nMediaUnitSize);
 	for (int i = 27; i < 64; i++)
 	{
 		if (m_nValidSize <= 1LL << i)
@@ -194,12 +221,16 @@ bool CNcsd::IsNcsdFile(const char* a_pFileName)
 
 void CNcsd::calculateMediaUnitSize()
 {
-	m_nMediaUnitSize = 1LL << (m_NcsdHeader.Ncsd.Flags[6] + 9);
+	m_nMediaUnitSize = 1LL << (m_NcsdHeader.Ncsd.Flags[MEDIA_UNIT_SIZE] + 9);
 }
 
 void CNcsd::calculateValidSize()
 {
 	m_nValidSize = m_NcsdHeader.Ncsd.ParitionOffsetAndSize[0] + m_NcsdHeader.Ncsd.ParitionOffsetAndSize[1];
+	if (m_nValidSize < s_nOffsetFirstNcch / m_nMediaUnitSize)
+	{
+		m_nValidSize = s_nOffsetFirstNcch / m_nMediaUnitSize;
+	}
 	for (int i = 1; i < 8; i++)
 	{
 		n64 nSize = m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2] + m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2 + 1];
@@ -295,7 +326,7 @@ bool CNcsd::createHeader()
 
 bool CNcsd::createNcch(int a_nIndex)
 {
-	if (m_pNcchFileName[a_nIndex] != nullptr && a_nIndex <= m_nLastPartitionIndex)
+	if (m_pNcchFileName[a_nIndex] != nullptr)
 	{
 		FILE* fp = FFopen(m_pNcchFileName[a_nIndex], "rb");
 		if (fp == nullptr)
@@ -325,6 +356,7 @@ bool CNcsd::createNcch(int a_nIndex)
 		m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2 + 1] = static_cast<u32>(FAlign(nFileSize, s_nBlockSize) / m_nMediaUnitSize);
 		FCopyFile(m_fpNcsd, fp, 0, nFileSize);
 		fclose(fp);
+		FPadFile(m_fpNcsd, FAlign(FFtell(m_fpNcsd), s_nBlockSize) - FFtell(m_fpNcsd), 0);
 	}
 	else
 	{
@@ -335,6 +367,8 @@ bool CNcsd::createNcch(int a_nIndex)
 
 void CNcsd::clearNcch(int a_nIndex)
 {
+	m_NcsdHeader.Ncsd.PartitionFsType[a_nIndex] = FS_TYPE_DEFAULT;
+	m_NcsdHeader.Ncsd.PartitionCryptType[a_nIndex] = ENCRYPTO_TYPE_DEFAULT;
 	m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2] = 0;
 	m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2 + 1] = 0;
 	memset(&m_NcsdHeader.Ncsd.PartitionId[a_nIndex], 0, sizeof(m_NcsdHeader.Ncsd.PartitionId[a_nIndex]));

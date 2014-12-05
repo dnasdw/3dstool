@@ -3,15 +3,6 @@
 
 #include "utility.h"
 
-enum ESectionType
-{
-	kSectionTypeDirHash,
-	kSectionTypeDir,
-	kSectionTypeFileHash,
-	kSectionTypeFile,
-	kSectionTypeCount
-};
-
 #include MSC_PUSH_PACKED
 struct SRomFsLevel
 {
@@ -42,87 +33,91 @@ struct SRomFsMetaInfoSection
 struct SRomFsMetaInfo
 {
 	u32 Size;
-	SRomFsMetaInfoSection Section[kSectionTypeCount];
+	SRomFsMetaInfoSection Section[4];
 	u32 DataOffset;
 } GNUC_PACKED;
 #include MSC_POP_PACKED
 
-struct SCommonDirEntry
-{
-	n32 ParentDirOffset;
-	n32 SiblingDirOffset;
-	n32 ChildDirOffset;
-	n32 ChildFileOffset;
-	n32 PrevDirOffset;
-	n32 NameSize;
-};
-
-struct SCommonFileEntry
-{
-	n32 ParentDirOffset;
-	n32 SiblingFileOffset;
-	n64 FileOffset;
-	n64 FileSize;
-	n32 PrevFileOffset;
-	n32 NameSize;
-};
-
-union UCommonEntry
-{
-	SCommonDirEntry Dir;
-	SCommonFileEntry File;
-};
-
-enum EExtractState
-{
-	kExtractStateBegin,
-	kExtractStateChildDir,
-	kExtractStateSiblingDir,
-	kExtractStateEnd
-};
-
-struct SExtractStackElement
-{
-	bool IsDir;
-	n32 EntryOffset;
-	UCommonEntry Entry;
-	String EntryName;
-	String Prefix;
-	EExtractState ExtractState;
-};
-
-struct SEntry
-{
-	String Path;
-	u16string EntryName;
-	int EntryNameSize;
-	n32 EntryOffset;
-	n32 BucketIndex;
-	UCommonEntry Entry;
-};
-
-struct SCreateStackElement
-{
-	int EntryOffset;
-	vector<int> ChildOffset;
-	int ChildIndex;
-};
-
-struct SLevelBuffer
-{
-	vector<u8> Data;
-	int DataPos;
-	n64 FilePos;
-};
-
 class CRomFs
 {
 public:
+	enum ESectionType
+	{
+		kSectionTypeDirHash,
+		kSectionTypeDir,
+		kSectionTypeFileHash,
+		kSectionTypeFile
+	};
+	enum EExtractState
+	{
+		kExtractStateBegin,
+		kExtractStateChildDir,
+		kExtractStateSiblingDir,
+		kExtractStateEnd
+	};
+	struct SCommonDirEntry
+	{
+		n32 ParentDirOffset;
+		n32 SiblingDirOffset;
+		n32 ChildDirOffset;
+		n32 ChildFileOffset;
+		n32 PrevDirOffset;
+		n32 NameSize;
+	};
+	struct SCommonFileEntry
+	{
+		n32 ParentDirOffset;
+		n32 SiblingFileOffset;
+		n64 FileOffset;
+		n64 FileSize;
+		n32 PrevFileOffset;
+		n32 NameSize;
+	};
+	union UCommonEntry
+	{
+		SCommonDirEntry Dir;
+		SCommonFileEntry File;
+	};
+	struct SExtractStackElement
+	{
+		bool IsDir;
+		n32 EntryOffset;
+		UCommonEntry Entry;
+		String EntryName;
+		String Prefix;
+		EExtractState ExtractState;
+	};
+	struct SEntry
+	{
+		String Path;
+		u16string EntryName;
+		int EntryNameSize;
+		n32 EntryOffset;
+		n32 BucketIndex;
+		UCommonEntry Entry;
+	};
+	struct SCreateStackElement
+	{
+		int EntryOffset;
+		vector<int> ChildOffset;
+		int ChildIndex;
+	};
+	struct SLevelBuffer
+	{
+		vector<u8> Data;
+		int DataPos;
+		n64 FilePos;
+		SLevelBuffer()
+			: DataPos(0)
+			, FilePos(0)
+		{
+		}
+	};
 	CRomFs();
 	~CRomFs();
 	void SetFileName(const char* a_pFileName);
-	void SetRomFsDirName(const char* a_pRomFsDirName);
 	void SetVerbose(bool a_bVerbose);
+	void SetRomFsDirName(const char* a_pRomFsDirName);
 	bool ExtractFile();
 	bool CreateFile();
 	static bool IsRomFsFile(const char* a_pFileName);
@@ -134,15 +129,17 @@ public:
 	static const int s_nEntryNameAlignment;
 	static const n64 s_nFileSizeAlignment;
 private:
+	void pushExtractStackElement(bool a_bIsDir, n32 a_nEntryOffset, const String& a_sPrefix);
 	bool extractDirEntry();
 	bool extractFileEntry();
 	void readEntry(SExtractStackElement& a_Element);
-	void pushExtractStackElement(bool a_bIsDir, n32 a_nEntryOffset, const String& a_sPrefix);
 	void setupCreate();
+	void buildBlackList();
 	void pushDirEntry(const String& a_sEntryName, n32 a_nParentDirOffset);
 	bool pushFileEntry(const String& a_sEntryName, n32 a_nParentDirOffset);
 	void pushCreateStackElement(int a_nEntryOffset);
 	bool createEntryList();
+	bool matchInBlackList(const String& a_sPath);
 	void removeEmptyDirEntry();
 	void removeDirEntry(int a_nIndex);
 	void subDirOffset(n32& a_nOffset, int a_nIndex);
@@ -159,16 +156,17 @@ private:
 	bool writeBufferFromFile(int a_nLevel, const String& a_sPath, n64 a_nSize);
 	void alignBuffer(int a_nLevel, int a_nAlignment);
 	const char* m_pFileName;
-	String m_sRomFsDirName;
 	bool m_bVerbose;
+	String m_sRomFsDirName;
 	FILE* m_fpRomFs;
 	SRomFsHeader m_RomFsHeader;
 	n64 m_nLevel3Offset;
 	SRomFsMetaInfo m_RomFsMetaInfo;
 	stack<SExtractStackElement> m_sExtractStack;
-	stack<SCreateStackElement> m_sCreateStack;
+	vector<Regex> m_vBlackList;
 	vector<SEntry> m_vCreateDir;
 	vector<SEntry> m_vCreateFile;
+	stack<SCreateStackElement> m_sCreateStack;
 	vector<n32> m_vDirBucket;
 	vector<n32> m_vFileBucket;
 	SLevelBuffer m_LevelBuffer[4];

@@ -17,7 +17,6 @@ CRomFs::CRomFs()
 {
 	memset(&m_RomFsHeader, 0, sizeof(m_RomFsHeader));
 	memset(&m_RomFsMetaInfo, 0, sizeof(m_RomFsMetaInfo));
-	memset(m_LevelBuffer, 0, sizeof(m_LevelBuffer));
 }
 
 CRomFs::~CRomFs()
@@ -29,14 +28,14 @@ void CRomFs::SetFileName(const char* a_pFileName)
 	m_pFileName = a_pFileName;
 }
 
-void CRomFs::SetRomFsDirName(const char* a_pRomFsDirName)
-{
-	m_sRomFsDirName = FSAToUnicode(a_pRomFsDirName);
-}
-
 void CRomFs::SetVerbose(bool a_bVerbose)
 {
 	m_bVerbose = a_bVerbose;
+}
+
+void CRomFs::SetRomFsDirName(const char* a_pRomFsDirName)
+{
+	m_sRomFsDirName = FSAToUnicode(a_pRomFsDirName);
 }
 
 bool CRomFs::ExtractFile()
@@ -75,6 +74,7 @@ bool CRomFs::CreateFile()
 {
 	bool bResult = true;
 	setupCreate();
+	buildBlackList();
 	pushDirEntry(STR(""), 0);
 	pushCreateStackElement(0);
 	while (!m_sCreateStack.empty())
@@ -116,6 +116,19 @@ bool CRomFs::IsRomFsFile(const char* a_pFileName)
 	fread(&romFsHeader, sizeof(romFsHeader), 1, fp);
 	fclose(fp);
 	return romFsHeader.Signature == s_uSignature;
+}
+
+void CRomFs::pushExtractStackElement(bool a_bIsDir, n32 a_nEntryOffset, const String& a_sPrefix)
+{
+	if (a_nEntryOffset != s_nInvalidOffset)
+	{
+		m_sExtractStack.push(SExtractStackElement());
+		SExtractStackElement& current = m_sExtractStack.top();
+		current.IsDir = a_bIsDir;
+		current.EntryOffset = a_nEntryOffset;
+		current.Prefix = a_sPrefix;
+		current.ExtractState = kExtractStateBegin;
+	}
 }
 
 bool CRomFs::extractDirEntry()
@@ -225,19 +238,6 @@ void CRomFs::readEntry(SExtractStackElement& a_Element)
 	}
 }
 
-void CRomFs::pushExtractStackElement(bool a_bIsDir, n32 a_nEntryOffset, const String& a_sPrefix)
-{
-	if (a_nEntryOffset != s_nInvalidOffset)
-	{
-		m_sExtractStack.push(SExtractStackElement());
-		SExtractStackElement& current = m_sExtractStack.top();
-		current.IsDir = a_bIsDir;
-		current.EntryOffset = a_nEntryOffset;
-		current.Prefix = a_sPrefix;
-		current.ExtractState = kExtractStateBegin;
-	}
-}
-
 void CRomFs::setupCreate()
 {
 	memset(&m_RomFsHeader, 0, sizeof(m_RomFsHeader));
@@ -250,6 +250,42 @@ void CRomFs::setupCreate()
 	memset(&m_RomFsMetaInfo, 0, sizeof(m_RomFsMetaInfo));
 	m_RomFsMetaInfo.Size = sizeof(m_RomFsMetaInfo);
 	m_RomFsMetaInfo.Section[kSectionTypeDirHash].Offset = static_cast<u32>(FAlign(m_RomFsMetaInfo.Size, s_nEntryNameAlignment));
+}
+
+void CRomFs::buildBlackList()
+{
+	m_vBlackList.clear();
+	String sIgnorePath = FGetModuleDir() + STR("/ignore.txt");
+	FILE* fp = FFopenUnicode(sIgnorePath.c_str(), STR("rb"));
+	if (fp != nullptr)
+	{
+		FFseek(fp, 0, SEEK_END);
+		u32 nSize = static_cast<u32>(FFtell(fp));
+		FFseek(fp, 0, SEEK_SET);
+		char* pTxt = new char[nSize + 1];
+		fread(pTxt, 1, nSize, fp);
+		fclose(fp);
+		pTxt[nSize] = '\0';
+		string sTxt(pTxt);
+		delete[] pTxt;
+		vector<string> vTxt = FSSplitOf<string>(sTxt, "\r\n");
+		for (auto it = vTxt.begin(); it != vTxt.end(); ++it)
+		{
+			sTxt = FSTrim(*it);
+			if (!sTxt.empty() && !FSStartsWith<string>(sTxt, "//"))
+			{
+				try
+				{
+					Regex black(FSAToUnicode(sTxt), regex_constants::ECMAScript | regex_constants::icase);
+					m_vBlackList.push_back(black);
+				}
+				catch (regex_error& e)
+				{
+					printf("ERROR: %s\n\n", e.what());
+				}
+			}
+		}
+	}
 }
 
 void CRomFs::pushDirEntry(const String& a_sEntryName, n32 a_nParentDirOffset)
@@ -329,6 +365,10 @@ bool CRomFs::createEntryList()
 		{
 			do
 			{
+				if (matchInBlackList(m_vCreateDir[current.EntryOffset].Path.substr(m_sRomFsDirName.size()) + STR("/") + ffd.cFileName))
+				{
+					continue;
+				}
 				if ((ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
 				{
 					if (m_vCreateDir[current.EntryOffset].Entry.Dir.ChildFileOffset == s_nInvalidOffset)
@@ -360,6 +400,10 @@ bool CRomFs::createEntryList()
 			dirent* pDirent = nullptr;
 			while ((pDirent = readdir(pDir)) != nullptr)
 			{
+				if (matchInBlackList(m_vCreateDir[current.EntryOffset].Path.substr(m_sRomFsDirName.size()) + STR("/") + pDirent->d_name))
+				{
+					continue;
+				}
 				string nameUpper = pDirent->d_name;
 				transform(nameUpper.begin(), nameUpper.end(), nameUpper.begin(), ::toupper);
 				if (pDirent->d_type == DT_REG)
@@ -396,15 +440,29 @@ bool CRomFs::createEntryList()
 #endif
 		current.ChildIndex = 0;
 	}
-	else if (current.ChildIndex == current.ChildOffset.size())
-	{
-		m_sCreateStack.pop();
-	}
-	else
+	else if (current.ChildIndex != current.ChildOffset.size())
 	{
 		pushCreateStackElement(current.ChildOffset[current.ChildIndex++]);
 	}
+	else
+	{
+		m_sCreateStack.pop();
+	}
 	return bResult;
+}
+
+bool CRomFs::matchInBlackList(const String& a_sPath)
+{
+	bool bMatch = false;
+	for (auto it = m_vBlackList.begin(); it != m_vBlackList.end(); ++it)
+	{
+		if (regex_search(a_sPath, *it))
+		{
+			bMatch = true;
+			break;
+		}
+	}
+	return bMatch;
 }
 
 void CRomFs::removeEmptyDirEntry()

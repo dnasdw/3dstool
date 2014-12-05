@@ -12,7 +12,7 @@ void FSetLocale()
 	vector<string> vLocale = FSSplit<string>(sLocale, ".");
 	if (!vLocale.empty())
 	{
-		g_sLocaleName = vLocale[vLocale.size() - 1];
+		g_sLocaleName = vLocale.back();
 	}
 #endif
 }
@@ -129,6 +129,44 @@ u16string FSWToU16(const wstring& a_sString)
 }
 #endif
 
+const String& FGetModuleDir()
+{
+	const int nMaxPath = 4096;
+	static String sDir;
+	sDir.resize(nMaxPath, STR('\0'));
+#if _3DSTOOL_COMPILER == COMPILER_MSC
+	GetModuleFileNameW(nullptr, &sDir.front(), nMaxPath);
+#elif defined(_3DSTOOL_APPLE)
+	char path[nMaxPath] = {};
+	u32 uPathSize = static_cast<u32>(sizeof(path));
+	if (_NSGetExecutablePath(path, &uPathSize) != 0)
+	{
+		printf("ERROR: _NSGetExecutablePath error\n\n");
+	}
+	else if (realpath(path, &sDir.front()) == nullptr)
+	{
+		sDir.erase();
+	}
+#else
+	ssize_t nCount = readlink("/proc/self/exe", &sDir.front(), nMaxPath);
+	if (nCount == -1)
+	{
+		printf("ERROR: readlink /proc/self/exe error\n\n");
+	}
+	else
+	{
+		sDir[nCount] = '\0';
+	}
+#endif
+	replace(sDir.begin(), sDir.end(), STR('\\'), STR('/'));
+	String::size_type nPos = sDir.rfind(STR('/'));
+	if (nPos != String::npos)
+	{
+		sDir.erase(nPos);
+	}
+	return sDir;
+}
+
 void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize)
 {
 	const n64 nBufferSize = 0x100000;
@@ -144,7 +182,7 @@ void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize)
 	delete[] pBuffer;
 }
 
-void FCryptoAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, u8 a_uKey[16], u8 a_uAesCtr[16], n64 a_nSrcOffset, n64 a_nSize, bool a_bVerbose)
+void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, u8 a_uKey[16], u8 a_uAesCtr[16], n64 a_nSrcOffset, n64 a_nSize, bool a_bVerbose)
 {
 	AES_KEY aesKey;
 	AES_set_encrypt_key(a_uKey, 128, &aesKey);
@@ -166,7 +204,7 @@ void FCryptoAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, u8 a_uKey[16], u8 a_uA
 	delete[] pInBuffer;
 }
 
-bool FCryptoXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const char* a_pXorFileName, n64 a_nSrcOffset, n64 a_nSize, n64 a_nXorOffset, bool a_bVerbose)
+bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, bool a_bVerbose)
 {
 	FILE* fpXor = FFopen(a_pXorFileName, "rb");
 	if (fpXor == nullptr)
@@ -175,15 +213,15 @@ bool FCryptoXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const char* a_pXorFileNam
 	}
 	FFseek(fpXor, 0, SEEK_END);
 	n64 nXorSize = FFtell(fpXor);
-	if (nXorSize - a_nXorOffset < a_nSize && a_bVerbose)
+	if (nXorSize < a_nSize && a_bVerbose)
 	{
 		printf("INFO: xor file %s size less than data size\n\n", a_pXorFileName);
 	}
-	FFseek(fpXor, a_nXorOffset, SEEK_SET);
+	FFseek(fpXor, 0, SEEK_SET);
 	const n64 nBufferSize = 0x100000;
 	u8* pDataBuffer = new u8[nBufferSize];
 	u8* pXorBuffer = new u8[nBufferSize];
-	FFseek(a_fpSrc, a_nSrcOffset, SEEK_SET);
+	FFseek(a_fpSrc, a_nOffset, SEEK_SET);
 	while (a_nSize > 0)
 	{
 		n64 nSize = a_nSize > nBufferSize ? nBufferSize : a_nSize;
@@ -219,7 +257,7 @@ void FPadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData)
 	delete[] pBuffer;
 }
 
-bool FCryptoAesCtrFile(const char* a_pDataFileName, u8 a_uKey[16], u8 a_uAesCtr[16], n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, bool a_bVerbose)
+bool FEncryptAesCtrFile(const char* a_pDataFileName, u8 a_uKey[16], u8 a_uAesCtr[16], n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, bool a_bVerbose)
 {
 	FILE* fpData = FFopen(a_pDataFileName, "rb+");
 	if (fpData == nullptr)
@@ -271,15 +309,10 @@ bool FCryptoAesCtrFile(const char* a_pDataFileName, u8 a_uKey[16], u8 a_uAesCtr[
 	return true;
 }
 
-bool FCryptoXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset, bool a_bVerbose)
+bool FEncryptXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset, bool a_bVerbose)
 {
 	FILE* fpData = FFopen(a_pDataFileName, "rb+");
 	if (fpData == nullptr)
-	{
-		return false;
-	}
-	FILE* fpXor = FFopen(a_pXorFileName, "rb");
-	if (fpXor == nullptr)
 	{
 		return false;
 	}
@@ -287,7 +320,6 @@ bool FCryptoXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n64
 	n64 nDataSize = FFtell(fpData);
 	if (nDataSize < a_nDataOffset)
 	{
-		fclose(fpXor);
 		fclose(fpData);
 		printf("ERROR: data file %s size less than data offset\n\n", a_pDataFileName);
 		return false;
@@ -303,6 +335,12 @@ bool FCryptoXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n64
 			printf("INFO: data file %s size less than data offset + data size\n\n", a_pDataFileName);
 		}
 		a_nDataSize = nDataSize - a_nDataOffset;
+	}
+	FILE* fpXor = FFopen(a_pXorFileName, "rb");
+	if (fpXor == nullptr)
+	{
+		fclose(fpData);
+		return false;
 	}
 	FFseek(fpXor, 0, SEEK_END);
 	n64 nXorSize = FFtell(fpXor);
@@ -341,6 +379,56 @@ bool FCryptoXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n64
 	delete[] pDataBuffer;
 	fclose(fpXor);
 	fclose(fpData);
+	return true;
+}
+
+bool FEncryptXorData(void* a_pData, const char* a_pXorFileName, n64 a_nDataSize, n64 a_nXorOffset, bool a_bVerbose)
+{
+	FILE* fpXor = FFopen(a_pXorFileName, "rb");
+	if (fpXor == nullptr)
+	{
+		return false;
+	}
+	FFseek(fpXor, 0, SEEK_END);
+	n64 nXorSize = FFtell(fpXor);
+	if (nXorSize - a_nXorOffset < a_nDataSize)
+	{
+		if (a_bVerbose)
+		{
+			printf("INFO: xor file %s size less than data size\n\n", a_pXorFileName);
+		}
+		a_nDataSize = nXorSize - a_nXorOffset;
+	}
+	FFseek(fpXor, a_nXorOffset, SEEK_SET);
+	n64 nIndex = 0;
+	const n64 nBufferSize = 0x100000;
+	u8* pXorBuffer = new u8[nBufferSize];
+	while (a_nDataSize > 0)
+	{
+		n64 nSize = a_nDataSize > nBufferSize ? nBufferSize : a_nDataSize;
+		fread(pXorBuffer, 1, static_cast<size_t>(nSize), fpXor);
+		u64* pDataBuffer64 = reinterpret_cast<u64*>(static_cast<u8*>(a_pData) + nIndex * nBufferSize);
+		u64* pXorBuffer64 = reinterpret_cast<u64*>(pXorBuffer);
+		n64 nXorCount = nSize / 8;
+		for (n64 i = 0; i < nXorCount; i++)
+		{
+			*pDataBuffer64++ ^= *pXorBuffer64++;
+		}
+		int nRemain = nSize % 8;
+		if (nRemain != 0)
+		{
+			u8* pDataBuffer8 = reinterpret_cast<u8*>(pDataBuffer64);
+			u8* pXorBuffer8 = reinterpret_cast<u8*>(pXorBuffer64);
+			for (n64 i = 0; i < nRemain; i++)
+			{
+				*pDataBuffer8++ ^= *pXorBuffer8++;
+			}
+		}
+		a_nDataSize -= nSize;
+		nIndex++;
+	}
+	delete[] pXorBuffer;
+	fclose(fpXor);
 	return true;
 }
 
@@ -423,14 +511,4 @@ bool FSeek(FILE* a_fpFile, n64 a_nOffset)
 n64 FAlign(n64 a_nOffset, n64 a_nAlignment)
 {
 	return (a_nOffset + a_nAlignment - 1) / a_nAlignment * a_nAlignment;
-}
-
-size_t FU16Strlen(const char16_t* a_pString)
-{
-	size_t nLength = 0;
-	while (*a_pString++ != 0)
-	{
-		nLength++;
-	}
-	return nLength;
 }

@@ -19,9 +19,12 @@ public:
 		kActionNone,
 		kActionExtract,
 		kActionCreate,
-		kActionCrypto,
+		kActionEncrypt,
+		kActionUncompress,
+		kActionCompress,
 		kActionTrim,
 		kActionPad,
+		kActionSample,
 		kActionHelp
 	};
 	enum EFileType
@@ -29,6 +32,8 @@ public:
 		kFileTypeUnknown,
 		kFileTypeCci,
 		kFileTypeCxi,
+		kFileTypeCfa,
+		kFileTypeExefs,
 		kFileTypeRomfs
 	};
 	struct SOption
@@ -50,34 +55,41 @@ private:
 	bool checkFileType();
 	bool extractFile();
 	bool createFile();
-	bool cryptoFile();
+	bool encryptFile();
+	bool uncompressFile();
+	bool compressFile();
 	bool trimFile();
 	bool padFile();
+	int sample();
 	EAction m_eAction;
-	int m_nLastPartitionIndex;
 	EFileType m_eFileType;
 	const char* m_pFileName;
+	bool m_bVerbose;
 	const char* m_pHeaderFileName;
-	const char* m_pNcchFileName[8];
-	int m_nCryptoMode;
+	int m_nEncryptMode;
 	u8 m_uKey[16];
 	string m_sCounter;
 	const char* m_pXorFileName;
-	const char* m_pExtendedHeaderXorFileName;
-	const char* m_pExeFsXorFileName;
-	const char* m_pRomFsXorFileName;
-	const char* m_pExtendedHeaderFileName;
-	const char* m_pAccessControlExtendedFileName;
-	const char* m_pLogoRegionFileName;
-	const char* m_pPlainRegionFileName;
-	const char* m_pExeFsFileName;
-	const char* m_pRomFsFileName;
+	const char* m_pCompressOutFileName;
+	const char* m_pNcchFileName[8];
+	int m_nLastPartitionIndex;
 	bool m_bNotUpdateExtendedHeaderHash;
 	bool m_bNotUpdateExeFsHash;
 	bool m_bNotUpdateRomFsHash;
 	bool m_bNotPad;
+	const char* m_pExtendedHeaderFileName;
+	const char* m_pLogoRegionFileName;
+	const char* m_pPlainRegionFileName;
+	const char* m_pExeFsFileName;
+	const char* m_pRomFsFileName;
+	const char* m_pExtendedHeaderXorFileName;
+	const char* m_pExeFsXorFileName;
+	const char* m_pExeFsTopXorFileName;
+	const char* m_pRomFsXorFileName;
+	const char* m_pExeFsDirName;
 	const char* m_pRomFsDirName;
-	bool m_bVerbose;
+	bool m_bUncompress;
+	bool m_bCompress;
 	const char* m_pMessage;
 };
 

@@ -45,14 +45,36 @@ struct SNcsdHeader
 class CNcsd
 {
 public:
+	enum PartitionFsType
+	{
+		FS_TYPE_DEFAULT
+	};
+	enum PartitionEncryptoType
+	{
+		ENCRYPTO_TYPE_DEFAULT
+	};
+	enum MediaType
+	{
+		INNER_DEVICE,
+		CARD1,
+		CARD2,
+		EXTENDED_DEVICE
+	};
+	enum FlagIndex
+	{
+		MEDIA_CARD_DEVICE = 3,
+		MEDIA_PLATFORM_INDEX,
+		MEDIA_TYPE_INDEX,
+		MEDIA_UNIT_SIZE
+	};
 	CNcsd();
 	~CNcsd();
-	void SetLastPartitionIndex(int a_nLastPartitionIndex);
 	void SetFileName(const char* a_pFileName);
+	void SetVerbose(bool a_bVerbose);
 	void SetHeaderFileName(const char* a_pHeaderFileName);
 	void SetNcchFileName(const char* a_pNcchFileName[]);
 	void SetNotPad(bool a_bNotPad);
-	void SetVerbose(bool a_bVerbose);
+	void SetLastPartitionIndex(int a_nLastPartitionIndex);
 	bool ExtractFile();
 	bool CreateFile();
 	bool TrimFile();
@@ -68,12 +90,12 @@ private:
 	bool createHeader();
 	bool createNcch(int a_nIndex);
 	void clearNcch(int a_nIndex);
-	int m_nLastPartitionIndex;
 	const char* m_pFileName;
+	bool m_bVerbose;
 	const char* m_pHeaderFileName;
 	const char* m_pNcchFileName[8];
 	bool m_bNotPad;
-	bool m_bVerbose;
+	int m_nLastPartitionIndex;
 	FILE* m_fpNcsd;
 	SNcsdHeader m_NcsdHeader;
 	CardInfoHeaderStruct m_CardInfo;

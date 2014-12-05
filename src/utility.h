@@ -14,8 +14,15 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <direct.h>
+#include <io.h>
+#include <codecvt>
 #else
+#if defined(_3DSTOOL_APPLE)
+#include <mach-o/dyld.h>
+#endif
 #include <dirent.h>
+#include <iconv.h>
+#include <unistd.h>
 #endif
 #include <errno.h>
 #include <locale.h>
@@ -23,21 +30,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if _3DSTOOL_COMPILER == COMPILER_MSC
-#include <io.h>
-#else
-#include <iconv.h>
-#include <unistd.h>
-#endif
 #include <sys/stat.h>
 #include <algorithm>
 #include <map>
+#include <regex>
 #include <stack>
 #include <string>
+#include <unordered_map>
 #include <vector>
-#if _3DSTOOL_COMPILER == COMPILER_MSC
-#include <codecvt>
-#endif
 
 using namespace std;
 
@@ -52,6 +52,7 @@ typedef uint64_t u64;
 
 #if _3DSTOOL_COMPILER == COMPILER_MSC
 typedef wstring String;
+typedef wregex Regex;
 typedef struct _stat64 SStat;
 #define STR(x) L##x
 #define FStat _wstat64
@@ -69,6 +70,7 @@ typedef struct _stat64 SStat;
 #define GNUC_PACKED
 #else
 typedef string String;
+typedef regex Regex;
 typedef struct stat SStat;
 #define STR(x) x
 #define FStat stat
@@ -97,20 +99,57 @@ bool FSHexToU8(string a_sHex, u8* a_pArray);
 n32 FSToN32(const string& a_sString);
 
 template<typename T>
+T FSTrim(const T& a_sString)
+{
+	typename T::size_type stSize = a_sString.size();
+	typename T::size_type st = 0;
+	while (st < stSize && a_sString[st] >= 0 && a_sString[st] <= static_cast<typename T::value_type>(' '))
+	{
+		st++;
+	}
+	while (st < stSize && a_sString[stSize - 1] >= 0 && a_sString[stSize - 1] <= static_cast<typename T::value_type>(' '))
+	{
+		stSize--;
+	}
+	return (st > 0 || stSize < a_sString.size()) ? a_sString.substr(st, stSize - st) : a_sString;
+}
+
+template<typename T>
 vector<T> FSSplit(const T& a_sString, const T& a_sSeparator)
 {
 	vector<T> vString;
-	for (typename T::size_type stOffset = 0; stOffset < a_sString.size(); stOffset += a_sSeparator.size())
+	for (typename T::size_type nOffset = 0; nOffset < a_sString.size(); nOffset += a_sSeparator.size())
 	{
-		typename T::size_type stPos = a_sString.find(a_sSeparator, stOffset);
-		if (stPos != T::npos)
+		typename T::size_type nPos = a_sString.find(a_sSeparator, nOffset);
+		if (nPos != T::npos)
 		{
-			vString.push_back(a_sString.substr(stOffset, stPos - stOffset));
-			stOffset = stPos;
+			vString.push_back(a_sString.substr(nOffset, nPos - nOffset));
+			nOffset = nPos;
 		}
 		else
 		{
-			vString.push_back(a_sString.substr(stOffset));
+			vString.push_back(a_sString.substr(nOffset));
+			break;
+		}
+	}
+	return vString;
+}
+
+template<typename T>
+vector<T> FSSplitOf(const T& a_sString, const T& a_sSeparatorSet)
+{
+	vector<T> vString;
+	for (auto it = a_sString.begin(); it != a_sString.end(); ++it)
+	{
+		auto itPos = find_first_of(it, a_sString.end(), a_sSeparatorSet.begin(), a_sSeparatorSet.end());
+		if (itPos != a_sString.end())
+		{
+			vString.push_back(a_sString.substr(it - a_sString.begin(), itPos - it));
+			it = itPos;
+		}
+		else
+		{
+			vString.push_back(a_sString.substr(it - a_sString.begin()));
 			break;
 		}
 	}
@@ -184,17 +223,21 @@ bool FSStartsWith(const T& a_sString, const T& a_sPrefix, typename T::size_type 
 	return a_sString.compare(a_stStart, a_sPrefix.size(), a_sPrefix) == 0;
 }
 
+const String& FGetModuleDir();
+
 void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize);
 
-void FCryptoAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, u8 a_uKey[16], u8 a_uAesCtr[16], n64 a_nSrcOffset, n64 a_nSize, bool a_bVerbose);
+void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, u8 a_uKey[16], u8 a_uAesCtr[16], n64 a_nSrcOffset, n64 a_nSize, bool a_bVerbose);
 
-bool FCryptoXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const char* a_pXorFileName, n64 a_nSrcOffset, n64 a_nSize, n64 a_nXorOffset, bool a_bVerbose);
+bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, bool a_bVerbose);
 
 void FPadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData);
 
-bool FCryptoAesCtrFile(const char* a_pDataFileName, u8 a_uKey[16], u8 a_uAesCtr[16], n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, bool a_bVerbose);
+bool FEncryptAesCtrFile(const char* a_pDataFileName, u8 a_uKey[16], u8 a_uAesCtr[16], n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, bool a_bVerbose);
 
-bool FCryptoXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset, bool a_bVerbose);
+bool FEncryptXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset, bool a_bVerbose);
+
+bool FEncryptXorData(void* a_pData, const char* a_pXorFileName, n64 a_nDataSize, n64 a_nXorOffset, bool a_bVerbose);
 
 bool FGetFileSize(const String::value_type* a_pFileName, n64& a_nFileSize);
 
@@ -209,7 +252,5 @@ FILE* FFopenW(const wchar_t* a_pFileName, const wchar_t* a_pMode);
 bool FSeek(FILE* a_fpFile, n64 a_nOffset);
 
 n64 FAlign(n64 a_nOffset, n64 a_nAlignment);
-
-size_t FU16Strlen(const char16_t* a_pString);
 
 #endif	// UTILITY_H_
