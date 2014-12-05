@@ -392,7 +392,8 @@ int C3DSTool::Help()
 			{
 				printf("   ");
 			}
-			if (printf(" --%-8s", pOption->Name) > 11 && pOption->Doc != nullptr)
+			printf(" --%-8s", pOption->Name);
+			if (strlen(pOption->Name) >= 8 && pOption->Doc != nullptr)
 			{
 				printf("\n%16s", "");
 			}
