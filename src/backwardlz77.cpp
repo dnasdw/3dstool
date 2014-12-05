@@ -169,6 +169,10 @@ bool CBackwardLZ77::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize,
 						break;
 					}
 				}
+				if (uOrigSize <= 0)
+				{
+					break;
+				}
 			}
 			if (bOver)
 			{
