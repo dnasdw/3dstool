@@ -968,6 +968,7 @@ bool C3DSTool::extractFile()
 			ncch.SetRomFsFileName(m_pRomFsFileName);
 			ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
 			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
+			ncch.SetExeFsTopXorFileName(m_pExeFsTopXorFileName);
 			ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
 			bResult = ncch.ExtractFile();
 		}
