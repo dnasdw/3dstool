@@ -109,6 +109,7 @@ public:
 private:
 	void calculateMediaUnitSize();
 	void calculateOffsetSize();
+	void calculateAlignment();
 	bool extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const char* a_pType);
 	bool createHeader();
 	bool createExtendedHeader();
@@ -155,6 +156,7 @@ private:
 	n64 m_nExeFsSize;
 	n64 m_nRomFsOffset;
 	n64 m_nRomFsSize;
+	bool m_bAlignToBlockSize;
 	u8 m_uAesCtr[16];
 	const char* m_pXorFileName;
 };

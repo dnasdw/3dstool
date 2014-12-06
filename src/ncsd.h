@@ -85,6 +85,7 @@ public:
 	static const int s_nBlockSize;
 private:
 	void calculateMediaUnitSize();
+	void calculateAlignment();
 	void calculateValidSize();
 	bool extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType, int a_nTypeId, bool bMediaUnitSize);
 	bool createHeader();
@@ -100,6 +101,7 @@ private:
 	SNcsdHeader m_NcsdHeader;
 	CardInfoHeaderStruct m_CardInfo;
 	n64 m_nMediaUnitSize;
+	bool m_bAlignToBlockSize;
 	n64 m_nValidSize;
 };
 

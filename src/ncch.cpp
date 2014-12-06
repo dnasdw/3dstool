@@ -36,6 +36,7 @@ CNcch::CNcch()
 	, m_nExeFsSize(0)
 	, m_nRomFsOffset(0)
 	, m_nRomFsSize(0)
+	, m_bAlignToBlockSize(false)
 	, m_pXorFileName(nullptr)
 {
 	memset(m_uKey, 0, sizeof(m_uKey));
@@ -250,6 +251,7 @@ bool CNcch::CreateFile()
 		return false;
 	}
 	calculateMediaUnitSize();
+	calculateAlignment();
 	if (!createExtendedHeader())
 	{
 		bResult = false;
@@ -269,12 +271,12 @@ bool CNcch::CreateFile()
 	{
 		bResult = false;
 	}
-	alignFileSize(s_nBlockSize);
+	alignFileSize(m_bAlignToBlockSize ? s_nBlockSize : m_nMediaUnitSize);
 	if (!createRomFs())
 	{
 		bResult = false;
 	}
-	alignFileSize(s_nBlockSize);
+	alignFileSize(m_bAlignToBlockSize ? s_nBlockSize : m_nMediaUnitSize);
 	FFseek(m_fpNcch, 0, SEEK_SET);
 	fwrite(&m_NcchHeader, sizeof(m_NcchHeader), 1, m_fpNcch);
 	fclose(m_fpNcch);
@@ -442,6 +444,11 @@ void CNcch::calculateOffsetSize()
 	m_nExeFsSize = m_NcchHeader.Ncch.ExeFsSize * m_nMediaUnitSize;
 	m_nRomFsOffset = m_NcchHeader.Ncch.RomFsOffset * m_nMediaUnitSize;
 	m_nRomFsSize = m_NcchHeader.Ncch.RomFsSize * m_nMediaUnitSize;
+}
+
+void CNcch::calculateAlignment()
+{
+	m_bAlignToBlockSize = m_NcchHeader.Ncch.ContentSize % 8 == 0 && m_NcchHeader.Ncch.RomFsOffset % 8 == 0 && m_NcchHeader.Ncch.RomFsSize % 8 == 0;
 }
 
 bool CNcch::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const char* a_pType)
@@ -709,7 +716,7 @@ bool CNcch::createExeFs()
 					bEncryptResult = false;
 				}
 				nXorOffset += exeFsSuperBlock.m_Header[0].size;
-				if (!FEncryptXorData(pExeFs + nXorOffset, m_pExeFsXorFileName, m_nExeFsSize - nXorOffset, nXorOffset, m_bVerbose))
+				if (!FEncryptXorData(pExeFs + nXorOffset, m_pExeFsXorFileName, nFileSize - nXorOffset, nXorOffset, m_bVerbose))
 				{
 					bEncryptResult = false;
 				}
