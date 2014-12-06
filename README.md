@@ -4,10 +4,7 @@ An all-in-one tool for extracting/creating 3ds roms.
 
 ## History
 
-| Date | Version | Note |
-| - | - | - |
-| 2014.12.07 | v1.0.0 | The very first release |
-
+- v1.0.0 @ 2014.12.07 - The very first release
 
 ## Platforms
 
