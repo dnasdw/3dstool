@@ -301,19 +301,20 @@ bool CExeFs::createSection(int a_nIndex)
 			u8* pData = new u8[uFileSize];
 			fread(pData, 1, uFileSize, fp);
 			fclose(fp);
+			bool bCompressResult = false;
 			if (a_nIndex == 0 && m_bCompress)
 			{
 				u32 uCompressedSize = uFileSize;
 				u8* pCompressed = new u8[uCompressedSize];
-				bResult = CBackwardLZ77::Compress(pData, uFileSize, pCompressed, uCompressedSize);
-				if (bResult)
+				bCompressResult = CBackwardLZ77::Compress(pData, uFileSize, pCompressed, uCompressedSize);
+				if (bCompressResult)
 				{
 					SHA256(pCompressed, uCompressedSize, m_ExeFsSuperBlock.m_Hash[7 - a_nIndex]);
 					fwrite(pCompressed, 1, uCompressedSize, m_fpExeFs);
 				}
 				delete[] pCompressed;
 			}
-			if (a_nIndex != 0 || !m_bCompress || !bResult)
+			if (a_nIndex != 0 || !m_bCompress || !bCompressResult)
 			{
 				SHA256(pData, uFileSize, m_ExeFsSuperBlock.m_Hash[7 - a_nIndex]);
 				fwrite(pData, 1, uFileSize, m_fpExeFs);

@@ -12,6 +12,7 @@ CNcsd::CNcsd()
 	, m_nLastPartitionIndex(7)
 	, m_fpNcsd(nullptr)
 	, m_nMediaUnitSize(1 << 9)
+	, m_bAlignToBlockSize(false)
 	, m_nValidSize(0)
 {
 	memset(m_pNcchFileName, 0, sizeof(m_pNcchFileName));
@@ -92,6 +93,7 @@ bool CNcsd::CreateFile()
 		return false;
 	}
 	calculateMediaUnitSize();
+	calculateAlignment();
 	for (int i = 0; i < 8; i++)
 	{
 		if (!createNcch(i))
@@ -224,6 +226,15 @@ void CNcsd::calculateMediaUnitSize()
 	m_nMediaUnitSize = 1LL << (m_NcsdHeader.Ncsd.Flags[MEDIA_UNIT_SIZE] + 9);
 }
 
+void CNcsd::calculateAlignment()
+{
+	m_bAlignToBlockSize = true;
+	for (int i = 0; m_bAlignToBlockSize && i < 8; i++)
+	{
+		m_bAlignToBlockSize = m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2] % 8 == 0 && m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2 + 1] % 8 == 0;
+	}
+}
+
 void CNcsd::calculateValidSize()
 {
 	m_nValidSize = m_NcsdHeader.Ncsd.ParitionOffsetAndSize[0] + m_NcsdHeader.Ncsd.ParitionOffsetAndSize[1];
@@ -353,10 +364,10 @@ bool CNcsd::createNcch(int a_nIndex)
 		}
 		FFseek(fp, 0, SEEK_SET);
 		m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2] = static_cast<u32>(FFtell(m_fpNcsd) / m_nMediaUnitSize);
-		m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2 + 1] = static_cast<u32>(FAlign(nFileSize, s_nBlockSize) / m_nMediaUnitSize);
+		m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2 + 1] = static_cast<u32>(FAlign(nFileSize, m_bAlignToBlockSize ? s_nBlockSize : m_nMediaUnitSize) / m_nMediaUnitSize);
 		FCopyFile(m_fpNcsd, fp, 0, nFileSize);
 		fclose(fp);
-		FPadFile(m_fpNcsd, FAlign(FFtell(m_fpNcsd), s_nBlockSize) - FFtell(m_fpNcsd), 0);
+		FPadFile(m_fpNcsd, FAlign(FFtell(m_fpNcsd), m_bAlignToBlockSize ? s_nBlockSize : m_nMediaUnitSize) - FFtell(m_fpNcsd), 0);
 	}
 	else
 	{
