@@ -5,13 +5,14 @@ An all-in-one tool for extracting/creating 3ds roms.
 ## History
 
 - v1.0.0 @ 2014.12.07 - The very first release
+- v1.0.1 @ 2014.12.09 - Make compatible with Windows XP
 
 ## Platforms
 
 - Cygwin *1.7.33+*
 - Linux *(Tested on Ubuntu 14.04+, CentOS 6.3+)*
 - Mac OS X *10.9+*
-- Windows *Vista+*
+- Windows *XP+*
 
 ## Building
 
