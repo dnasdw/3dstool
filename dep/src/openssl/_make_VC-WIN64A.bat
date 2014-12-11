@@ -21,8 +21,8 @@ XCOPY "%rootdir%..\%openssl_version%" "%rootdir%%openssl_version%" /S /Y
 CD /D "%rootdir%%openssl_version%"
 perl Configure VC-WIN64A --prefix="%prefix%" --openssldir="%openssldir%"
 CALL ms\do_win64a.bat
-nmake -f ms\ntdll.mak
-nmake -f ms\ntdll.mak install
+nmake -f ms\nt.mak
+nmake -f ms\nt.mak install
 RD /S /Q "%rootdir%..\..\include\%target%\openssl"
 XCOPY "%prefix%\include" "%rootdir%..\..\include\%target%" /S /Y
 COPY /Y "%prefix%\lib\libeay32.lib" "%rootdir%..\..\lib\%target%"
