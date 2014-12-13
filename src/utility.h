@@ -32,6 +32,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <algorithm>
+#include <list>
 #include <map>
 #include <regex>
 #include <stack>

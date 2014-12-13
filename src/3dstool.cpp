@@ -1080,6 +1080,7 @@ bool C3DSTool::createFile()
 			romFs.SetFileName(m_pFileName);
 			romFs.SetVerbose(m_bVerbose);
 			romFs.SetRomFsDirName(m_pRomFsDirName);
+			romFs.SetRomFsFileName(m_pRomFsFileName);
 			bResult = romFs.CreateFile();
 		}
 		break;
@@ -1277,8 +1278,10 @@ int C3DSTool::sample()
 	printf("3dstool -cvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n");
 	printf("# create exefs with Backward LZ77 compress\n");
 	printf("3dstool -czvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n");
-	printf("# create romfs\n");
+	printf("# create romfs without reference\n");
 	printf("3dstool -cvtf romfs romfs.bin --romfs-dir romfs\n\n");
+	printf("# create romfs with reference\n");
+	printf("3dstool -cvtf romfs romfs.bin --romfs-dir romfs --romfs original_romfs.bin\n\n");
 	printf("# encrypt file with AES-CTR encryption, standalone\n");
 	printf("3dstool -evf file.bin --key 00000000000000000000000000000000 --counter 00000000000000000000000000000000\n\n");
 	printf("# encrypt file with xor encryption, standalone\n");
