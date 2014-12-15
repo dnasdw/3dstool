@@ -54,6 +54,21 @@ void CNcsd::SetLastPartitionIndex(int a_nLastPartitionIndex)
 	m_nLastPartitionIndex = a_nLastPartitionIndex;
 }
 
+void CNcsd::SetFilePtr(FILE* a_fpNcsd)
+{
+	m_fpNcsd = a_fpNcsd;
+}
+
+SNcsdHeader& CNcsd::GetNcsdHeader()
+{
+	return m_NcsdHeader;
+}
+
+n64 CNcsd::GetMediaUnitSize() const
+{
+	return m_nMediaUnitSize;
+}
+
 bool CNcsd::ExtractFile()
 {
 	bool bResult = true;
@@ -206,6 +221,32 @@ bool CNcsd::PadFile()
 	FChsize(FFileno(m_fpNcsd), m_NcsdHeader.Ncsd.MediaSize * m_nMediaUnitSize);
 	fclose(m_fpNcsd);
 	return true;
+}
+
+void CNcsd::Analyze()
+{
+	if (m_fpNcsd != nullptr)
+	{
+		n64 nFilePos = FFtell(m_fpNcsd);
+		FFseek(m_fpNcsd, 0, SEEK_SET);
+		fread(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
+		calculateMediaUnitSize();
+		for (int i = 6; i >= 0; i--)
+		{
+			if (m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2] == 0 && m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2 + 1] == 0)
+			{
+				m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2] = m_NcsdHeader.Ncsd.ParitionOffsetAndSize[(i + 1) * 2];
+			}
+		}
+		for (int i = 1; i < 8; i++)
+		{
+			if (m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2] == 0 && m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2 + 1] == 0)
+			{
+				m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2] = m_NcsdHeader.Ncsd.ParitionOffsetAndSize[(i - 1) * 2] + m_NcsdHeader.Ncsd.ParitionOffsetAndSize[(i - 1) * 2 + 1];
+			}
+		}
+		FFseek(m_fpNcsd, nFilePos, SEEK_SET);
+	}
 }
 
 bool CNcsd::IsNcsdFile(const char* a_pFileName)

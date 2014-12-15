@@ -3,6 +3,7 @@
 #include "exefs.h"
 #include "ncch.h"
 #include "ncsd.h"
+#include "patch.h"
 #include "romfs.h"
 
 C3DSTool::SOption C3DSTool::s_Option[] =
@@ -15,6 +16,8 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 	{ "compress", 'z', "compress the target file used by Backward LZ77" },
 	{ "trim", 'r', "trim the cci file" },
 	{ "pad", 'p', "pad the cci file" },
+	{ "diff", 0, "create the patch file from the old file and the new file" },
+	{ "patch", 0, "apply the patch file to the target file"},
 	{ "sample", 0, "show the samples" },
 	{ "help", 'h', "show this help" },
 	{ nullptr, 0, "\ncommon:" },
@@ -31,6 +34,11 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 	{ "xor", 0, "the xor data file used by the xor encryption" },
 	{ nullptr, 0, " uncompress/compress:" },
 	{ "compress-out", 0, "the output file of uncompressed or compressed" },
+	{ nullptr, 0, " diff:" },
+	{ "old", 0, "the old file" },
+	{ "new", 0, "the new file" },
+	{ nullptr, 0, "  patch:" },
+	{ "patch-file", 0, "the patch file" },
 	{ nullptr, 0, "\ncci:" },
 	{ nullptr, 0, " extract/create:" },
 	{ "partition0", '0', "the cxi file of the cci file at partition 0" },
@@ -86,6 +94,9 @@ C3DSTool::C3DSTool()
 	, m_nEncryptMode(CNcch::kEncryptModeNone)
 	, m_pXorFileName(nullptr)
 	, m_pCompressOutFileName(nullptr)
+	, m_pOldFileName(nullptr)
+	, m_pNewFileName(nullptr)
+	, m_pPatchFileName(nullptr)
 	, m_nLastPartitionIndex(7)
 	, m_bNotUpdateExtendedHeaderHash(false)
 	, m_bNotUpdateExeFsHash(false)
@@ -184,7 +195,7 @@ int C3DSTool::CheckOptions()
 		printf("ERROR: nothing to do\n\n");
 		return 1;
 	}
-	if (m_eAction != kActionSample && m_eAction != kActionHelp && m_pFileName == nullptr)
+	if (m_eAction != kActionDiff && m_eAction != kActionSample && m_eAction != kActionHelp && m_pFileName == nullptr)
 	{
 		printf("ERROR: no --file option\n\n");
 		return 1;
@@ -370,6 +381,32 @@ int C3DSTool::CheckOptions()
 			printf("INFO: ignore --type option\n");
 		}
 	}
+	if (m_eAction == kActionDiff)
+	{
+		if (m_pOldFileName == nullptr)
+		{
+			printf("ERROR: no --old option\n\n");
+			return 1;
+		}
+		if (m_pNewFileName == nullptr)
+		{
+			printf("ERROR: no --new option\n\n");
+			return 1;
+		}
+		if (m_pPatchFileName == nullptr)
+		{
+			printf("ERROR: no --patch-file option\n\n");
+			return 1;
+		}
+	}
+	if (m_eAction == kActionPatch)
+	{
+		if (m_pPatchFileName == nullptr)
+		{
+			printf("ERROR: no --patch-file option\n\n");
+			return 1;
+		}
+	}
 	return 0;
 }
 
@@ -466,6 +503,22 @@ int C3DSTool::Action()
 			return 1;
 		}
 	}
+	if (m_eAction == kActionDiff)
+	{
+		if (!diffFile())
+		{
+			printf("ERROR: create patch file failed\n\n");
+			return 1;
+		}
+	}
+	if (m_eAction == kActionPatch)
+	{
+		if (!patchFile())
+		{
+			printf("ERROR: apply patch file failed\n\n");
+			return 1;
+		}
+	}
 	if (m_eAction == kActionSample)
 	{
 		return sample();
@@ -554,6 +607,28 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 			m_eAction = kActionPad;
 		}
 		else if (m_eAction != kActionPad && m_eAction != kActionHelp)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+	}
+	else if (strcmp(a_pName, "diff") == 0)
+	{
+		if (m_eAction == kActionNone)
+		{
+			m_eAction = kActionDiff;
+		}
+		else if (m_eAction != kActionDiff && m_eAction != kActionHelp)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+	}
+	else if (strcmp(a_pName, "patch") == 0)
+	{
+		if (m_eAction == kActionNone)
+		{
+			m_eAction = kActionPatch;
+		}
+		else if (m_eAction != kActionPatch && m_eAction != kActionHelp)
 		{
 			return kParseOptionReturnOptionConflict;
 		}
@@ -701,6 +776,30 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnNoArgument;
 		}
 		m_pCompressOutFileName = a_pArgv[++a_nIndex];
+	}
+	else if (strcmp(a_pName, "old") == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		m_pOldFileName = a_pArgv[++a_nIndex];
+	}
+	else if (strcmp(a_pName, "new") == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		m_pNewFileName = a_pArgv[++a_nIndex];
+	}
+	else if (strcmp(a_pName, "patch-file") == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		m_pPatchFileName = a_pArgv[++a_nIndex];
 	}
 	else if (FSStartsWith<string>(a_pName, "partition"))
 	{
@@ -1227,6 +1326,26 @@ bool C3DSTool::padFile()
 	return bResult;
 }
 
+bool C3DSTool::diffFile()
+{
+	CPatch patch;
+	patch.SetFileType(m_eFileType);
+	patch.SetVerbose(m_bVerbose);
+	patch.SetOldFileName(m_pOldFileName);
+	patch.SetNewFileName(m_pNewFileName);
+	patch.SetPatchFileName(m_pPatchFileName);
+	return patch.CreatePatchFile();
+}
+
+bool C3DSTool::patchFile()
+{
+	CPatch patch;
+	patch.SetFileName(m_pFileName);
+	patch.SetVerbose(m_bVerbose);
+	patch.SetPatchFileName(m_pPatchFileName);
+	return patch.ApplyPatchFile();
+}
+
 int C3DSTool::sample()
 {
 	printf("sample:\n");
@@ -1296,6 +1415,16 @@ int C3DSTool::sample()
 	printf("3dstool -vtf cci input.3ds --trim --trim-after-partition 2\n\n");
 	printf("# pad cci with 0xFF\n");
 	printf("3dstool -vtf cci input.3ds --pad\n\n");
+	printf("# create patch file without optimization\n");
+	printf("3dstool --diff -v --old old.bin --new new.bin --patch-file patch.3ps\n\n");
+	printf("# create patch file with cci optimization\n");
+	printf("3dstool --diff -vt cci --old old.3ds --new new.3ds --patch-file patch.3ps\n\n");
+	printf("# create patch file with cxi optimization\n");
+	printf("3dstool --diff -vt cxi --old old.cxi --new new.cxi --patch-file patch.3ps\n\n");
+	printf("# create patch file with cfa optimization\n");
+	printf("3dstool --diff -vt cfa --old old.cfa --new new.cfa --patch-file patch.3ps\n\n");
+	printf("# apply patch file\n");
+	printf("3dstool --patch -vf input.bin --patch-file patch.3ps\n\n");
 	return 0;
 }
 

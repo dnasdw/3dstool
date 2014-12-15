@@ -21,6 +21,12 @@ struct NcsdCommonHeaderStruct
 	u8 Reserved[48];
 } GNUC_PACKED;
 
+struct SNcsdHeader
+{
+	u8 RSASignature[256];
+	NcsdCommonHeaderStruct Ncsd;
+} GNUC_PACKED;
+
 struct CardInfoHeaderStruct
 {
 	u64 CardInfo;
@@ -33,12 +39,6 @@ struct CardInfoHeaderStruct
 	u8 CardDeviceReserved1[512];
 	u8 TitleKey[16];
 	u8 CardDeviceReserved2[240];
-} GNUC_PACKED;
-
-struct SNcsdHeader
-{
-	u8 RSASignature[256];
-	NcsdCommonHeaderStruct Ncsd;
 } GNUC_PACKED;
 #include MSC_POP_PACKED
 
@@ -75,10 +75,14 @@ public:
 	void SetNcchFileName(const char* a_pNcchFileName[]);
 	void SetNotPad(bool a_bNotPad);
 	void SetLastPartitionIndex(int a_nLastPartitionIndex);
+	void SetFilePtr(FILE* a_fpNcsd);
+	SNcsdHeader& GetNcsdHeader();
+	n64 GetMediaUnitSize() const;
 	bool ExtractFile();
 	bool CreateFile();
 	bool TrimFile();
 	bool PadFile();
+	void Analyze();
 	static bool IsNcsdFile(const char* a_pFileName);
 	static const u32 s_uSignature;
 	static const n64 s_nOffsetFirstNcch;

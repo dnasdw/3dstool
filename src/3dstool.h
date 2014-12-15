@@ -24,6 +24,8 @@ public:
 		kActionCompress,
 		kActionTrim,
 		kActionPad,
+		kActionDiff,
+		kActionPatch,
 		kActionSample,
 		kActionHelp
 	};
@@ -60,6 +62,8 @@ private:
 	bool compressFile();
 	bool trimFile();
 	bool padFile();
+	bool diffFile();
+	bool patchFile();
 	int sample();
 	EAction m_eAction;
 	EFileType m_eFileType;
@@ -71,6 +75,9 @@ private:
 	string m_sCounter;
 	const char* m_pXorFileName;
 	const char* m_pCompressOutFileName;
+	const char* m_pOldFileName;
+	const char* m_pNewFileName;
+	const char* m_pPatchFileName;
 	const char* m_pNcchFileName[8];
 	int m_nLastPartitionIndex;
 	bool m_bNotUpdateExtendedHeaderHash;

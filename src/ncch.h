@@ -2,6 +2,7 @@
 #define NCCH_H_
 
 #include "utility.h"
+#include "3dstool.h"
 
 #include MSC_PUSH_PACKED
 struct NcchCommonHeaderStruct
@@ -80,8 +81,18 @@ public:
 		kAesCtrTypeExeFs,
 		kAesCtrTypeRomFs
 	};
+	enum EOffsetSizeIndex
+	{
+		kOffsetSizeIndexExtendedHeader,
+		kOffsetSizeIndexLogoRegion,
+		kOffsetSizeIndexPlainRegion,
+		kOffsetSizeIndexExeFs,
+		kOffsetSizeIndexRomFs,
+		kOffsetSizeIndexCount
+	};
 	CNcch();
 	~CNcch();
+	void SetFileType(C3DSTool::EFileType a_eFileType);
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
 	void SetHeaderFileName(const char* a_pHeaderFileName);
@@ -99,9 +110,13 @@ public:
 	void SetExeFsXorFileName(const char* a_pExeFsXorFileName);
 	void SetExeFsTopXorFileName(const char* a_pExeFsTopXorFileName);
 	void SetRomFsXorFileName(const char* a_pRomFsXorFileName);
+	void SetFilePtr(FILE* a_fpNcch);
+	void SetOffset(n64 a_nOffset);
+	n64* GetOffsetAndSize();
 	bool ExtractFile();
 	bool CreateFile();
 	bool EncryptFile();
+	void Analyze();
 	static bool IsCxiFile(const char* a_pFileName);
 	static bool IsCfaFile(const char* a_pFileName);
 	static const u32 s_uSignature;
@@ -126,6 +141,7 @@ private:
 	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, const char* a_pType);
 	bool encryptXorFile(const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
 	static void getAesCounter(NcchCommonHeaderStruct* a_pNcch, EAesCtrType a_eAesCtrType, n64 a_nMediaUnitSize, u8 a_uAesCtr[16]);
+	C3DSTool::EFileType m_eFileType;
 	const char* m_pFileName;
 	bool m_bVerbose;
 	const char* m_pHeaderFileName;
@@ -144,18 +160,10 @@ private:
 	const char* m_pExeFsTopXorFileName;
 	const char* m_pRomFsXorFileName;
 	FILE* m_fpNcch;
+	n64 m_nOffset;
 	SNcchHeader m_NcchHeader;
 	n64 m_nMediaUnitSize;
-	n64 m_nExtendedHeaderOffset;
-	n64 m_nExtendedHeaderSize;
-	n64 m_nLogoRegionOffset;
-	n64 m_nLogoRegionSize;
-	n64 m_nPlainRegionOffset;
-	n64 m_nPlainRegionSize;
-	n64 m_nExeFsOffset;
-	n64 m_nExeFsSize;
-	n64 m_nRomFsOffset;
-	n64 m_nRomFsSize;
+	n64 m_nOffsetAndSize[kOffsetSizeIndexCount * 2];
 	bool m_bAlignToBlockSize;
 	u8 m_uAesCtr[16];
 	const char* m_pXorFileName;
