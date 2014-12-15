@@ -123,7 +123,11 @@ bool CPatch::CreatePatchFile()
 	}
 	fclose(m_fpNew);
 	fclose(m_fpOld);
-	writePatch(kPatchCommandOver, nullptr);
+	if (nFileSizeNew < nFileSizeOld)
+	{
+		writeChangeSize(nFileSizeNew);
+	}
+	writeOver();
 	m_3DSPatchSystemHeader.ExtDataOffset = FFtell(m_fpPatch);
 	n64 nOffset = FFtell(m_fpPatch) + sizeof(n64);
 	fwrite(&nOffset, sizeof(nOffset), 1, m_fpPatch);
@@ -199,6 +203,12 @@ bool CPatch::ApplyPatchFile()
 			fread(&nSize, 8, 1, m_fpPatch);
 			fread(&uData, 1, 1, m_fpPatch);
 			executeSet(nStartOffset, nSize, uData);
+		}
+		else if (uPatchCommand == kPatchCommandChangeSize)
+		{
+			n64 nSize = 0;
+			fread(&nSize, 8, 1, m_fpPatch);
+			executeChangeSize(nSize);
 		}
 		else if (uPatchCommand >= kPatchCommandSeekWrite && uPatchCommand <= kPatchCommandSeekWrite + 0xF)
 		{
@@ -419,6 +429,11 @@ bool CPatch::createPatchFile(n64 a_nOffsetOld, n64 a_nSizeOld, n64 a_nOffsetNew,
 	return true;
 }
 
+void CPatch::writeOver()
+{
+	writePatch(kPatchCommandOver, nullptr);
+}
+
 void CPatch::writeMove(n64 a_nFromOffset, n64 a_nToOffset, n64 a_nSize)
 {
 	n64 nArg[3] = { a_nFromOffset, a_nToOffset, a_nSize };
@@ -429,6 +444,11 @@ void CPatch::writeSet(n64 a_nStartOffset, n64 a_nSize, u8 a_uData)
 {
 	n64 nArg[3] = { a_nStartOffset, a_nSize, a_uData };
 	writePatch(kPatchCommandSet, nArg);
+}
+
+void CPatch::writeChangeSize(n64 a_nSize)
+{
+	writePatch(kPatchCommandChangeSize, &a_nSize);
 }
 
 void CPatch::writeSeekWrite(bool a_bSeekSet, n64 a_nOffset, size_t a_nSize, u8* a_pData)
@@ -474,6 +494,10 @@ void CPatch::writePatch(u8 a_uPatchCommand, n64* a_pArg)
 		fwrite(a_pArg, 8, 2, m_fpPatch);
 		fwrite(a_pArg + 2, 1, 1, m_fpPatch);
 	}
+	else if (a_uPatchCommand == kPatchCommandChangeSize)
+	{
+		fwrite(a_pArg, 8, 1, m_fpPatch);
+	}
 	else if (a_uPatchCommand >= kPatchCommandSeekWrite && a_uPatchCommand <= kPatchCommandSeekWrite + 0xF)
 	{
 		size_t nOffsetByte = 1 << (a_uPatchCommand >> 1 & 3);
@@ -516,7 +540,7 @@ void CPatch::executeMove(n64 a_nFromOffset, n64 a_nToOffset, n64 a_nSize)
 				a_nSize -= nSize;
 				FFseek(m_fpOld, a_nFromOffset + a_nSize, SEEK_SET);
 				fread(pBuffer, 1, static_cast<size_t>(nSize), m_fpOld);
-				FFseek(m_fpOld, a_nToOffset + a_nSize, SEEK_SET);
+				FSeek(m_fpOld, a_nToOffset + a_nSize);
 				fwrite(pBuffer, 1, static_cast<size_t>(nSize), m_fpOld);
 			}
 		}
@@ -528,6 +552,11 @@ void CPatch::executeSet(n64 a_nStartOffset, n64 a_nSize, u8 a_uData)
 {
 	FFseek(m_fpOld, a_nStartOffset, SEEK_SET);
 	FPadFile(m_fpOld, a_nSize, a_uData);
+}
+
+void CPatch::executeChangeSize(n64 a_nSize)
+{
+	FChsize(FFileno(m_fpOld), a_nSize);
 }
 
 void CPatch::executeSeekWrite(bool a_bSeekSet, n64 a_nOffset, size_t a_nSize, u8* a_pData)

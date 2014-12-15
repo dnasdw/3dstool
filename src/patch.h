@@ -12,6 +12,7 @@ public:
 		kPatchCommandOver,
 		kPatchCommandMove,
 		kPatchCommandSet,
+		kPatchCommandChangeSize,
 		kPatchCommandSeekWrite = 0x10
 	};
 	struct C3DSPatchSystemHeader
@@ -41,13 +42,16 @@ private:
 	bool createNcsdPatchFile();
 	bool createNcchPatchFile(C3DSTool::EFileType a_eFileType, n64 a_nOffsetOld, n64 a_nOffsetNew);
 	bool createPatchFile(n64 a_nOffsetOld, n64 a_nSizeOld, n64 a_nOffsetNew, n64 a_nSizeNew);
+	void writeOver();
 	void writeMove(n64 a_nFromOffset, n64 a_nToOffset, n64 a_nSize);
 	void writeSet(n64 a_nStartOffset, n64 a_nSize, u8 a_uData);
+	void writeChangeSize(n64 a_nSize);
 	void writeSeekWrite(bool a_bSeekSet, n64 a_nOffset, size_t a_nSize, u8* a_pData);
 	void writePatch(u8 a_uPatchCommand, n64* a_pArg);
 	void calculateVersion();
 	void executeMove(n64 a_nFromOffset, n64 a_nToOffset, n64 a_nSize);
 	void executeSet(n64 a_nStartOffset, n64 a_nSize, u8 a_uData);
+	void executeChangeSize(n64 a_nSize);
 	void executeSeekWrite(bool a_bSeekSet, n64 a_nOffset, size_t a_nSize, u8* a_pData);
 	C3DSTool::EFileType m_eFileType;
 	const char* m_pFileName;
