@@ -18,6 +18,7 @@ CNcsd::CNcsd()
 	memset(m_pNcchFileName, 0, sizeof(m_pNcchFileName));
 	memset(&m_NcsdHeader, 0, sizeof(m_NcsdHeader));
 	memset(&m_CardInfo, 0, sizeof(m_CardInfo));
+	memset(m_nOffsetAndSize, 0, sizeof(m_nOffsetAndSize));
 }
 
 CNcsd::~CNcsd()
@@ -64,9 +65,9 @@ SNcsdHeader& CNcsd::GetNcsdHeader()
 	return m_NcsdHeader;
 }
 
-n64 CNcsd::GetMediaUnitSize() const
+n64* CNcsd::GetOffsetAndSize()
 {
-	return m_nMediaUnitSize;
+	return m_nOffsetAndSize;
 }
 
 bool CNcsd::ExtractFile()
@@ -231,18 +232,23 @@ void CNcsd::Analyze()
 		FFseek(m_fpNcsd, 0, SEEK_SET);
 		fread(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
 		calculateMediaUnitSize();
+		for (int i = 0; i < 8; i++)
+		{
+			m_nOffsetAndSize[i * 2] = m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2] * m_nMediaUnitSize;
+			m_nOffsetAndSize[i * 2 + 1] = m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2 + 1] * m_nMediaUnitSize;
+		}
 		for (int i = 6; i >= 0; i--)
 		{
-			if (m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2] == 0 && m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2 + 1] == 0)
+			if (m_nOffsetAndSize[i * 2] == 0 && m_nOffsetAndSize[i * 2 + 1] == 0)
 			{
-				m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2] = m_NcsdHeader.Ncsd.ParitionOffsetAndSize[(i + 1) * 2];
+				m_nOffsetAndSize[i * 2] = m_nOffsetAndSize[(i + 1) * 2];
 			}
 		}
 		for (int i = 1; i < 8; i++)
 		{
-			if (m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2] == 0 && m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2 + 1] == 0)
+			if (m_nOffsetAndSize[i * 2] == 0 && m_nOffsetAndSize[i * 2 + 1] == 0)
 			{
-				m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2] = m_NcsdHeader.Ncsd.ParitionOffsetAndSize[(i - 1) * 2] + m_NcsdHeader.Ncsd.ParitionOffsetAndSize[(i - 1) * 2 + 1];
+				m_nOffsetAndSize[i * 2] = m_nOffsetAndSize[(i - 1) * 2] + m_nOffsetAndSize[(i - 1) * 2 + 1];
 			}
 		}
 		FFseek(m_fpNcsd, nFilePos, SEEK_SET);

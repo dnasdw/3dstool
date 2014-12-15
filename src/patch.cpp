@@ -1,5 +1,7 @@
 #include "patch.h"
+#include "ncch.h"
 #include "ncsd.h"
+#include <openssl/sha.h>
 
 const u32 CPatch::s_uSignature = CONVERT_ENDIAN('3PS\0');
 const u8 CPatch::s_uCurrentVersionMajor = 1;
@@ -102,14 +104,14 @@ bool CPatch::CreatePatchFile()
 	}
 	else if (m_eFileType == C3DSTool::kFileTypeCxi && CNcch::IsCxiFile(m_pOldFileName) && CNcch::IsCxiFile(m_pNewFileName))
 	{
-		if (!createNcchPatchFile(m_eFileType, 0, 0))
+		if (!createNcchPatchFile(m_eFileType, 0, 0, true))
 		{
 			bResult = false;
 		}
 	}
 	else if (m_eFileType == C3DSTool::kFileTypeCfa && CNcch::IsCfaFile(m_pOldFileName) && CNcch::IsCfaFile(m_pNewFileName))
 	{
-		if (!createNcchPatchFile(m_eFileType, 0, 0))
+		if (!createNcchPatchFile(m_eFileType, 0, 0, true))
 		{
 			bResult = false;
 		}
@@ -171,7 +173,41 @@ bool CPatch::ApplyPatchFile()
 		printf("INFO: apply patch to %s\n", m_pFileName);
 	}
 	bool bResult = false;
+	bool bPatched = false;
 	u8 uPatchCommand = 0;
+	fread(&uPatchCommand, 1, 1, m_fpPatch);
+	if (uPatchCommand == kPatchCommandCheck)
+	{
+		bPatched = true;
+	}
+	while (uPatchCommand == kPatchCommandCheck)
+	{
+		n64 nOffset = 0;
+		n64 nSize = 0;
+		u8 uSHA256New[32] = {};
+		fread(&nOffset, 8, 1, m_fpPatch);
+		fread(&nSize, 8, 1, m_fpPatch);
+		fread(uSHA256New, 1, 32, m_fpPatch);
+		FFseek(m_fpOld, nOffset, SEEK_SET);
+		u8* pData = new u8[static_cast<size_t>(nSize)];
+		fread(pData, 1, static_cast<size_t>(nSize), m_fpOld);
+		u8 uSHA256Old[32] = {};
+		SHA256(pData, static_cast<size_t>(nSize), uSHA256Old);
+		if (memcmp(uSHA256Old, uSHA256New, 32) != 0)
+		{
+			bPatched = false;
+			break;
+		}
+		fread(&uPatchCommand, 1, 1, m_fpPatch);
+	}
+	if (bPatched)
+	{
+		printf("ERROR: %s was already patched\n\n", m_pFileName);
+		fclose(m_fpPatch);
+		fclose(m_fpOld);
+		return bResult;
+	}
+	FFseek(m_fpPatch, sizeof(m_3DSPatchSystemHeader), SEEK_SET);
 	do
 	{
 		fread(&uPatchCommand, 1, 1, m_fpPatch);
@@ -183,6 +219,10 @@ bool CPatch::ApplyPatchFile()
 			}
 			bResult = true;
 			break;
+		}
+		else if (uPatchCommand == kPatchCommandCheck)
+		{
+			FFseek(m_fpPatch, 48, SEEK_CUR);
 		}
 		else if (uPatchCommand == kPatchCommandMove)
 		{
@@ -241,21 +281,29 @@ bool CPatch::createNcsdPatchFile()
 	CNcsd ncsdOld;
 	ncsdOld.SetFilePtr(m_fpOld);
 	ncsdOld.Analyze();
-	SNcsdHeader& ncsdHeaderOld = ncsdOld.GetNcsdHeader();
-	n64 nMediaUnitSizeOld = ncsdOld.GetMediaUnitSize();
+	n64* pOffsetAndSizeOld = ncsdOld.GetOffsetAndSize();
 	CNcsd ncsdNew;
 	ncsdNew.SetFilePtr(m_fpNew);
 	ncsdNew.Analyze();
+	n64* pOffsetAndSizeNew = ncsdNew.GetOffsetAndSize();
+	u8 uSHA256[32] = {};
 	SNcsdHeader& ncsdHeaderNew = ncsdNew.GetNcsdHeader();
-	n64 nMediaUnitSizeNew = ncsdNew.GetMediaUnitSize();
-	n64 nPartitionOffsetAndSizeOld[16] = {};
-	n64 nPartitionOffsetAndSizeNew[16] = {};
+	SHA256(reinterpret_cast<u8*>(&ncsdHeaderNew.Ncsd), sizeof(ncsdHeaderNew.Ncsd), uSHA256);
+	writeCheck(reinterpret_cast<u8*>(&ncsdHeaderNew.Ncsd) - reinterpret_cast<u8*>(&ncsdHeaderNew), sizeof(ncsdHeaderNew.Ncsd), uSHA256);
 	for (int i = 0; i < 8; i++)
 	{
-		nPartitionOffsetAndSizeOld[i * 2] = ncsdHeaderOld.Ncsd.ParitionOffsetAndSize[i * 2] * nMediaUnitSizeOld;
-		nPartitionOffsetAndSizeOld[i * 2 + 1] = ncsdHeaderOld.Ncsd.ParitionOffsetAndSize[i * 2 + 1] * nMediaUnitSizeOld;
-		nPartitionOffsetAndSizeNew[i * 2] = ncsdHeaderNew.Ncsd.ParitionOffsetAndSize[i * 2] * nMediaUnitSizeNew;
-		nPartitionOffsetAndSizeNew[i * 2 + 1] = ncsdHeaderNew.Ncsd.ParitionOffsetAndSize[i * 2 + 1] * nMediaUnitSizeNew;
+		if (pOffsetAndSizeNew[i * 2 + 1] != 0)
+		{
+			FFseek(m_fpNew, pOffsetAndSizeNew[i * 2], SEEK_SET);
+			CNcch ncch;
+			ncch.SetFileType(i == 0 ? C3DSTool::kFileTypeCxi : C3DSTool::kFileTypeCfa);
+			ncch.SetFilePtr(m_fpNew);
+			ncch.SetOffset(pOffsetAndSizeNew[i * 2]);
+			ncch.Analyze();
+			SNcchHeader& ncchHeader = ncch.GetNcchHeader();
+			SHA256(reinterpret_cast<u8*>(&ncchHeader.Ncch), sizeof(ncchHeader.Ncch), uSHA256);
+			writeCheck(pOffsetAndSizeNew[i * 2] + reinterpret_cast<u8*>(&ncchHeader.Ncch) - reinterpret_cast<u8*>(&ncchHeader), sizeof(ncchHeader.Ncch), uSHA256);
+		}
 	}
 	bitset<8> bsOver;
 	while (!bsOver.all())
@@ -264,10 +312,10 @@ bool CPatch::createNcsdPatchFile()
 		{
 			if (!bsOver.test(i))
 			{
-				n64 nOffsetOld = nPartitionOffsetAndSizeOld[i * 2];
-				n64 nSizeOld = nPartitionOffsetAndSizeOld[i * 2 + 1];
-				n64 nOffsetNew = nPartitionOffsetAndSizeNew[i * 2];
-				n64 nSizeNew = nPartitionOffsetAndSizeNew[i * 2 + 1];
+				n64 nOffsetOld = pOffsetAndSizeOld[i * 2];
+				n64 nSizeOld = pOffsetAndSizeOld[i * 2 + 1];
+				n64 nOffsetNew = pOffsetAndSizeNew[i * 2];
+				n64 nSizeNew = pOffsetAndSizeNew[i * 2 + 1];
 				if (i != 0 && nOffsetNew < nOffsetOld && !bsOver.test(i - 1))
 				{
 					continue;
@@ -282,7 +330,7 @@ bool CPatch::createNcsdPatchFile()
 				}
 				if (nSizeNew != 0)
 				{
-					if (!createNcchPatchFile(i == 0 ? C3DSTool::kFileTypeCxi : C3DSTool::kFileTypeCfa, nOffsetOld, nOffsetNew))
+					if (!createNcchPatchFile(i == 0 ? C3DSTool::kFileTypeCxi : C3DSTool::kFileTypeCfa, nOffsetOld, nOffsetNew, false))
 					{
 						return false;
 					}
@@ -294,14 +342,14 @@ bool CPatch::createNcsdPatchFile()
 	}
 	printf("INFO: create patch from ncsd header\n");
 	createPatchFile(0, sizeof(SNcsdHeader) + sizeof(CardInfoHeaderStruct), 0, sizeof(SNcsdHeader) + sizeof(CardInfoHeaderStruct));
-	if (nPartitionOffsetAndSizeNew[14] + nPartitionOffsetAndSizeNew[15] < nPartitionOffsetAndSizeOld[14] + nPartitionOffsetAndSizeOld[15])
+	if (pOffsetAndSizeNew[14] + pOffsetAndSizeNew[15] < pOffsetAndSizeOld[14] + pOffsetAndSizeOld[15])
 	{
-		writeSet(nPartitionOffsetAndSizeNew[14] + nPartitionOffsetAndSizeNew[15], nPartitionOffsetAndSizeOld[14] + nPartitionOffsetAndSizeOld[15] - (nPartitionOffsetAndSizeNew[14] + nPartitionOffsetAndSizeNew[15]), 0xFF);
+		writeSet(pOffsetAndSizeNew[14] + pOffsetAndSizeNew[15], pOffsetAndSizeOld[14] + pOffsetAndSizeOld[15] - (pOffsetAndSizeNew[14] + pOffsetAndSizeNew[15]), 0xFF);
 	}
 	return true;
 }
 
-bool CPatch::createNcchPatchFile(C3DSTool::EFileType a_eFileType, n64 a_nOffsetOld, n64 a_nOffsetNew)
+bool CPatch::createNcchPatchFile(C3DSTool::EFileType a_eFileType, n64 a_nOffsetOld, n64 a_nOffsetNew, bool a_bCreateCheck)
 {
 	static const char* pPartName[5] = { "extendedheader", "logoregion", "plainregion", "exefs", "romfs" };
 	CNcch ncchOld;
@@ -316,6 +364,13 @@ bool CPatch::createNcchPatchFile(C3DSTool::EFileType a_eFileType, n64 a_nOffsetO
 	ncchNew.SetOffset(a_nOffsetNew);
 	ncchNew.Analyze();
 	n64* pOffsetAndSizeNew = ncchNew.GetOffsetAndSize();
+	if (a_bCreateCheck)
+	{
+		u8 uSHA256[32] = {};
+		SNcchHeader& ncchHeader = ncchNew.GetNcchHeader();
+		SHA256(reinterpret_cast<u8*>(&ncchHeader.Ncch), sizeof(ncchHeader.Ncch), uSHA256);
+		writeCheck(a_nOffsetNew + reinterpret_cast<u8*>(&ncchHeader.Ncch) - reinterpret_cast<u8*>(&ncchHeader), sizeof(ncchHeader.Ncch), uSHA256);
+	}
 	bitset<CNcch::kOffsetSizeIndexCount> bsOver;
 	if (!bsOver.all())
 	{
@@ -434,6 +489,13 @@ void CPatch::writeOver()
 	writePatch(kPatchCommandOver, nullptr);
 }
 
+void CPatch::writeCheck(n64 a_nOffset, n64 a_nSize, u8* a_pSHA256)
+{
+	n64* pSHA256 = reinterpret_cast<n64*>(a_pSHA256);
+	n64 nArg[6] = { a_nOffset, a_nSize, pSHA256[0], pSHA256[1], pSHA256[2], pSHA256[3] };
+	writePatch(kPatchCommandCheck, nArg);
+}
+
 void CPatch::writeMove(n64 a_nFromOffset, n64 a_nToOffset, n64 a_nSize)
 {
 	n64 nArg[3] = { a_nFromOffset, a_nToOffset, a_nSize };
@@ -488,6 +550,10 @@ void CPatch::writePatch(u8 a_uPatchCommand, n64* a_pArg)
 	if (a_uPatchCommand == kPatchCommandMove)
 	{
 		fwrite(a_pArg, 8, 3, m_fpPatch);
+	}
+	else if (a_uPatchCommand == kPatchCommandCheck)
+	{
+		fwrite(a_pArg, 8, 6, m_fpPatch);
 	}
 	else if (a_uPatchCommand == kPatchCommandSet)
 	{

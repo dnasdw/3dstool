@@ -10,12 +10,13 @@ public:
 	enum EPatchCommand
 	{
 		kPatchCommandOver,
+		kPatchCommandCheck,
 		kPatchCommandMove,
 		kPatchCommandSet,
 		kPatchCommandChangeSize,
 		kPatchCommandSeekWrite = 0x10
 	};
-	struct C3DSPatchSystemHeader
+	struct S3DSPatchSystemHeader
 	{
 		u32 Signature;
 		u8 VersionMajor;
@@ -40,9 +41,10 @@ public:
 	static const u8 s_uCurrentVersionPatchLevel;
 private:
 	bool createNcsdPatchFile();
-	bool createNcchPatchFile(C3DSTool::EFileType a_eFileType, n64 a_nOffsetOld, n64 a_nOffsetNew);
+	bool createNcchPatchFile(C3DSTool::EFileType a_eFileType, n64 a_nOffsetOld, n64 a_nOffsetNew, bool a_bCreateCheck);
 	bool createPatchFile(n64 a_nOffsetOld, n64 a_nSizeOld, n64 a_nOffsetNew, n64 a_nSizeNew);
 	void writeOver();
+	void writeCheck(n64 a_nOffset, n64 a_nSize, u8* a_pSHA256);
 	void writeMove(n64 a_nFromOffset, n64 a_nToOffset, n64 a_nSize);
 	void writeSet(n64 a_nStartOffset, n64 a_nSize, u8 a_uData);
 	void writeChangeSize(n64 a_nSize);
@@ -62,7 +64,7 @@ private:
 	FILE* m_fpOld;
 	FILE* m_fpNew;
 	FILE* m_fpPatch;
-	C3DSPatchSystemHeader m_3DSPatchSystemHeader;
+	S3DSPatchSystemHeader m_3DSPatchSystemHeader;
 	u32 m_uVersion;
 };
 

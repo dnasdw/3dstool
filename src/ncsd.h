@@ -77,7 +77,7 @@ public:
 	void SetLastPartitionIndex(int a_nLastPartitionIndex);
 	void SetFilePtr(FILE* a_fpNcsd);
 	SNcsdHeader& GetNcsdHeader();
-	n64 GetMediaUnitSize() const;
+	n64* GetOffsetAndSize();
 	bool ExtractFile();
 	bool CreateFile();
 	bool TrimFile();
@@ -107,6 +107,7 @@ private:
 	n64 m_nMediaUnitSize;
 	bool m_bAlignToBlockSize;
 	n64 m_nValidSize;
+	n64 m_nOffsetAndSize[8 * 2];
 };
 
 #endif	// NCSD_H_

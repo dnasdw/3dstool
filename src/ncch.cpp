@@ -141,6 +141,11 @@ void CNcch::SetOffset(n64 a_nOffset)
 	m_nOffset = a_nOffset;
 }
 
+SNcchHeader& CNcch::GetNcchHeader()
+{
+	return m_NcchHeader;
+}
+
 n64* CNcch::GetOffsetAndSize()
 {
 	return m_nOffsetAndSize;

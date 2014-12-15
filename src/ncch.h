@@ -112,6 +112,7 @@ public:
 	void SetRomFsXorFileName(const char* a_pRomFsXorFileName);
 	void SetFilePtr(FILE* a_fpNcch);
 	void SetOffset(n64 a_nOffset);
+	SNcchHeader& GetNcchHeader();
 	n64* GetOffsetAndSize();
 	bool ExtractFile();
 	bool CreateFile();
