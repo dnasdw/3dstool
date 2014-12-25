@@ -1,4 +1,4 @@
-# 3DS Tool
+# 3dstool
 
 An all-in-one tool for extracting/creating 3ds roms.
 
@@ -6,6 +6,7 @@ An all-in-one tool for extracting/creating 3ds roms.
 
 - v1.0.0 @ 2014.12.07 - The very first release
 - v1.0.1 @ 2014.12.09 - Make compatible with Windows XP
+- v1.0.2 @ 2014.12.25 - Support diff and patch
 
 ## Platforms
 
@@ -16,8 +17,6 @@ An all-in-one tool for extracting/creating 3ds roms.
 
 ## Building
 
-> A 64-bit system is required for building and running this tool. 
-
 ### Dependencies
 
 - cmake
@@ -26,8 +25,20 @@ An all-in-one tool for extracting/creating 3ds roms.
 
 ### Compiling
 
+- make 64-bit version
 ~~~
-mkdir projectcd projectcmake ..make
+mkdir project
+cd project
+cmake ..
+make
+~~~
+
+- make 32-bit version
+~~~
+mkdir project
+cd project
+cmake -DBUILD64=OFF ..
+make
 ~~~
 
 ### Installing
@@ -37,7 +48,6 @@ make install
 ~~~
 
 ## Usage
-
 
 ### Windows
 
