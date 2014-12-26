@@ -372,7 +372,7 @@ bool CPatch::createNcchPatchFile(C3DSTool::EFileType a_eFileType, n64 a_nOffsetO
 		writeCheck(a_nOffsetNew + reinterpret_cast<u8*>(&ncchHeader.Ncch) - reinterpret_cast<u8*>(&ncchHeader), sizeof(ncchHeader.Ncch), uSHA256);
 	}
 	bitset<CNcch::kOffsetSizeIndexCount> bsOver;
-	if (!bsOver.all())
+	while (!bsOver.all())
 	{
 		for (int i = CNcch::kOffsetSizeIndexRomFs; i >= 0; i--)
 		{
@@ -474,7 +474,7 @@ bool CPatch::createPatchFile(n64 a_nOffsetOld, n64 a_nSizeOld, n64 a_nOffsetNew,
 			nBufferPos = static_cast<size_t>(nRemainSize > nBufferSize ? nBufferSize : nRemainSize);
 			fread(uBuffer, 1, nBufferPos, m_fpNew);
 			nSeekOffset = a_nOffsetNew + a_nSizeNew - nRemainSize - nBaseOffset;
-			nBaseOffset += nSeekOffset + nBaseOffset;
+			nBaseOffset += nSeekOffset + nBufferPos;
 			writeSeekWrite(bSeekSet, nSeekOffset, nBufferPos, uBuffer);
 			bSeekSet = false;
 			nRemainSize -= nBufferPos;
