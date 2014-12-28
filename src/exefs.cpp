@@ -291,6 +291,7 @@ bool CExeFs::createSection(int a_nIndex)
 		}
 		else
 		{
+			m_ExeFsSuperBlock.m_Header[a_nIndex].offset = static_cast<u32>(FFtell(m_fpExeFs)) - sizeof(m_ExeFsSuperBlock);
 			if (m_bVerbose)
 			{
 				FPrintf(STR("load: %s\n"), sPath.c_str());
@@ -311,6 +312,7 @@ bool CExeFs::createSection(int a_nIndex)
 				{
 					SHA256(pCompressed, uCompressedSize, m_ExeFsSuperBlock.m_Hash[7 - a_nIndex]);
 					fwrite(pCompressed, 1, uCompressedSize, m_fpExeFs);
+					m_ExeFsSuperBlock.m_Header[a_nIndex].size = uCompressedSize;
 				}
 				delete[] pCompressed;
 			}
@@ -318,6 +320,7 @@ bool CExeFs::createSection(int a_nIndex)
 			{
 				SHA256(pData, uFileSize, m_ExeFsSuperBlock.m_Hash[7 - a_nIndex]);
 				fwrite(pData, 1, uFileSize, m_fpExeFs);
+				m_ExeFsSuperBlock.m_Header[a_nIndex].size = uFileSize;
 			}
 			delete[] pData;
 			FPadFile(m_fpExeFs, FAlign(FFtell(m_fpExeFs), s_nBlockSize) - FFtell(m_fpExeFs), 0);
