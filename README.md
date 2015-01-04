@@ -9,6 +9,7 @@ An all-in-one tool for extracting/creating 3ds roms.
 - v1.0.2 @ 2014.12.25 - Support diff and patch
 - v1.0.3 @ 2014.12.26 - Fix diff bug
 - v1.0.4 @ 2014.12.28 - Fix exefs header bug
+- v1.0.5 @ 2015.01.05 - Fix diff bug
 
 ## Platforms
 
@@ -32,6 +33,7 @@ An all-in-one tool for extracting/creating 3ds roms.
 mkdir project
 cd project
 cmake ..
+cmake ..
 make
 ~~~
 
@@ -39,6 +41,7 @@ make
 ~~~
 mkdir project
 cd project
+cmake -DBUILD64=OFF ..
 cmake -DBUILD64=OFF ..
 make
 ~~~

@@ -391,7 +391,7 @@ bool CPatch::createNcchPatchFile(C3DSTool::EFileType a_eFileType, n64 a_nOffsetO
 				{
 					if (nSizeOld != 0 && nSizeNew != 0)
 					{
-						writeMove(nOffsetOld, nOffsetNew, min(nSizeOld, nSizeNew));
+						writeMove(a_nOffsetOld + nOffsetOld, a_nOffsetNew + nOffsetNew, min(nSizeOld, nSizeNew));
 					}
 				}
 				if (nSizeNew != 0)
@@ -400,6 +400,10 @@ bool CPatch::createNcchPatchFile(C3DSTool::EFileType a_eFileType, n64 a_nOffsetO
 					{
 						return false;
 					}
+				}
+				if (nSizeNew < nSizeOld)
+				{
+					writeSet(a_nOffsetNew + nOffsetNew + nSizeNew, nSizeOld - nSizeNew, 0);
 				}
 				bsOver.set(i);
 				break;
