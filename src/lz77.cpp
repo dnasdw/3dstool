@@ -388,7 +388,7 @@ u32 CLZ77::SearchLZ(LZCompressInfo * info, const u8 *nextp, u32 remainSize, u16 
 		headp = nextp + 3;
 
 		// Increments the compression size until the data ends or different data is encountered
-		while (((u32)(headp - nextp) < remainSize) && (*headp == *searchHeadp))
+		while ((static_cast<u32>(headp - nextp) < remainSize) && (*headp == *searchHeadp))
 		{
 			headp++;
 			searchHeadp++;
@@ -405,7 +405,7 @@ u32 CLZ77::SearchLZ(LZCompressInfo * info, const u8 *nextp, u32 remainSize, u16 
 		{
 			// Update the maximum-length offset
 			currLength = tmpLength;
-			maxOffset = (u16)(nextp - searchp);
+			maxOffset = static_cast<u16>(nextp - searchp);
 			if (currLength == maxLength || currLength == remainSize)
 			{
 				// This is the longest matching length, so end search
@@ -430,9 +430,9 @@ void CLZ77::LZInitTable(LZCompressInfo * info, void *work)
 {
 	u16     i;
 
-	info->LZOffsetTable = (s16*)work;
-	info->LZByteTable = (s16*)((u32)work + 4096 * sizeof(s16));
-	info->LZEndTable = (s16*)((u32)work + (4096 + 256) * sizeof(s16));
+	info->LZOffsetTable = static_cast<s16*>(work);
+	info->LZByteTable = static_cast<s16*>(work) + 4096;
+	info->LZEndTable = static_cast<s16*>(work) + 4096 + 256;
 
 	for (i = 0; i < 256; i++)
 	{
@@ -475,18 +475,18 @@ void CLZ77::SlideByte(LZCompressInfo * info, const u8 *srcp)
 	offset = LZEndTable[in_data];
 	if (offset == -1)
 	{
-		LZByteTable[in_data] = (s16)insert_offset;
+		LZByteTable[in_data] = static_cast<s16>(insert_offset);
 	}
 	else
 	{
-		LZOffsetTable[offset] = (s16)insert_offset;
+		LZOffsetTable[offset] = static_cast<s16>(insert_offset);
 	}
-	LZEndTable[in_data] = (s16)insert_offset;
+	LZEndTable[in_data] = static_cast<s16>(insert_offset);
 	LZOffsetTable[insert_offset] = -1;
 
 	if (windowLen == 4096)
 	{
-		info->windowPos = (u16)((windowPos + 1) % 0x1000);
+		info->windowPos = static_cast<s16>((windowPos + 1) % 0x1000);
 	}
 	else
 	{
