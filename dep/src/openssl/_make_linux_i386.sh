@@ -15,7 +15,9 @@ cd "$rootdir/$openssl_version"
 make
 make install
 rm -rf "$rootdir/../../include/$target/openssl"
+mkdir "$rootdir/../../include/$target"
 cp -rf "$prefix/include/"* "$rootdir/../../include/$target"
+mkdir "$rootdir/../../lib/$target"
 cp -f "$prefix/lib/libcrypto.a" "$rootdir/../../lib/$target"
 cd $rootdir
 rm -rf "$rootdir/$openssl_version"

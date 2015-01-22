@@ -264,7 +264,7 @@ void CRomFs::setupCreate()
 void CRomFs::buildBlackList()
 {
 	m_vBlackList.clear();
-	String sIgnorePath = FGetModuleDir() + STR("/ignore.txt");
+	String sIgnorePath = FGetModuleDir() + STR("/ignore_3dstool.txt");
 	FILE* fp = FFopenUnicode(sIgnorePath.c_str(), STR("rb"));
 	if (fp != nullptr)
 	{
@@ -911,7 +911,10 @@ bool CRomFs::updateLevelBuffer()
 		map<n64, SEntry*> mCreateFile;
 		for (int i = 0; i < static_cast<int>(m_vCreateFile.size()); i++)
 		{
-			mCreateFile.insert(make_pair(m_vCreateFile[i].Entry.File.FileOffset, &m_vCreateFile[i]));
+			if (m_vCreateFile[i].Entry.File.FileSize != 0)
+			{
+				mCreateFile.insert(make_pair(m_vCreateFile[i].Entry.File.FileOffset, &m_vCreateFile[i]));
+			}
 		}
 		for (auto it = mCreateFile.begin(); it != mCreateFile.end(); ++it)
 		{

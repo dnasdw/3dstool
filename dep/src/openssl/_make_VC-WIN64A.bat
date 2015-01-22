@@ -24,7 +24,9 @@ CALL ms\do_win64a.bat
 nmake -f ms\nt.mak
 nmake -f ms\nt.mak install
 RD /S /Q "%rootdir%..\..\include\%target%\openssl"
+MD "%rootdir%..\..\include\%target%"
 XCOPY "%prefix%\include" "%rootdir%..\..\include\%target%" /S /Y
+MD "%rootdir%..\..\lib\%target%"
 COPY /Y "%prefix%\lib\libeay32.lib" "%rootdir%..\..\lib\%target%"
 CD /D "%rootdir%"
 RD /S /Q "%rootdir%%openssl_version%"
