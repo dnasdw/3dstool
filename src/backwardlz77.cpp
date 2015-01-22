@@ -2,19 +2,22 @@
 
 bool CBackwardLZ77::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, u32& a_uUncompressedSize)
 {
-	bool bResult = false;
+	bool bResult = true;
 	if (a_uCompressedSize >= sizeof(CompFooter))
 	{
 		const CompFooter* pCompFooter = reinterpret_cast<const CompFooter*>(a_pCompressed + a_uCompressedSize - sizeof(CompFooter));
 		a_uUncompressedSize = a_uCompressedSize + pCompFooter->originalBottom;
-		bResult = true;
+	}
+	else
+	{
+		bResult = false;
 	}
 	return bResult;
 }
 
 bool CBackwardLZ77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUncompressed, u32& a_uUncompressedSize)
 {
-	bool bResult = false;
+	bool bResult = true;
 	if (a_uCompressedSize >= sizeof(CompFooter))
 	{
 		const CompFooter* pCompFooter = reinterpret_cast<const CompFooter*>(a_pCompressed + a_uCompressedSize - sizeof(CompFooter));
@@ -34,16 +37,30 @@ bool CBackwardLZ77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u
 				{
 					if ((uFlag << i & 0x80) == 0)
 					{
+						if (pDest < pEnd)
+						{
+							bResult = false;
+							break;
+						}
 						*--pDest = *--pSrc;
 					}
 					else
 					{
-						int nOffset = *--pSrc;
-						nOffset = nOffset << 8 | *--pSrc;
-						int nSize = (nOffset >> 12 & 0xF) + 3;
-						nOffset = (nOffset & 0xFFF) + 3;
+						if (pSrc - 2 < pEnd)
+						{
+							bResult = false;
+							break;
+						}
+						int nSize = *--pSrc;
+						int nOffset = (((nSize & 0x0F) << 8) | *--pSrc) + 3;
+						nSize = (nSize >> 4 & 0x0F) + 3;
+						if (pDest - nSize < pEnd)
+						{
+							bResult = false;
+							break;
+						}
 						u8* pData = pDest + nOffset;
-						for (int i = 0; i < nSize; i++)
+						for (int j = 0; j < nSize; j++)
 						{
 							*--pDest = *--pData;
 						}
@@ -53,9 +70,20 @@ bool CBackwardLZ77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u
 						break;
 					}
 				}
+				if (!bResult)
+				{
+					break;
+				}
 			}
-			bResult = true;
 		}
+		else
+		{
+			bResult = false;
+		}
+	}
+	else
+	{
+		bResult = false;
 	}
 	return bResult;
 }

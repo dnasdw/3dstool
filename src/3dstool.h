@@ -36,7 +36,15 @@ public:
 		kFileTypeCxi,
 		kFileTypeCfa,
 		kFileTypeExefs,
-		kFileTypeRomfs
+		kFileTypeRomfs,
+		kFileTypeBanner,
+	};
+	enum ECompressType
+	{
+		kCompressTypeNone,
+		kCompressTypeBLZ,
+		kCompressTypeLZ,
+		kCompressTypeLZEx
 	};
 	struct SOption
 	{
@@ -74,6 +82,7 @@ private:
 	u8 m_uKey[16];
 	string m_sCounter;
 	const char* m_pXorFileName;
+	ECompressType m_eCompressType;
 	const char* m_pCompressOutFileName;
 	const char* m_pOldFileName;
 	const char* m_pNewFileName;
@@ -95,6 +104,7 @@ private:
 	const char* m_pRomFsXorFileName;
 	const char* m_pExeFsDirName;
 	const char* m_pRomFsDirName;
+	const char* m_pBannerDirName;
 	bool m_bUncompress;
 	bool m_bCompress;
 	const char* m_pMessage;

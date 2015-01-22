@@ -1,6 +1,8 @@
 #include "3dstool.h"
 #include "backwardlz77.h"
+#include "banner.h"
 #include "exefs.h"
+#include "lz77.h"
 #include "ncch.h"
 #include "ncsd.h"
 #include "patch.h"
@@ -12,8 +14,8 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 	{ "extract", 'x', "extract the target file" },
 	{ "create", 'c', "create the target file" },
 	{ "encrypt", 'e', "encrypt the target file" },
-	{ "uncompress", 'u', "uncompress the target file used by Backward LZ77" },
-	{ "compress", 'z', "compress the target file used by Backward LZ77" },
+	{ "uncompress", 'u', "uncompress the target file" },
+	{ "compress", 'z', "compress the target file" },
 	{ "trim", 'r', "trim the cci file" },
 	{ "pad", 'p', "pad the cci file" },
 	{ "diff", 0, "create the patch file from the old file and the new file" },
@@ -21,7 +23,7 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 	{ "sample", 0, "show the samples" },
 	{ "help", 'h', "show this help" },
 	{ nullptr, 0, "\ncommon:" },
-	{ "type", 't', "[[card|cci|3ds]|[nand|exec|cxi]|[data|cfa]|exefs|romfs]\n\t\tthe type of the file, optional" },
+	{ "type", 't', "[[card|cci|3ds]|[nand|exec|cxi]|[data|cfa]|exefs|romfs|banner]\n\t\tthe type of the file, optional" },
 	{ "file", 'f', "the target file, required" },
 	{ "verbose", 'v', "show the info" },
 	{ nullptr, 0, " cci/cxi/cfa/exefs:" },
@@ -33,6 +35,7 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 	{ "counter", 0, "the hex string of the counter used by the AES-CTR encryption" },
 	{ "xor", 0, "the xor data file used by the xor encryption" },
 	{ nullptr, 0, " uncompress/compress:" },
+	{ "compress-type" , 0, "[blz|lz(ex)]\n\t\tthe type of the compress" },
 	{ "compress-out", 0, "the output file of uncompressed or compressed" },
 	{ nullptr, 0, " diff:" },
 	{ "old", 0, "the old file" },
@@ -82,6 +85,9 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 	{ nullptr, 0, "\nromfs:" },
 	{ nullptr, 0, " extract/create:" },
 	{ "romfs-dir", 0, "the romfs dir for the romfs file" },
+	{ nullptr, 0, "\nbanner:" },
+	{ nullptr, 0, " extract/create:" },
+	{ "banner-dir", 0, "the banner dir for the banner file"},
 	{ nullptr, 0, nullptr }
 };
 
@@ -93,6 +99,7 @@ C3DSTool::C3DSTool()
 	, m_pHeaderFileName(nullptr)
 	, m_nEncryptMode(CNcch::kEncryptModeNone)
 	, m_pXorFileName(nullptr)
+	, m_eCompressType(kCompressTypeNone)
 	, m_pCompressOutFileName(nullptr)
 	, m_pOldFileName(nullptr)
 	, m_pNewFileName(nullptr)
@@ -113,6 +120,7 @@ C3DSTool::C3DSTool()
 	, m_pRomFsXorFileName(nullptr)
 	, m_pExeFsDirName(nullptr)
 	, m_pRomFsDirName(nullptr)
+	, m_pBannerDirName(nullptr)
 	, m_bUncompress(false)
 	, m_bCompress(false)
 	, m_pMessage(nullptr)
@@ -256,6 +264,12 @@ int C3DSTool::CheckOptions()
 				return 1;
 			}
 			break;
+		case kFileTypeBanner:
+			if (m_pBannerDirName == nullptr)
+			{
+				printf("ERROR: no --banner-dir option\n\n");
+				return 1;
+			}
 		default:
 			break;
 		}
@@ -317,6 +331,14 @@ int C3DSTool::CheckOptions()
 					return 1;
 				}
 			}
+			else if (m_eFileType == kFileTypeBanner)
+			{
+				if (m_pBannerDirName == nullptr)
+				{
+					printf("ERROR: no --banner-dir option\n\n");
+					return 1;
+				}
+			}
 		}
 	}
 	if (m_eAction == kActionEncrypt)
@@ -364,6 +386,11 @@ int C3DSTool::CheckOptions()
 	}
 	if (m_eAction == kActionUncompress || m_eAction == kActionCompress)
 	{
+		if (m_eCompressType == kCompressTypeNone)
+		{
+			printf("ERROR: no --compress-type option\n\n");
+			return 1;
+		}
 		if (m_pCompressOutFileName == nullptr)
 		{
 			m_pCompressOutFileName = m_pFileName;
@@ -675,6 +702,10 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		{
 			m_eFileType = kFileTypeRomfs;
 		}
+		else if (strcmp(pType, "banner") == 0)
+		{
+			m_eFileType = kFileTypeBanner;
+		}
 		else
 		{
 			m_pMessage = pType;
@@ -768,6 +799,31 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnOptionConflict;
 		}
 		m_pXorFileName = a_pArgv[++a_nIndex];
+	}
+	else if (strcmp(a_pName, "compress-type") == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		char* pType = a_pArgv[++a_nIndex];
+		if (strcmp(pType, "blz") == 0)
+		{
+			m_eCompressType = kCompressTypeBLZ;
+		}
+		else if (strcmp(pType, "lz") == 0)
+		{
+			m_eCompressType = kCompressTypeLZ;
+		}
+		else if (strcmp(pType, "lzex") == 0)
+		{
+			m_eCompressType = kCompressTypeLZEx;
+		}
+		else
+		{
+			m_pMessage = pType;
+			return kParseOptionReturnUnknownArgument;
+		}
 	}
 	else if (strcmp(a_pName, "compress-out") == 0)
 	{
@@ -962,6 +1018,14 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_pRomFsDirName = a_pArgv[++a_nIndex];
 	}
+	else if (strcmp(a_pName, "banner-dir") == 0)
+	{
+		if (a_nIndex + 1 > a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		m_pBannerDirName = a_pArgv[++a_nIndex];
+	}
 	return kParseOptionReturnSuccess;
 }
 
@@ -1001,6 +1065,10 @@ bool C3DSTool::checkFileType()
 		{
 			m_eFileType = kFileTypeRomfs;
 		}
+		else if (CBanner::IsBannerFile(m_pFileName))
+		{
+			m_eFileType = kFileTypeBanner;
+		}
 		else
 		{
 			m_pMessage = "unknown file type";
@@ -1026,6 +1094,9 @@ bool C3DSTool::checkFileType()
 			break;
 		case kFileTypeRomfs:
 			bMatch = CRomFs::IsRomFsFile(m_pFileName);
+			break;
+		case kFileTypeBanner:
+			bMatch = CBanner::IsBannerFile(m_pFileName);
 			break;
 		}
 		if (!bMatch)
@@ -1103,6 +1174,16 @@ bool C3DSTool::extractFile()
 			romFs.SetVerbose(m_bVerbose);
 			romFs.SetRomFsDirName(m_pRomFsDirName);
 			bResult = romFs.ExtractFile();
+		}
+		break;
+	case kFileTypeBanner:
+		{
+			CBanner banner;
+			banner.SetFileName(m_pFileName);
+			banner.SetVerbose(m_bVerbose);
+			banner.SetBannerDirName(m_pBannerDirName);
+			banner.SetUncompress(m_bUncompress);
+			bResult = banner.ExtractFile();
 		}
 		break;
 	}
@@ -1183,6 +1264,15 @@ bool C3DSTool::createFile()
 			bResult = romFs.CreateFile();
 		}
 		break;
+	case kFileTypeBanner:
+		{
+			CBanner banner;
+			banner.SetFileName(m_pFileName);
+			banner.SetVerbose(m_bVerbose);
+			banner.SetBannerDirName(m_pBannerDirName);
+			banner.SetCompress(m_bCompress);
+			bResult = banner.CreateFile();
+		}
 	}
 	return bResult;
 }
@@ -1242,11 +1332,29 @@ bool C3DSTool::uncompressFile()
 		fread(pCompressed, 1, uCompressedSize, fp);
 		fclose(fp);
 		u32 uUncompressedSize = 0;
-		bResult = CBackwardLZ77::GetUncompressedSize(pCompressed, uCompressedSize, uUncompressedSize);
+		switch (m_eCompressType)
+		{
+		case C3DSTool::kCompressTypeBLZ:
+			bResult = CBackwardLZ77::GetUncompressedSize(pCompressed, uCompressedSize, uUncompressedSize);
+			break;
+		case C3DSTool::kCompressTypeLZ:
+		case C3DSTool::kCompressTypeLZEx:
+			bResult = CLZ77::GetUncompressedSize(pCompressed, uCompressedSize, uUncompressedSize);
+			break;
+		}
 		if (bResult)
 		{
 			u8* pUncompressed = new u8[uUncompressedSize];
-			bResult = CBackwardLZ77::Uncompress(pCompressed, uCompressedSize, pUncompressed, uUncompressedSize);
+			switch (m_eCompressType)
+			{
+			case C3DSTool::kCompressTypeBLZ:
+				bResult = CBackwardLZ77::Uncompress(pCompressed, uCompressedSize, pUncompressed, uUncompressedSize);
+				break;
+			case C3DSTool::kCompressTypeLZ:
+			case C3DSTool::kCompressTypeLZEx:
+				bResult = CLZ77::Uncompress(pCompressed, uCompressedSize, pUncompressed, uUncompressedSize);
+				break;
+			}
 			if (bResult)
 			{
 				fp = FFopen(m_pCompressOutFileName, "wb");
@@ -1284,9 +1392,30 @@ bool C3DSTool::compressFile()
 		u8* pUncompressed = new u8[uUncompressedSize];
 		fread(pUncompressed, 1, uUncompressedSize, fp);
 		fclose(fp);
-		u32 uCompressedSize = uUncompressedSize;
+		u32 uCompressedSize = 0;
+		switch (m_eCompressType)
+		{
+		case C3DSTool::kCompressTypeBLZ:
+			uCompressedSize = uUncompressedSize;
+			break;
+		case C3DSTool::kCompressTypeLZ:
+		case C3DSTool::kCompressTypeLZEx:
+			uCompressedSize = CLZ77::GetCompressBoundSize(uUncompressedSize);
+			break;
+		}
 		u8* pCompressed = new u8[uCompressedSize];
-		bReuslt = CBackwardLZ77::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize);
+		switch (m_eCompressType)
+		{
+		case C3DSTool::kCompressTypeBLZ:
+			bReuslt = CBackwardLZ77::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize);
+			break;
+		case C3DSTool::kCompressTypeLZ:
+			bReuslt = CLZ77::CompressLZ(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize);
+			break;
+		case C3DSTool::kCompressTypeLZEx:
+			bReuslt = CLZ77::CompressLZEx(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize);
+			break;
+		}
 		if (bReuslt)
 		{
 			fp = FFopen(m_pCompressOutFileName, "wb");
@@ -1371,6 +1500,10 @@ int C3DSTool::sample()
 	printf("3dstool -xuvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n");
 	printf("# extract romfs\n");
 	printf("3dstool -xvtf romfs romfs.bin --romfs-dir romfs\n\n");
+	printf("# extract banner without LZ77Ex uncompress\n");
+	printf("3dstool -xvtf banner banner.bnr --banner-dir banner\n\n");
+	printf("# extract banner with LZ77Ex uncompress\n");
+	printf("3dstool -xvtfu banner banner.bnr --banner-dir banner\n\n");
 	printf("# create cci with pad 0xFF\n");
 	printf("3dstool -cvt017f cci 0.cxi 1.cfa 7.cfa output.3ds --header ncsdheader.bin\n\n");
 	printf("# create cci without pad\n");
@@ -1401,14 +1534,26 @@ int C3DSTool::sample()
 	printf("3dstool -cvtf romfs romfs.bin --romfs-dir romfs\n\n");
 	printf("# create romfs with reference\n");
 	printf("3dstool -cvtf romfs romfs.bin --romfs-dir romfs --romfs original_romfs.bin\n\n");
+	printf("# create banner without LZ77Ex compress\n");
+	printf("3dstool -cvtf banner banner.bnr --banner-dir banner\n\n");
+	printf("# create banner with LZ77Ex compress\n");
+	printf("3dstool -cvtfz banner banner.bnr --banner-dir banner\n\n");
 	printf("# encrypt file with AES-CTR encryption, standalone\n");
 	printf("3dstool -evf file.bin --key 00000000000000000000000000000000 --counter 00000000000000000000000000000000\n\n");
 	printf("# encrypt file with xor encryption, standalone\n");
 	printf("3dstool -evf file.bin --xor xor.bin\n\n");
 	printf("# uncompress file with Backward LZ77, standalone\n");
-	printf("3dstool -uvf code.bin --compress-out code.bin\n\n");
+	printf("3dstool -uvf code.bin --compress-type blz --compress-out code.bin\n\n");
 	printf("# compress file with Backward LZ77, standalone\n");
-	printf("3dstool -zvf code.bin --compress-out code.bin\n\n");
+	printf("3dstool -zvf code.bin --compress-type blz --compress-out code.bin\n\n");
+	printf("# uncompress file with LZ77, standalone\n");
+	printf("3dstool -uvf input.lz --compress-type lz --compress-out output.bin\n\n");
+	printf("# compress file with LZ77, standalone\n");
+	printf("3dstool -zvf output.lz --compress-type lz --compress-out input.bin\n\n");
+	printf("# uncompress file with LZ77Ex, standalone\n");
+	printf("3dstool -uvf logo.bcma.lz --compress-type lzex --compress-out logo.bcma\n\n");
+	printf("# compress file with LZ77Ex, standalone\n");
+	printf("3dstool -zvf logo.bcma.lz --compress-type lzex --compress-out logo.bcma\n\n");
 	printf("# trim cci without pad\n");
 	printf("3dstool -vtf cci input.3ds --trim\n\n");
 	printf("# trim cci reserve partition 0~2\n");
