@@ -82,6 +82,7 @@ private:
 	u8 m_uKey[16];
 	string m_sCounter;
 	const char* m_pXorFileName;
+	n32 m_nCompressAlign;
 	ECompressType m_eCompressType;
 	const char* m_pCompressOutFileName;
 	const char* m_pOldFileName;

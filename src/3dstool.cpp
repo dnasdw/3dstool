@@ -34,8 +34,10 @@ C3DSTool::SOption C3DSTool::s_Option[] =
 	{ "key", 0, "the hex string of the key used by the AES-CTR encryption" },
 	{ "counter", 0, "the hex string of the counter used by the AES-CTR encryption" },
 	{ "xor", 0, "the xor data file used by the xor encryption" },
-	{ nullptr, 0, " uncompress/compress:" },
-	{ "compress-type" , 0, "[blz|lz(ex)]\n\t\tthe type of the compress" },
+	{ nullptr, 0, " compress:" },
+	{ "compress-align", 0, "[1|4|8|16|32]\n\t\tthe alignment of the compressed filesize" },
+	{ nullptr, 0, "  uncompress:" },
+	{ "compress-type", 0, "[blz|lz(ex)]\n\t\tthe type of the compress" },
 	{ "compress-out", 0, "the output file of uncompressed or compressed" },
 	{ nullptr, 0, " diff:" },
 	{ "old", 0, "the old file" },
@@ -99,6 +101,7 @@ C3DSTool::C3DSTool()
 	, m_pHeaderFileName(nullptr)
 	, m_nEncryptMode(CNcch::kEncryptModeNone)
 	, m_pXorFileName(nullptr)
+	, m_nCompressAlign(1)
 	, m_eCompressType(kCompressTypeNone)
 	, m_pCompressOutFileName(nullptr)
 	, m_pOldFileName(nullptr)
@@ -800,6 +803,21 @@ C3DSTool::EParseOptionReturn C3DSTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_pXorFileName = a_pArgv[++a_nIndex];
 	}
+	else if (strcmp(a_pName, "compress-align") == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		char* pCompressAlign = a_pArgv[++a_nIndex];
+		n32 nCompressAlign = FSToN32(pCompressAlign);
+		if (nCompressAlign != 1 && nCompressAlign != 4 && nCompressAlign != 8 && nCompressAlign != 16 && nCompressAlign != 32)
+		{
+			m_pMessage = pCompressAlign;
+			return kParseOptionReturnUnknownArgument;
+		}
+		m_nCompressAlign = nCompressAlign;
+	}
 	else if (strcmp(a_pName, "compress-type") == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
@@ -1269,6 +1287,7 @@ bool C3DSTool::createFile()
 			CBanner banner;
 			banner.SetFileName(m_pFileName);
 			banner.SetVerbose(m_bVerbose);
+			banner.SetCompressAlign(m_nCompressAlign);
 			banner.SetBannerDirName(m_pBannerDirName);
 			banner.SetCompress(m_bCompress);
 			bResult = banner.CreateFile();
@@ -1400,7 +1419,7 @@ bool C3DSTool::compressFile()
 			break;
 		case C3DSTool::kCompressTypeLZ:
 		case C3DSTool::kCompressTypeLZEx:
-			uCompressedSize = CLZ77::GetCompressBoundSize(uUncompressedSize);
+			uCompressedSize = CLZ77::GetCompressBoundSize(uUncompressedSize, m_nCompressAlign);
 			break;
 		}
 		u8* pCompressed = new u8[uCompressedSize];
@@ -1410,10 +1429,10 @@ bool C3DSTool::compressFile()
 			bReuslt = CBackwardLZ77::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize);
 			break;
 		case C3DSTool::kCompressTypeLZ:
-			bReuslt = CLZ77::CompressLZ(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize);
+			bReuslt = CLZ77::CompressLZ(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
 			break;
 		case C3DSTool::kCompressTypeLZEx:
-			bReuslt = CLZ77::CompressLZEx(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize);
+			bReuslt = CLZ77::CompressLZEx(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
 			break;
 		}
 		if (bReuslt)

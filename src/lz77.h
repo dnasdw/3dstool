@@ -7,10 +7,10 @@ class CLZ77
 {
 public:
 	static bool GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, u32& a_uUncompressedSize);
-	static u32 GetCompressBoundSize(u32 a_uCompressedSize);
+	static u32 GetCompressBoundSize(u32 a_uCompressedSize, n32 a_nCompressAlign);
 	static bool Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUncompressed, u32& a_uUncompressedSize);
-	static bool CompressLZ(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize);
-	static bool CompressLZEx(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize);
+	static bool CompressLZ(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign);
+	static bool CompressLZEx(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign);
 private:
 	typedef n8 s8;
 	typedef n16 s16;
@@ -28,7 +28,7 @@ private:
 	};
 	static const int LZ_COMPRESS_WORK_SIZE = (4096 + 256 + 256) * sizeof(s16);
 	CLZ77();
-	static bool compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, bool a_bExFormat);
+	static bool compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign, bool a_bExFormat);
 	static void LZInitTable(LZCompressInfo * info, void *work);
 	static u32 SearchLZ(LZCompressInfo * info, const u8 *nextp, u32 remainSize, u16 *offset, u32 maxLength);
 	static void SlideByte(LZCompressInfo * info, const u8 *srcp);

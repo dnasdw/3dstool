@@ -25,9 +25,9 @@ bool CLZ77::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, 
 	return bResult;
 }
 
-u32 CLZ77::GetCompressBoundSize(u32 a_uCompressedSize)
+u32 CLZ77::GetCompressBoundSize(u32 a_uCompressedSize, n32 a_nCompressAlign)
 {
-	return ((a_uCompressedSize + 7) / 8 * 9 + 3) / 4 * 4;
+	return ((a_uCompressedSize + 7) / 8 * 9 + a_nCompressAlign - 1) / a_nCompressAlign * a_nCompressAlign;
 }
 
 bool CLZ77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUncompressed, u32& a_uUncompressedSize)
@@ -162,21 +162,21 @@ bool CLZ77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUn
 	return bResult;
 }
 
-bool CLZ77::CompressLZ(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize)
+bool CLZ77::CompressLZ(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign)
 {
-	return compress(a_pUncompressed, a_uUncompressedSize, a_pCompressed, a_uCompressedSize, false);
+	return compress(a_pUncompressed, a_uUncompressedSize, a_pCompressed, a_uCompressedSize, a_nCompressAlign, false);
 }
 
-bool CLZ77::CompressLZEx(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize)
+bool CLZ77::CompressLZEx(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign)
 {
-	return compress(a_pUncompressed, a_uUncompressedSize, a_pCompressed, a_uCompressedSize, true);
+	return compress(a_pUncompressed, a_uUncompressedSize, a_pCompressed, a_uCompressedSize, a_nCompressAlign, true);
 }
 
 CLZ77::CLZ77()
 {
 }
 
-bool CLZ77::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, bool a_bExFormat)
+bool CLZ77::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign, bool a_bExFormat)
 {
 	bool bResult = true;
 	const u8* pUncompressed = a_pUncompressed;
@@ -314,6 +314,20 @@ bool CLZ77::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_p
 				break;
 			}
 			*LZCompFlagsp = LZCompFlags;   // Store flag series
+		}
+		if (!bResult)
+		{
+			break;
+		}
+		while (LZDstCount % a_nCompressAlign != 0)
+		{
+			if (LZDstCount + 1 > dstMax)
+			{
+				bResult = false;
+				break;
+			}
+			*a_pCompressed++ = 0;
+			LZDstCount++;
 		}
 		if (!bResult)
 		{

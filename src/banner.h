@@ -21,6 +21,7 @@ public:
 	~CBanner();
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
+	void SetCompressAlign(n32 a_nCompressAlign);
 	void SetBannerDirName(const char* a_pBannerDirName);
 	void SetUncompress(bool a_bUncompress);
 	void SetCompress(bool a_bCompress);
@@ -41,6 +42,7 @@ private:
 	bool createBcwav();
 	const char* m_pFileName;
 	bool m_bVerbose;
+	n32 m_nCompressAlign;
 	const char* m_pBannerDirName;
 	bool m_bUncompress;
 	bool m_bCompress;

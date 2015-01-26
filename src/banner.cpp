@@ -10,6 +10,7 @@ const char* CBanner::s_pBcwavFileName = "banner.bcwav";
 CBanner::CBanner()
 	: m_pFileName(nullptr)
 	, m_bVerbose(false)
+	, m_nCompressAlign(1)
 	, m_pBannerDirName(nullptr)
 	, m_bUncompress(false)
 	, m_bCompress(false)
@@ -30,6 +31,11 @@ void CBanner::SetFileName(const char* a_pFileName)
 void CBanner::SetVerbose(bool a_bVerbose)
 {
 	m_bVerbose = a_bVerbose;
+}
+
+void CBanner::SetCompressAlign(n32 a_nCompressAlign)
+{
+	m_nCompressAlign = a_nCompressAlign;
 }
 
 void CBanner::SetBannerDirName(const char* a_pBannerDirName)
@@ -266,9 +272,9 @@ bool CBanner::createCbmdBody()
 		bool bCompressResult = false;
 		if (m_bCompress)
 		{
-			u32 uCompressedSize = CLZ77::GetCompressBoundSize(uFileSize);
+			u32 uCompressedSize = CLZ77::GetCompressBoundSize(uFileSize, m_nCompressAlign);
 			u8* pCompressed = new u8[uCompressedSize];
-			bCompressResult = CLZ77::CompressLZEx(pData, uFileSize, pCompressed, uCompressedSize);
+			bCompressResult = CLZ77::CompressLZEx(pData, uFileSize, pCompressed, uCompressedSize, m_nCompressAlign);
 			if (bCompressResult)
 			{
 				fwrite(pCompressed, 1, uCompressedSize, m_fpBanner);
