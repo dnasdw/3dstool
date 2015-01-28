@@ -24,6 +24,8 @@ public:
 		kActionCompress,
 		kActionTrim,
 		kActionPad,
+		kActionDiff,
+		kActionPatch,
 		kActionSample,
 		kActionHelp
 	};
@@ -34,7 +36,15 @@ public:
 		kFileTypeCxi,
 		kFileTypeCfa,
 		kFileTypeExefs,
-		kFileTypeRomfs
+		kFileTypeRomfs,
+		kFileTypeBanner,
+	};
+	enum ECompressType
+	{
+		kCompressTypeNone,
+		kCompressTypeBLZ,
+		kCompressTypeLZ,
+		kCompressTypeLZEx
 	};
 	struct SOption
 	{
@@ -60,6 +70,8 @@ private:
 	bool compressFile();
 	bool trimFile();
 	bool padFile();
+	bool diffFile();
+	bool patchFile();
 	int sample();
 	EAction m_eAction;
 	EFileType m_eFileType;
@@ -70,7 +82,12 @@ private:
 	u8 m_uKey[16];
 	string m_sCounter;
 	const char* m_pXorFileName;
+	n32 m_nCompressAlign;
+	ECompressType m_eCompressType;
 	const char* m_pCompressOutFileName;
+	const char* m_pOldFileName;
+	const char* m_pNewFileName;
+	const char* m_pPatchFileName;
 	const char* m_pNcchFileName[8];
 	int m_nLastPartitionIndex;
 	bool m_bNotUpdateExtendedHeaderHash;
@@ -88,6 +105,7 @@ private:
 	const char* m_pRomFsXorFileName;
 	const char* m_pExeFsDirName;
 	const char* m_pRomFsDirName;
+	const char* m_pBannerDirName;
 	bool m_bUncompress;
 	bool m_bCompress;
 	const char* m_pMessage;

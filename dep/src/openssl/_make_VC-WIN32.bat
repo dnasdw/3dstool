@@ -21,10 +21,12 @@ XCOPY "%rootdir%..\%openssl_version%" "%rootdir%%openssl_version%" /S /Y
 CD /D "%rootdir%%openssl_version%"
 perl Configure VC-WIN32 no-asm --prefix="%prefix%" --openssldir="%openssldir%"
 CALL ms\do_ms.bat
-nmake -f ms\ntdll.mak
-nmake -f ms\ntdll.mak install
+nmake -f ms\nt.mak
+nmake -f ms\nt.mak install
 RD /S /Q "%rootdir%..\..\include\%target%\openssl"
+MD "%rootdir%..\..\include\%target%"
 XCOPY "%prefix%\include" "%rootdir%..\..\include\%target%" /S /Y
+MD "%rootdir%..\..\lib\%target%"
 COPY /Y "%prefix%\lib\libeay32.lib" "%rootdir%..\..\lib\%target%"
 CD /D "%rootdir%"
 RD /S /Q "%rootdir%%openssl_version%"

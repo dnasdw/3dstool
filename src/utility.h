@@ -32,6 +32,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <algorithm>
+#include <bitset>
+#include <list>
 #include <map>
 #include <regex>
 #include <stack>
@@ -208,7 +210,7 @@ u16string FSWToU16(const wstring& a_sString);
 #define FSU16ToUnicode(x) FSU16ToW(x)
 #define FSUnicodeToU16(x) FSWToU16(x)
 #else
-#define FSAToUnicode(x) (x)
+#define FSAToUnicode(x) string(x)
 #define FSU16ToUnicode(x) FSU16ToU8(x)
 #define FSUnicodeToU16(x) FSU8ToU16(x)
 #endif

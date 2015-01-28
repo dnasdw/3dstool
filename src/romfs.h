@@ -118,6 +118,7 @@ public:
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
 	void SetRomFsDirName(const char* a_pRomFsDirName);
+	void SetRomFsFileName(const char* a_pRomFsFileName);
 	bool ExtractFile();
 	bool CreateFile();
 	static bool IsRomFsFile(const char* a_pFileName);
@@ -149,6 +150,10 @@ private:
 	void redirectOffset();
 	void redirectOffset(n32& a_nOffset, bool a_bIsDir);
 	void createMetaInfo();
+	void remap();
+	bool travelFile();
+	void travelDirEntry();
+	void travelFileEntry();
 	void createHeader();
 	void initLevelBuffer();
 	bool updateLevelBuffer();
@@ -158,6 +163,7 @@ private:
 	const char* m_pFileName;
 	bool m_bVerbose;
 	String m_sRomFsDirName;
+	const char* m_pRomFsFileName;
 	FILE* m_fpRomFs;
 	SRomFsHeader m_RomFsHeader;
 	n64 m_nLevel3Offset;
@@ -169,6 +175,8 @@ private:
 	stack<SCreateStackElement> m_sCreateStack;
 	vector<n32> m_vDirBucket;
 	vector<n32> m_vFileBucket;
+	unordered_map<String, SCommonFileEntry> m_mTravelInfo;
+	bool m_bRemapped;
 	SLevelBuffer m_LevelBuffer[4];
 };
 

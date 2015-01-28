@@ -8,7 +8,8 @@ const u32 CNcch::s_uSignature = CONVERT_ENDIAN('NCCH');
 const int CNcch::s_nBlockSize = 0x1000;
 
 CNcch::CNcch()
-	: m_pFileName(nullptr)
+	: m_eFileType(C3DSTool::kFileTypeUnknown)
+	, m_pFileName(nullptr)
 	, m_bVerbose(false)
 	, m_pHeaderFileName(nullptr)
 	, m_nEncryptMode(kEncryptModeNone)
@@ -25,27 +26,24 @@ CNcch::CNcch()
 	, m_pExeFsTopXorFileName(nullptr)
 	, m_pRomFsXorFileName(nullptr)
 	, m_fpNcch(nullptr)
+	, m_nOffset(0)
 	, m_nMediaUnitSize(1 << 9)
-	, m_nExtendedHeaderOffset(0)
-	, m_nExtendedHeaderSize(0)
-	, m_nLogoRegionOffset(0)
-	, m_nLogoRegionSize(0)
-	, m_nPlainRegionOffset(0)
-	, m_nPlainRegionSize(0)
-	, m_nExeFsOffset(0)
-	, m_nExeFsSize(0)
-	, m_nRomFsOffset(0)
-	, m_nRomFsSize(0)
 	, m_bAlignToBlockSize(false)
 	, m_pXorFileName(nullptr)
 {
 	memset(m_uKey, 0, sizeof(m_uKey));
 	memset(&m_NcchHeader, 0, sizeof(m_NcchHeader));
+	memset(m_nOffsetAndSize, 0, sizeof(m_nOffsetAndSize));
 	memset(m_uAesCtr, 0, sizeof(m_uAesCtr));
 }
 
 CNcch::~CNcch()
 {
+}
+
+void CNcch::SetFileType(C3DSTool::EFileType a_eFileType)
+{
+	m_eFileType = a_eFileType;
 }
 
 void CNcch::SetFileName(const char* a_pFileName)
@@ -133,6 +131,26 @@ void CNcch::SetRomFsXorFileName(const char* a_pRomFsXorFileName)
 	m_pRomFsXorFileName = a_pRomFsXorFileName;
 }
 
+void CNcch::SetFilePtr(FILE* a_fpNcch)
+{
+	m_fpNcch = a_fpNcch;
+}
+
+void CNcch::SetOffset(n64 a_nOffset)
+{
+	m_nOffset = a_nOffset;
+}
+
+SNcchHeader& CNcch::GetNcchHeader()
+{
+	return m_NcchHeader;
+}
+
+n64* CNcch::GetOffsetAndSize()
+{
+	return m_nOffsetAndSize;
+}
+
 bool CNcch::ExtractFile()
 {
 	bool bResult = true;
@@ -150,26 +168,26 @@ bool CNcch::ExtractFile()
 	}
 	getAesCounter(&m_NcchHeader.Ncch, kAesCtrTypeExtendedHeader, m_nMediaUnitSize, m_uAesCtr);
 	m_pXorFileName = m_pExtendedHeaderXorFileName;
-	if (!extractFile(m_pExtendedHeaderFileName, m_nExtendedHeaderOffset, m_nExtendedHeaderSize, false, "extendedheader"))
+	if (!extractFile(m_pExtendedHeaderFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], false, "extendedheader"))
 	{
 		bResult = false;
 	}
-	if (!extractFile(m_pLogoRegionFileName, m_nLogoRegionOffset, m_nLogoRegionSize, true, "logoregion"))
+	if (!extractFile(m_pLogoRegionFileName, m_nOffsetAndSize[kOffsetSizeIndexLogoRegion * 2], m_nOffsetAndSize[kOffsetSizeIndexLogoRegion * 2 + 1], true, "logoregion"))
 	{
 		bResult = false;
 	}
-	if (!extractFile(m_pPlainRegionFileName, m_nPlainRegionOffset, m_nPlainRegionSize, true, "plainregion"))
+	if (!extractFile(m_pPlainRegionFileName, m_nOffsetAndSize[kOffsetSizeIndexPlainRegion * 2], m_nOffsetAndSize[kOffsetSizeIndexPlainRegion * 2 + 1], true, "plainregion"))
 	{
 		bResult = false;
 	}
-	if (m_pExeFsXorFileName != nullptr && m_pExeFsTopXorFileName != nullptr && m_nExeFsSize != 0)
+	if (m_pExeFsXorFileName != nullptr && m_pExeFsTopXorFileName != nullptr && m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] != 0)
 	{
-		FFseek(m_fpNcch, m_nExeFsOffset, SEEK_SET);
+		FFseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
 		ExeFsSuperBlock exeFsSuperBlock;
 		fread(&exeFsSuperBlock, sizeof(exeFsSuperBlock), 1, m_fpNcch);
-		FFseek(m_fpNcch, m_nExeFsOffset, SEEK_SET);
-		u8* pExeFs = new u8[static_cast<size_t>(m_nExeFsSize)];
-		fread(pExeFs, 1, static_cast<size_t>(m_nExeFsSize), m_fpNcch);
+		FFseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
+		u8* pExeFs = new u8[static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1])];
+		fread(pExeFs, 1, static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1]), m_fpNcch);
 		bool bEncryptResult = true;
 		if (!CExeFs::IsExeFsSuperBlock(exeFsSuperBlock))
 		{
@@ -188,7 +206,7 @@ bool CNcch::ExtractFile()
 				bEncryptResult = false;
 			}
 			nXorOffset += exeFsSuperBlock.m_Header[0].size;
-			if (!FEncryptXorData(pExeFs + nXorOffset, m_pExeFsXorFileName, m_nExeFsSize - nXorOffset, nXorOffset, m_bVerbose))
+			if (!FEncryptXorData(pExeFs + nXorOffset, m_pExeFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] - nXorOffset, nXorOffset, m_bVerbose))
 			{
 				bEncryptResult = false;
 			}
@@ -206,7 +224,7 @@ bool CNcch::ExtractFile()
 				{
 					printf("save: %s\n", m_pExeFsFileName);
 				}
-				fwrite(pExeFs, 1, static_cast<size_t>(m_nExeFsSize), fp);
+				fwrite(pExeFs, 1, static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1]), fp);
 				fclose(fp);
 			}
 			delete[] pExeFs;
@@ -215,21 +233,21 @@ bool CNcch::ExtractFile()
 		{
 			delete[] pExeFs;
 			bResult = false;
-			extractFile(m_pExeFsFileName, m_nExeFsOffset, m_nExeFsSize, true, "exefs");
+			extractFile(m_pExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], true, "exefs");
 		}
 	}
 	else
 	{
 		getAesCounter(&m_NcchHeader.Ncch, kAesCtrTypeExeFs, m_nMediaUnitSize, m_uAesCtr);
 		m_pXorFileName = m_pExeFsXorFileName;
-		if (!extractFile(m_pExeFsFileName, m_nExeFsOffset, m_nExeFsSize, false, "exefs"))
+		if (!extractFile(m_pExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], false, "exefs"))
 		{
 			bResult = false;
 		}
 	}
 	getAesCounter(&m_NcchHeader.Ncch, kAesCtrTypeRomFs, m_nMediaUnitSize, m_uAesCtr);
 	m_pXorFileName = m_pRomFsXorFileName;
-	if (!extractFile(m_pRomFsFileName, m_nRomFsOffset, m_nRomFsSize, false, "romfs"))
+	if (!extractFile(m_pRomFsFileName, m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], false, "romfs"))
 	{
 		bResult = false;
 	}
@@ -298,35 +316,35 @@ bool CNcch::EncryptFile()
 	if (m_nEncryptMode == kEncryptModeAesCtr)
 	{
 		getAesCounter(&m_NcchHeader.Ncch, kAesCtrTypeExtendedHeader, m_nMediaUnitSize, m_uAesCtr);
-		if (!encryptAesCtrFile(m_nExtendedHeaderOffset, m_nExtendedHeaderSize, "extendedheader"))
+		if (!encryptAesCtrFile(m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], "extendedheader"))
 		{
 			bResult = false;
 		}
 		getAesCounter(&m_NcchHeader.Ncch, kAesCtrTypeExeFs, m_nMediaUnitSize, m_uAesCtr);
-		if (!encryptAesCtrFile(m_nExeFsOffset, m_nExeFsSize, "exefs"))
+		if (!encryptAesCtrFile(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], "exefs"))
 		{
 			bResult = false;
 		}
 		getAesCounter(&m_NcchHeader.Ncch, kAesCtrTypeRomFs, m_nMediaUnitSize, m_uAesCtr);
-		if (!encryptAesCtrFile(m_nRomFsOffset, m_nRomFsSize, "romfs"))
+		if (!encryptAesCtrFile(m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], "romfs"))
 		{
 			bResult = false;
 		}
 	}
 	else if (m_nEncryptMode == kEncryptModeXor)
 	{
-		if (!encryptXorFile(m_pExtendedHeaderXorFileName, m_nExtendedHeaderOffset, m_nExtendedHeaderSize, 0, "extendedheader"))
+		if (!encryptXorFile(m_pExtendedHeaderXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], 0, "extendedheader"))
 		{
 			bResult = false;
 		}
 		if (m_pExeFsTopXorFileName == nullptr)
 		{
-			if (!encryptXorFile(m_pExeFsXorFileName, m_nExeFsOffset, m_nExeFsSize, 0, "exefs"))
+			if (!encryptXorFile(m_pExeFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], 0, "exefs"))
 			{
 				bResult = false;
 			}
 		}
-		else if (m_nExeFsSize != 0)
+		else if (m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] != 0)
 		{
 			m_fpNcch = FFopen(m_pFileName, "rb");
 			if (m_fpNcch == nullptr)
@@ -335,7 +353,7 @@ bool CNcch::EncryptFile()
 			}
 			else
 			{
-				FFseek(m_fpNcch, m_nExeFsOffset, SEEK_SET);
+				FFseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
 				ExeFsSuperBlock exeFsSuperBlock;
 				fread(&exeFsSuperBlock, sizeof(exeFsSuperBlock), 1, m_fpNcch);
 				fclose(m_fpNcch);
@@ -351,29 +369,64 @@ bool CNcch::EncryptFile()
 				else
 				{
 					n64 nXorOffset = 0;
-					if (!encryptXorFile(m_pExeFsXorFileName, m_nExeFsOffset + nXorOffset, sizeof(exeFsSuperBlock), nXorOffset, "exefs super block"))
+					if (!encryptXorFile(m_pExeFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2] + nXorOffset, sizeof(exeFsSuperBlock), nXorOffset, "exefs super block"))
 					{
 						bResult = false;
 					}
 					nXorOffset += sizeof(exeFsSuperBlock);
-					if (!encryptXorFile(m_pExeFsTopXorFileName, m_nExeFsOffset + nXorOffset, exeFsSuperBlock.m_Header[0].size, nXorOffset, "exefs top section"))
+					if (!encryptXorFile(m_pExeFsTopXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2] + nXorOffset, exeFsSuperBlock.m_Header[0].size, nXorOffset, "exefs top section"))
 					{
 						bResult = false;
 					}
 					nXorOffset += exeFsSuperBlock.m_Header[0].size;
-					if (!encryptXorFile(m_pExeFsXorFileName, m_nExeFsOffset + nXorOffset, m_nExeFsSize - nXorOffset, nXorOffset, "exefs other section"))
+					if (!encryptXorFile(m_pExeFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2] + nXorOffset, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] - nXorOffset, nXorOffset, "exefs other section"))
 					{
 						bResult = false;
 					}
 				}
 			}
 		}
-		if (!encryptXorFile(m_pRomFsXorFileName, m_nRomFsOffset, m_nRomFsSize, 0, "romfs"))
+		if (!encryptXorFile(m_pRomFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], 0, "romfs"))
 		{
 			bResult = false;
 		}
 	}
 	return true;
+}
+
+void CNcch::Analyze()
+{
+	if (m_fpNcch != nullptr)
+	{
+		n64 nFilePos = FFtell(m_fpNcch);
+		FFseek(m_fpNcch, m_nOffset, SEEK_SET);
+		fread(&m_NcchHeader, sizeof(m_NcchHeader), 1, m_fpNcch);
+		calculateMediaUnitSize();
+		calculateOffsetSize();
+		if (m_eFileType == C3DSTool::kFileTypeCfa)
+		{
+			for (int i = kOffsetSizeIndexExtendedHeader; i < kOffsetSizeIndexRomFs; i++)
+			{
+				m_nOffsetAndSize[i * 2] = 0;
+				m_nOffsetAndSize[i * 2 + 1] = 0;
+			}
+		}
+		for (int i = kOffsetSizeIndexRomFs - 1; i >= kOffsetSizeIndexExtendedHeader; i--)
+		{
+			if (m_nOffsetAndSize[i * 2] == 0 && m_nOffsetAndSize[i * 2 + 1] == 0)
+			{
+				m_nOffsetAndSize[i * 2] = m_nOffsetAndSize[(i + 1) * 2];
+			}
+		}
+		for (int i = kOffsetSizeIndexExtendedHeader + 1; i < kOffsetSizeIndexCount; i++)
+		{
+			if (m_nOffsetAndSize[i * 2] == 0 && m_nOffsetAndSize[i * 2 + 1] == 0)
+			{
+				m_nOffsetAndSize[i * 2] = m_nOffsetAndSize[(i - 1) * 2] + m_nOffsetAndSize[(i - 1) * 2 + 1];
+			}
+		}
+		FFseek(m_fpNcch, nFilePos, SEEK_SET);
+	}
 }
 
 bool CNcch::IsCxiFile(const char* a_pFileName)
@@ -434,16 +487,16 @@ void CNcch::calculateMediaUnitSize()
 
 void CNcch::calculateOffsetSize()
 {
-	m_nExtendedHeaderOffset = sizeof(m_NcchHeader);
-	m_nExtendedHeaderSize = m_NcchHeader.Ncch.ExtendedHeaderSize == sizeof(NcchExtendedHeader) ? sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended) : 0;
-	m_nLogoRegionOffset = m_NcchHeader.Ncch.LogoRegionOffset * m_nMediaUnitSize;
-	m_nLogoRegionSize = m_NcchHeader.Ncch.LogoRegionSize * m_nMediaUnitSize;
-	m_nPlainRegionOffset = m_NcchHeader.Ncch.PlainRegionOffset * m_nMediaUnitSize;
-	m_nPlainRegionSize = m_NcchHeader.Ncch.PlainRegionSize * m_nMediaUnitSize;
-	m_nExeFsOffset = m_NcchHeader.Ncch.ExeFsOffset * m_nMediaUnitSize;
-	m_nExeFsSize = m_NcchHeader.Ncch.ExeFsSize * m_nMediaUnitSize;
-	m_nRomFsOffset = m_NcchHeader.Ncch.RomFsOffset * m_nMediaUnitSize;
-	m_nRomFsSize = m_NcchHeader.Ncch.RomFsSize * m_nMediaUnitSize;
+	m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2] = sizeof(m_NcchHeader);
+	m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1] = m_NcchHeader.Ncch.ExtendedHeaderSize == sizeof(NcchExtendedHeader) ? sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended) : 0;
+	m_nOffsetAndSize[kOffsetSizeIndexLogoRegion * 2] = m_NcchHeader.Ncch.LogoRegionOffset * m_nMediaUnitSize;
+	m_nOffsetAndSize[kOffsetSizeIndexLogoRegion * 2 + 1] = m_NcchHeader.Ncch.LogoRegionSize * m_nMediaUnitSize;
+	m_nOffsetAndSize[kOffsetSizeIndexPlainRegion * 2] = m_NcchHeader.Ncch.PlainRegionOffset * m_nMediaUnitSize;
+	m_nOffsetAndSize[kOffsetSizeIndexPlainRegion * 2 + 1] = m_NcchHeader.Ncch.PlainRegionSize * m_nMediaUnitSize;
+	m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2] = m_NcchHeader.Ncch.ExeFsOffset * m_nMediaUnitSize;
+	m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] = m_NcchHeader.Ncch.ExeFsSize * m_nMediaUnitSize;
+	m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2] = m_NcchHeader.Ncch.RomFsOffset * m_nMediaUnitSize;
+	m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1] = m_NcchHeader.Ncch.RomFsSize * m_nMediaUnitSize;
 }
 
 void CNcch::calculateAlignment()
