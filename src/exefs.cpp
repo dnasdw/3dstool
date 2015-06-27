@@ -199,11 +199,11 @@ bool CExeFs::extractSection(int a_nIndex)
 				u8* pCompressed = new u8[uCompressedSize];
 				fread(pCompressed, 1, uCompressedSize, m_fpExeFs);
 				u32 uUncompressedSize = 0;
-				bResult = CBackwardLZ77::GetUncompressedSize(pCompressed, uCompressedSize, uUncompressedSize);
+				bResult = CBackwardLz77::GetUncompressedSize(pCompressed, uCompressedSize, uUncompressedSize);
 				if (bResult)
 				{
 					u8* pUncompressed = new u8[uUncompressedSize];
-					bResult = CBackwardLZ77::Uncompress(pCompressed, uCompressedSize, pUncompressed, uUncompressedSize);
+					bResult = CBackwardLz77::Uncompress(pCompressed, uCompressedSize, pUncompressed, uUncompressedSize);
 					if (bResult)
 					{
 						fwrite(pUncompressed, 1, uUncompressedSize, fp);
@@ -307,7 +307,7 @@ bool CExeFs::createSection(int a_nIndex)
 			{
 				u32 uCompressedSize = uFileSize;
 				u8* pCompressed = new u8[uCompressedSize];
-				bCompressResult = CBackwardLZ77::Compress(pData, uFileSize, pCompressed, uCompressedSize);
+				bCompressResult = CBackwardLz77::Compress(pData, uFileSize, pCompressed, uCompressedSize);
 				if (bCompressResult)
 				{
 					SHA256(pCompressed, uCompressedSize, m_ExeFsSuperBlock.m_Hash[7 - a_nIndex]);

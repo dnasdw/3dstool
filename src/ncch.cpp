@@ -8,7 +8,7 @@ const u32 CNcch::s_uSignature = CONVERT_ENDIAN('NCCH');
 const int CNcch::s_nBlockSize = 0x1000;
 
 CNcch::CNcch()
-	: m_eFileType(C3DSTool::kFileTypeUnknown)
+	: m_eFileType(C3dsTool::kFileTypeUnknown)
 	, m_pFileName(nullptr)
 	, m_bVerbose(false)
 	, m_pHeaderFileName(nullptr)
@@ -41,7 +41,7 @@ CNcch::~CNcch()
 {
 }
 
-void CNcch::SetFileType(C3DSTool::EFileType a_eFileType)
+void CNcch::SetFileType(C3dsTool::EFileType a_eFileType)
 {
 	m_eFileType = a_eFileType;
 }
@@ -403,7 +403,7 @@ void CNcch::Analyze()
 		fread(&m_NcchHeader, sizeof(m_NcchHeader), 1, m_fpNcch);
 		calculateMediaUnitSize();
 		calculateOffsetSize();
-		if (m_eFileType == C3DSTool::kFileTypeCfa)
+		if (m_eFileType == C3dsTool::kFileTypeCfa)
 		{
 			for (int i = kOffsetSizeIndexExtendedHeader; i < kOffsetSizeIndexRomFs; i++)
 			{

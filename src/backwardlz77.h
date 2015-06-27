@@ -11,14 +11,14 @@ struct CompFooter
 } GNUC_PACKED;
 #include MSC_POP_PACKED
 
-class CBackwardLZ77
+class CBackwardLz77
 {
 public:
 	static bool GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, u32& a_uUncompressedSize);
 	static bool Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUncompressed, u32& a_uUncompressedSize);
 	static bool Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize);
 private:
-	CBackwardLZ77();
+	CBackwardLz77();
 };
 
 #endif	// BACKWARDLZ77_H_

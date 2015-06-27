@@ -9,7 +9,7 @@ const u8 CPatch::s_uCurrentVersionMinor = 0;
 const u8 CPatch::s_uCurrentVersionPatchLevel = 0;
 
 CPatch::CPatch()
-	: m_eFileType(C3DSTool::kFileTypeUnknown)
+	: m_eFileType(C3dsTool::kFileTypeUnknown)
 	, m_pFileName(nullptr)
 	, m_bVerbose(false)
 	, m_pOldFileName(nullptr)
@@ -20,14 +20,14 @@ CPatch::CPatch()
 	, m_fpPatch(nullptr)
 	, m_uVersion(0)
 {
-	memset(&m_3DSPatchSystemHeader, 0, sizeof(m_3DSPatchSystemHeader));
+	memset(&m_3dsPatchSystemHeader, 0, sizeof(m_3dsPatchSystemHeader));
 }
 
 CPatch::~CPatch()
 {
 }
 
-void CPatch::SetFileType(C3DSTool::EFileType a_eFileType)
+void CPatch::SetFileType(C3dsTool::EFileType a_eFileType)
 {
 	m_eFileType = a_eFileType;
 }
@@ -83,33 +83,33 @@ bool CPatch::CreatePatchFile()
 		fclose(m_fpOld);
 		return false;
 	}
-	m_3DSPatchSystemHeader.Signature = s_uSignature;
-	m_3DSPatchSystemHeader.VersionMajor = s_uCurrentVersionMajor;
-	m_3DSPatchSystemHeader.VersionMinor = s_uCurrentVersionMinor;
-	m_3DSPatchSystemHeader.VersionPatchLevel = s_uCurrentVersionPatchLevel;
-	m_3DSPatchSystemHeader.Reserved = 0;
-	m_3DSPatchSystemHeader.ExtDataOffset = 0;
-	fwrite(&m_3DSPatchSystemHeader, sizeof(m_3DSPatchSystemHeader), 1, m_fpPatch);
+	m_3dsPatchSystemHeader.Signature = s_uSignature;
+	m_3dsPatchSystemHeader.VersionMajor = s_uCurrentVersionMajor;
+	m_3dsPatchSystemHeader.VersionMinor = s_uCurrentVersionMinor;
+	m_3dsPatchSystemHeader.VersionPatchLevel = s_uCurrentVersionPatchLevel;
+	m_3dsPatchSystemHeader.Reserved = 0;
+	m_3dsPatchSystemHeader.ExtDataOffset = 0;
+	fwrite(&m_3dsPatchSystemHeader, sizeof(m_3dsPatchSystemHeader), 1, m_fpPatch);
 	bool bResult = true;
 	if (m_bVerbose)
 	{
 		printf("INFO: create patch from %s and %s\n", m_pOldFileName, m_pNewFileName);
 	}
-	if (m_eFileType == C3DSTool::kFileTypeCci && CNcsd::IsNcsdFile(m_pOldFileName) && CNcsd::IsNcsdFile(m_pNewFileName))
+	if (m_eFileType == C3dsTool::kFileTypeCci && CNcsd::IsNcsdFile(m_pOldFileName) && CNcsd::IsNcsdFile(m_pNewFileName))
 	{
 		if (!createNcsdPatchFile())
 		{
 			bResult = false;
 		}
 	}
-	else if (m_eFileType == C3DSTool::kFileTypeCxi && CNcch::IsCxiFile(m_pOldFileName) && CNcch::IsCxiFile(m_pNewFileName))
+	else if (m_eFileType == C3dsTool::kFileTypeCxi && CNcch::IsCxiFile(m_pOldFileName) && CNcch::IsCxiFile(m_pNewFileName))
 	{
 		if (!createNcchPatchFile(m_eFileType, 0, 0, true))
 		{
 			bResult = false;
 		}
 	}
-	else if (m_eFileType == C3DSTool::kFileTypeCfa && CNcch::IsCfaFile(m_pOldFileName) && CNcch::IsCfaFile(m_pNewFileName))
+	else if (m_eFileType == C3dsTool::kFileTypeCfa && CNcch::IsCfaFile(m_pOldFileName) && CNcch::IsCfaFile(m_pNewFileName))
 	{
 		if (!createNcchPatchFile(m_eFileType, 0, 0, true))
 		{
@@ -130,11 +130,11 @@ bool CPatch::CreatePatchFile()
 		writeChangeSize(nFileSizeNew);
 	}
 	writeOver();
-	m_3DSPatchSystemHeader.ExtDataOffset = FFtell(m_fpPatch);
+	m_3dsPatchSystemHeader.ExtDataOffset = FFtell(m_fpPatch);
 	n64 nOffset = FFtell(m_fpPatch) + sizeof(n64);
 	fwrite(&nOffset, sizeof(nOffset), 1, m_fpPatch);
 	FFseek(m_fpPatch, 0, SEEK_SET);
-	fwrite(&m_3DSPatchSystemHeader, sizeof(m_3DSPatchSystemHeader), 1, m_fpPatch);
+	fwrite(&m_3dsPatchSystemHeader, sizeof(m_3dsPatchSystemHeader), 1, m_fpPatch);
 	fclose(m_fpPatch);
 	return bResult;
 }
@@ -152,8 +152,8 @@ bool CPatch::ApplyPatchFile()
 		fclose(m_fpOld);
 		return false;
 	}
-	fread(&m_3DSPatchSystemHeader, sizeof(m_3DSPatchSystemHeader), 1, m_fpPatch);
-	if (m_3DSPatchSystemHeader.Signature != s_uSignature)
+	fread(&m_3dsPatchSystemHeader, sizeof(m_3dsPatchSystemHeader), 1, m_fpPatch);
+	if (m_3dsPatchSystemHeader.Signature != s_uSignature)
 	{
 		printf("ERROR: not support patch file %s\n\n", m_pPatchFileName);
 		fclose(m_fpPatch);
@@ -163,7 +163,7 @@ bool CPatch::ApplyPatchFile()
 	calculateVersion();
 	if (m_uVersion > 0x010000)
 	{
-		printf("ERROR: not support patch file version %u.%u.%u\n\n", m_3DSPatchSystemHeader.VersionMajor, m_3DSPatchSystemHeader.VersionMinor, m_3DSPatchSystemHeader.VersionPatchLevel);
+		printf("ERROR: not support patch file version %u.%u.%u\n\n", m_3dsPatchSystemHeader.VersionMajor, m_3dsPatchSystemHeader.VersionMinor, m_3dsPatchSystemHeader.VersionPatchLevel);
 		fclose(m_fpPatch);
 		fclose(m_fpOld);
 		return false;
@@ -207,7 +207,7 @@ bool CPatch::ApplyPatchFile()
 		fclose(m_fpOld);
 		return bResult;
 	}
-	FFseek(m_fpPatch, sizeof(m_3DSPatchSystemHeader), SEEK_SET);
+	FFseek(m_fpPatch, sizeof(m_3dsPatchSystemHeader), SEEK_SET);
 	do
 	{
 		fread(&uPatchCommand, 1, 1, m_fpPatch);
@@ -296,7 +296,7 @@ bool CPatch::createNcsdPatchFile()
 		{
 			FFseek(m_fpNew, pOffsetAndSizeNew[i * 2], SEEK_SET);
 			CNcch ncch;
-			ncch.SetFileType(i == 0 ? C3DSTool::kFileTypeCxi : C3DSTool::kFileTypeCfa);
+			ncch.SetFileType(i == 0 ? C3dsTool::kFileTypeCxi : C3dsTool::kFileTypeCfa);
 			ncch.SetFilePtr(m_fpNew);
 			ncch.SetOffset(pOffsetAndSizeNew[i * 2]);
 			ncch.Analyze();
@@ -330,7 +330,7 @@ bool CPatch::createNcsdPatchFile()
 				}
 				if (nSizeNew != 0)
 				{
-					if (!createNcchPatchFile(i == 0 ? C3DSTool::kFileTypeCxi : C3DSTool::kFileTypeCfa, nOffsetOld, nOffsetNew, false))
+					if (!createNcchPatchFile(i == 0 ? C3dsTool::kFileTypeCxi : C3dsTool::kFileTypeCfa, nOffsetOld, nOffsetNew, false))
 					{
 						return false;
 					}
@@ -349,7 +349,7 @@ bool CPatch::createNcsdPatchFile()
 	return true;
 }
 
-bool CPatch::createNcchPatchFile(C3DSTool::EFileType a_eFileType, n64 a_nOffsetOld, n64 a_nOffsetNew, bool a_bCreateCheck)
+bool CPatch::createNcchPatchFile(C3dsTool::EFileType a_eFileType, n64 a_nOffsetOld, n64 a_nOffsetNew, bool a_bCreateCheck)
 {
 	static const char* pPartName[5] = { "extendedheader", "logoregion", "plainregion", "exefs", "romfs" };
 	CNcch ncchOld;
@@ -579,7 +579,7 @@ void CPatch::writePatch(u8 a_uPatchCommand, n64* a_pArg)
 
 void CPatch::calculateVersion()
 {
-	m_uVersion = m_3DSPatchSystemHeader.VersionMajor << 16 | m_3DSPatchSystemHeader.VersionMinor << 8 | m_3DSPatchSystemHeader.VersionPatchLevel;
+	m_uVersion = m_3dsPatchSystemHeader.VersionMajor << 16 | m_3dsPatchSystemHeader.VersionMinor << 8 | m_3dsPatchSystemHeader.VersionPatchLevel;
 }
 
 void CPatch::executeMove(n64 a_nFromOffset, n64 a_nToOffset, n64 a_nSize)

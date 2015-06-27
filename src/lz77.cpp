@@ -1,6 +1,6 @@
 #include "lz77.h"
 
-bool CLZ77::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, u32& a_uUncompressedSize)
+bool CLz77::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, u32& a_uUncompressedSize)
 {
 	bool bResult = true;
 	if (a_uCompressedSize >= 4 && (a_pCompressed[0] & 0xF0) == 0x10 && (a_pCompressed[0] & 0x0F) <= 1)
@@ -25,12 +25,12 @@ bool CLZ77::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, 
 	return bResult;
 }
 
-u32 CLZ77::GetCompressBoundSize(u32 a_uCompressedSize, n32 a_nCompressAlign)
+u32 CLz77::GetCompressBoundSize(u32 a_uUncompressedSize, n32 a_nCompressAlign)
 {
-	return ((a_uCompressedSize + 7) / 8 * 9 + a_nCompressAlign - 1) / a_nCompressAlign * a_nCompressAlign;
+	return ((a_uUncompressedSize <= 0xFFFFFF ? 4 : 8) + (a_uUncompressedSize + 7) / 8 * 9 + a_nCompressAlign - 1) / a_nCompressAlign * a_nCompressAlign;
 }
 
-bool CLZ77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUncompressed, u32& a_uUncompressedSize)
+bool CLz77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUncompressed, u32& a_uUncompressedSize)
 {
 	bool bResult = true;
 	if (a_uCompressedSize >= 4 && (a_pCompressed[0] & 0xF0) == 0x10 && (a_pCompressed[0] & 0x0F) <= 1)
@@ -162,21 +162,21 @@ bool CLZ77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUn
 	return bResult;
 }
 
-bool CLZ77::CompressLZ(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign)
+bool CLz77::CompressLz(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign)
 {
 	return compress(a_pUncompressed, a_uUncompressedSize, a_pCompressed, a_uCompressedSize, a_nCompressAlign, false);
 }
 
-bool CLZ77::CompressLZEx(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign)
+bool CLz77::CompressLzEx(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign)
 {
 	return compress(a_pUncompressed, a_uUncompressedSize, a_pCompressed, a_uCompressedSize, a_nCompressAlign, true);
 }
 
-CLZ77::CLZ77()
+CLz77::CLz77()
 {
 }
 
-bool CLZ77::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign, bool a_bExFormat)
+bool CLz77::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign, bool a_bExFormat)
 {
 	bool bResult = true;
 	const u8* pUncompressed = a_pUncompressed;
@@ -352,7 +352,7 @@ bool CLZ77::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_p
 //  Return:    TRUE if matching string is found
 //                FALSE if not found.
 //--------------------------------------------------------
-u32 CLZ77::SearchLZ(LZCompressInfo * info, const u8 *nextp, u32 remainSize, u16 *offset, u32 maxLength)
+u32 CLz77::SearchLZ(LZCompressInfo * info, const u8 *nextp, u32 remainSize, u16 *offset, u32 maxLength)
 {
 	const u8 *searchp;
 	const u8 *headp, *searchHeadp;
@@ -440,7 +440,7 @@ u32 CLZ77::SearchLZ(LZCompressInfo * info, const u8 *nextp, u32 remainSize, u16 
 //--------------------------------------------------------
 // Initialize the dictionary index
 //--------------------------------------------------------
-void CLZ77::LZInitTable(LZCompressInfo * info, void *work)
+void CLz77::LZInitTable(LZCompressInfo * info, void *work)
 {
 	u16     i;
 
@@ -460,7 +460,7 @@ void CLZ77::LZInitTable(LZCompressInfo * info, void *work)
 //--------------------------------------------------------
 // Slide the dictionary 1 byte
 //--------------------------------------------------------
-void CLZ77::SlideByte(LZCompressInfo * info, const u8 *srcp)
+void CLz77::SlideByte(LZCompressInfo * info, const u8 *srcp)
 {
 	s16     offset;
 	u8      in_data = *srcp;
@@ -511,7 +511,7 @@ void CLZ77::SlideByte(LZCompressInfo * info, const u8 *srcp)
 //--------------------------------------------------------
 // Slide the dictionary n bytes
 //--------------------------------------------------------
-inline void CLZ77::LZSlide(LZCompressInfo * info, const u8 *srcp, u32 n)
+inline void CLz77::LZSlide(LZCompressInfo * info, const u8 *srcp, u32 n)
 {
 	u32     i;
 

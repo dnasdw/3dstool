@@ -92,7 +92,7 @@ public:
 	};
 	CNcch();
 	~CNcch();
-	void SetFileType(C3DSTool::EFileType a_eFileType);
+	void SetFileType(C3dsTool::EFileType a_eFileType);
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
 	void SetHeaderFileName(const char* a_pHeaderFileName);
@@ -142,7 +142,7 @@ private:
 	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, const char* a_pType);
 	bool encryptXorFile(const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
 	static void getAesCounter(NcchCommonHeaderStruct* a_pNcch, EAesCtrType a_eAesCtrType, n64 a_nMediaUnitSize, u8 a_uAesCtr[16]);
-	C3DSTool::EFileType m_eFileType;
+	C3dsTool::EFileType m_eFileType;
 	const char* m_pFileName;
 	bool m_bVerbose;
 	const char* m_pHeaderFileName;

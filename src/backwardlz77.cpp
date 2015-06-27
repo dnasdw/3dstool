@@ -1,6 +1,6 @@
 #include "backwardlz77.h"
 
-bool CBackwardLZ77::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, u32& a_uUncompressedSize)
+bool CBackwardLz77::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, u32& a_uUncompressedSize)
 {
 	bool bResult = true;
 	if (a_uCompressedSize >= sizeof(CompFooter))
@@ -15,7 +15,7 @@ bool CBackwardLZ77::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompress
 	return bResult;
 }
 
-bool CBackwardLZ77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUncompressed, u32& a_uUncompressedSize)
+bool CBackwardLz77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUncompressed, u32& a_uUncompressedSize)
 {
 	bool bResult = true;
 	if (a_uCompressedSize >= sizeof(CompFooter))
@@ -88,7 +88,7 @@ bool CBackwardLZ77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u
 	return bResult;
 }
 
-bool CBackwardLZ77::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize)
+bool CBackwardLz77::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize)
 {
 	bool bResult = true;
 	if (a_uUncompressedSize > sizeof(CompFooter) && a_uCompressedSize >= a_uUncompressedSize)
@@ -230,6 +230,6 @@ bool CBackwardLZ77::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize,
 	return bResult;
 }
 
-CBackwardLZ77::CBackwardLZ77()
+CBackwardLz77::CBackwardLz77()
 {
 }

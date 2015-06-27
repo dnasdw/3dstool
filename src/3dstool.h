@@ -1,9 +1,9 @@
-#ifndef _3DS_TOOL_H_
-#define _3DS_TOOL_H_
+#ifndef _3DSTOOL_H_
+#define _3DSTOOL_H_
 
 #include "utility.h"
 
-class C3DSTool
+class C3dsTool
 {
 public:
 	enum EParseOptionReturn
@@ -42,9 +42,9 @@ public:
 	enum ECompressType
 	{
 		kCompressTypeNone,
-		kCompressTypeBLZ,
-		kCompressTypeLZ,
-		kCompressTypeLZEx
+		kCompressTypeBlz,
+		kCompressTypeLz,
+		kCompressTypeLzEx
 	};
 	struct SOption
 	{
@@ -52,8 +52,8 @@ public:
 		int Key;
 		const char* Doc;
 	};
-	C3DSTool();
-	~C3DSTool();
+	C3dsTool();
+	~C3dsTool();
 	int ParseOptions(int a_nArgc, char* a_pArgv[]);
 	int CheckOptions();
 	int Help();
@@ -111,4 +111,4 @@ private:
 	const char* m_pMessage;
 };
 
-#endif	// _3DS_TOOL_H_
+#endif	// _3DSTOOL_H_

@@ -166,11 +166,11 @@ bool CBanner::extractCbmdBody()
 			u8* pCompressed = new u8[uCompressedSize];
 			fread(pCompressed, 1, uCompressedSize, m_fpBanner);
 			u32 uUncompressedSize = 0;
-			bResult = CLZ77::GetUncompressedSize(pCompressed, uCompressedSize, uUncompressedSize);
+			bResult = CLz77::GetUncompressedSize(pCompressed, uCompressedSize, uUncompressedSize);
 			if (bResult)
 			{
 				u8* pUncompressed = new u8[uUncompressedSize];
-				bResult = CLZ77::Uncompress(pCompressed, uCompressedSize, pUncompressed, uUncompressedSize);
+				bResult = CLz77::Uncompress(pCompressed, uCompressedSize, pUncompressed, uUncompressedSize);
 				if (bResult)
 				{
 					fwrite(pUncompressed, 1, uUncompressedSize, fp);
@@ -272,9 +272,9 @@ bool CBanner::createCbmdBody()
 		bool bCompressResult = false;
 		if (m_bCompress)
 		{
-			u32 uCompressedSize = CLZ77::GetCompressBoundSize(uFileSize, m_nCompressAlign);
+			u32 uCompressedSize = CLz77::GetCompressBoundSize(uFileSize, m_nCompressAlign);
 			u8* pCompressed = new u8[uCompressedSize];
-			bCompressResult = CLZ77::CompressLZEx(pData, uFileSize, pCompressed, uCompressedSize, m_nCompressAlign);
+			bCompressResult = CLz77::CompressLzEx(pData, uFileSize, pCompressed, uCompressedSize, m_nCompressAlign);
 			if (bCompressResult)
 			{
 				fwrite(pCompressed, 1, uCompressedSize, m_fpBanner);

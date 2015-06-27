@@ -16,7 +16,7 @@ public:
 		kPatchCommandChangeSize,
 		kPatchCommandSeekWrite = 0x10
 	};
-	struct S3DSPatchSystemHeader
+	struct S3dsPatchSystemHeader
 	{
 		u32 Signature;
 		u8 VersionMajor;
@@ -27,7 +27,7 @@ public:
 	};
 	CPatch();
 	~CPatch();
-	void SetFileType(C3DSTool::EFileType a_eFileType);
+	void SetFileType(C3dsTool::EFileType a_eFileType);
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
 	void SetOldFileName(const char* a_pOldFileName);
@@ -41,7 +41,7 @@ public:
 	static const u8 s_uCurrentVersionPatchLevel;
 private:
 	bool createNcsdPatchFile();
-	bool createNcchPatchFile(C3DSTool::EFileType a_eFileType, n64 a_nOffsetOld, n64 a_nOffsetNew, bool a_bCreateCheck);
+	bool createNcchPatchFile(C3dsTool::EFileType a_eFileType, n64 a_nOffsetOld, n64 a_nOffsetNew, bool a_bCreateCheck);
 	bool createPatchFile(n64 a_nOffsetOld, n64 a_nSizeOld, n64 a_nOffsetNew, n64 a_nSizeNew);
 	void writeOver();
 	void writeCheck(n64 a_nOffset, n64 a_nSize, u8* a_pSHA256);
@@ -55,7 +55,7 @@ private:
 	void executeSet(n64 a_nStartOffset, n64 a_nSize, u8 a_uData);
 	void executeChangeSize(n64 a_nSize);
 	void executeSeekWrite(bool a_bSeekSet, n64 a_nOffset, size_t a_nSize, u8* a_pData);
-	C3DSTool::EFileType m_eFileType;
+	C3dsTool::EFileType m_eFileType;
 	const char* m_pFileName;
 	bool m_bVerbose;
 	const char* m_pOldFileName;
@@ -64,7 +64,7 @@ private:
 	FILE* m_fpOld;
 	FILE* m_fpNew;
 	FILE* m_fpPatch;
-	S3DSPatchSystemHeader m_3DSPatchSystemHeader;
+	S3dsPatchSystemHeader m_3dsPatchSystemHeader;
 	u32 m_uVersion;
 };
 
