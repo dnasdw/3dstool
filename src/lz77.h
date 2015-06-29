@@ -12,27 +12,21 @@ public:
 	static bool CompressLz(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign);
 	static bool CompressLzEx(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign);
 private:
-	typedef n8 s8;
-	typedef n16 s16;
-	typedef n32 s32;
-	typedef n64 s64;
-	// Temporary information for LZ high-speed encoding
-	struct LZCompressInfo
+	struct SCompressInfo
 	{
-		u16     windowPos;                 // Initial position of the history window
-		u16     windowLen;                 // Length of the history window
-
-		s16    *LZOffsetTable;             // Offset buffer of the history window
-		s16    *LZByteTable;               // Pointer to the most recent character history
-		s16    *LZEndTable;                // Pointer to the oldest character history
+		u16 WindowPos;
+		u16 WindowLen;
+		n16* OffsetTable;
+		n16* ByteTable;
+		n16* EndTable;
 	};
-	static const int LZ_COMPRESS_WORK_SIZE = (4096 + 256 + 256) * sizeof(s16);
+	static const int s_nCompressWorkSize = (4096 + 256 + 256) * sizeof(n16);
 	CLz77();
 	static bool compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign, bool a_bExFormat);
-	static void LZInitTable(LZCompressInfo * info, void *work);
-	static u32 SearchLZ(LZCompressInfo * info, const u8 *nextp, u32 remainSize, u16 *offset, u32 maxLength);
-	static void SlideByte(LZCompressInfo * info, const u8 *srcp);
-	static inline void LZSlide(LZCompressInfo * info, const u8 *srcp, u32 n);
+	static void initTable(SCompressInfo* a_pInfo, void* a_pWork);
+	static int search(SCompressInfo* a_pInfo, const u8* a_pSrc, int& a_nOffset, int a_nMaxSize);
+	static inline void slide(SCompressInfo* a_pInfo, const u8* a_pSrc, int a_nSize);
+	static void slideByte(SCompressInfo* a_pInfo, const u8* a_pSrc);
 };
 
 #endif	// LZ77_H_

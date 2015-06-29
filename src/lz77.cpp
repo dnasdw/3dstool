@@ -36,18 +36,18 @@ bool CLz77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUn
 	if (a_uCompressedSize >= 4 && (a_pCompressed[0] & 0xF0) == 0x10 && (a_pCompressed[0] & 0x0F) <= 1)
 	{
 		u32 uUncompressedSize = *reinterpret_cast<const u32*>(a_pCompressed) >> 8 & 0xFFFFFF;
-		u32 uHeaderSize = 4;
+		n32 nHeaderSize = 4;
 		if (uUncompressedSize != 0 || a_uCompressedSize >= 8)
 		{
 			if (uUncompressedSize == 0)
 			{
 				uUncompressedSize = *reinterpret_cast<const u32*>(a_pCompressed + 4);
-				uHeaderSize = 8;
+				nHeaderSize = 8;
 			}
 			if (a_uUncompressedSize >= uUncompressedSize)
 			{
 				a_uUncompressedSize = uUncompressedSize;
-				const u8* pSrc = a_pCompressed + uHeaderSize;
+				const u8* pSrc = a_pCompressed + nHeaderSize;
 				u8* pDest = a_pUncompressed;
 				bool bExFormat = (a_pCompressed[0] & 0x0F) != 0;
 				while (a_pUncompressed + a_uUncompressedSize - pDest > 0)
@@ -123,15 +123,15 @@ bool CLz77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUn
 								bResult = false;
 								break;
 							}
-							u8* pDest2 = pDest - nOffset;
-							if (pDest2 < a_pUncompressed)
+							u8* pData = pDest - nOffset;
+							if (pData < a_pUncompressed)
 							{
 								bResult = false;
 								break;
 							}
 							for (int j = 0; j < nSize; j++)
 							{
-								*pDest++ = *pDest2++;
+								*pDest++ = *pData++;
 							}
 						}
 						if (a_pUncompressed + a_uUncompressedSize - pDest <= 0)
@@ -179,27 +179,10 @@ CLz77::CLz77()
 bool CLz77::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign, bool a_bExFormat)
 {
 	bool bResult = true;
-	const u8* pUncompressed = a_pUncompressed;
-	u8* pAlignUncompressed = nullptr;
-	if (reinterpret_cast<u64>(pUncompressed) % 2 != 0)
-	{
-		pAlignUncompressed = new u8[a_uUncompressedSize + 1];
-		memcpy(pAlignUncompressed + reinterpret_cast<u64>(pAlignUncompressed) % 2, a_pUncompressed, a_uUncompressedSize);
-		pUncompressed = pAlignUncompressed + reinterpret_cast<u64>(pAlignUncompressed) % 2;
-	}
-	u8* pWork = new u8[LZ_COMPRESS_WORK_SIZE];
+	u8* pWork = new u8[s_nCompressWorkSize];
 	do
 	{
-		u32     LZDstCount;                // Number of bytes of compressed data
-		u8      LZCompFlags;               // Flag sequence indicating whether there is a compression
-		u8     *LZCompFlagsp;              // Point to memory regions storing LZCompFlags
-		u16     lastOffset;                // Offset to matching data (the longest matching data at the time) 
-		u32     lastLength;                // Length of matching data (the longest matching data at the time)
-		u8      i;
-		u32     dstMax;
-		LZCompressInfo info;               // Temporary LZ compression information
-		const u32 MAX_LENGTH = (a_bExFormat) ? (0xFFFF + 0xFF + 0xF + 3U) : (0xF + 3U);
-
+		n32 nHeaderSize = 4;
 		if (a_uUncompressedSize <= 0xFFFFFF)
 		{
 			if (a_uCompressedSize < 4)
@@ -207,316 +190,232 @@ bool CLz77::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_p
 				bResult = false;
 				break;
 			}
-			*reinterpret_cast<u32*>(a_pCompressed) = a_uUncompressedSize << 8 | 0x10 | (a_bExFormat ? 1 : 0);  // Data header
-			a_pCompressed += 4;
-			LZDstCount = 4;
+			*reinterpret_cast<u32*>(a_pCompressed) = a_uUncompressedSize << 8 | 0x10 | (a_bExFormat ? 1 : 0);
 		}
 		else
 		{
-			// Use extended header if the size is larger than 24 bits
 			if (a_uCompressedSize < 8)
 			{
 				bResult = false;
 				break;
 			}
-			*reinterpret_cast<u32*>(a_pCompressed) = 0x10 | (a_bExFormat ? 1 : 0);  // Data header
-			a_pCompressed += 4;
-			*reinterpret_cast<u32*>(a_pCompressed) = a_uUncompressedSize; // Size extended header
-			a_pCompressed += 4;
-			LZDstCount = 8;
+			*reinterpret_cast<u32*>(a_pCompressed) = 0x10 | (a_bExFormat ? 1 : 0);
+			*reinterpret_cast<u32*>(a_pCompressed + 4) = a_uUncompressedSize;
+			nHeaderSize = 8;
 		}
-		dstMax = a_uCompressedSize;
-		LZInitTable(&info, pWork);
-
-		while (a_uUncompressedSize > 0)
+		SCompressInfo info;
+		initTable(&info, pWork);
+		const int kMaxSize = a_bExFormat ? 0xFFFF + 0xFF + 0xF + 3 : 0xF + 3;
+		const u8* pSrc = a_pUncompressed;
+		u8* pDest = a_pCompressed + nHeaderSize;
+		while (a_pUncompressed + a_uUncompressedSize - pSrc > 0)
 		{
-			LZCompFlags = 0;
-			LZCompFlagsp = a_pCompressed++;         // Destination for storing flag sequence
-			LZDstCount++;
-
-			// Because flag sequence is stored as 8-bit data, loop eight times
-			for (i = 0; i < 8; i++)
-			{
-				LZCompFlags <<= 1;         // No meaning for the first time (i=0)
-				if (a_uUncompressedSize <= 0)
-				{
-					// When reached the end, quit after shifting flag to the end
-					continue;
-				}
-
-				if ((lastLength = SearchLZ(&info, pUncompressed, a_uUncompressedSize, &lastOffset, MAX_LENGTH)) != 0)
-				{
-					u32 length;
-					// Enable flag if compression is possible
-					LZCompFlags |= 0x1;
-
-					if (LZDstCount + 2 > dstMax)   // Quit on error if size becomes larger than source
-					{
-						bResult = false;
-						break;
-					}
-
-					if (a_bExFormat)
-					{
-						if (lastLength >= 0xFF + 0xF + 3)
-						{
-							length = static_cast<u32>(lastLength - 0xFF - 0xF - 3);
-							*a_pCompressed++ = static_cast<u8>(0x10 | (length >> 12));
-							*a_pCompressed++ = static_cast<u8>(length >> 4);
-							LZDstCount += 2;
-						}
-						else if (lastLength >= 0xF + 2)
-						{
-							length = static_cast<u32>(lastLength - 0xF - 2);
-							*a_pCompressed++ = static_cast<u8>(length >> 4);
-							LZDstCount += 1;
-						}
-						else
-						{
-							length = static_cast<u32>(lastLength - 1);
-						}
-					}
-					else
-					{
-						length = static_cast<u32>(lastLength - 3);
-					}
-
-					if (LZDstCount + 2 > dstMax)   // Quit on error if size becomes larger than source
-					{
-						bResult = false;
-						break;
-					}
-
-					// Divide offset into upper 4 bits and lower 8 bits and store
-					*a_pCompressed++ = static_cast<u8>(length << 4 | (lastOffset - 1) >> 8);
-					*a_pCompressed++ = static_cast<u8>((lastOffset - 1) & 0xff);
-					LZDstCount += 2;
-					LZSlide(&info, pUncompressed, lastLength);
-					pUncompressed += lastLength;
-					a_uUncompressedSize -= lastLength;
-				}
-				else
-				{
-					// No compression
-					if (LZDstCount + 1 > dstMax)       // Quit on error if size becomes larger than source
-					{
-						bResult = false;
-						break;
-					}
-					LZSlide(&info, pUncompressed, 1);
-					*a_pCompressed++ = *pUncompressed++;
-					a_uUncompressedSize--;
-					LZDstCount++;
-				}
-			}                              // Completed eight loops
-			if (!bResult)
-			{
-				break;
-			}
-			*LZCompFlagsp = LZCompFlags;   // Store flag series
-		}
-		if (!bResult)
-		{
-			break;
-		}
-		while (LZDstCount % a_nCompressAlign != 0)
-		{
-			if (LZDstCount + 1 > dstMax)
+			if (a_pCompressed + a_uCompressedSize - pDest < 1)
 			{
 				bResult = false;
 				break;
 			}
-			*a_pCompressed++ = 0;
-			LZDstCount++;
+			u8* pFlag = pDest++;
+			*pFlag = 0;
+			for (int i = 0; i < 8; i++)
+			{
+				int nOffset = 0;
+				int nSize = search(&info, pSrc, nOffset, min(kMaxSize, a_pUncompressed + a_uUncompressedSize - pSrc));
+				if (nSize < 3)
+				{
+					if (a_pCompressed + a_uCompressedSize - pDest < 1)
+					{
+						bResult = false;
+						break;
+					}
+					slide(&info, pSrc, 1);
+					*pDest++ = *pSrc++;
+				}
+				else
+				{
+					if (a_pCompressed + a_uCompressedSize - pDest < 2)
+					{
+						bResult = false;
+						break;
+					}
+					*pFlag |= 0x80 >> i;
+					slide(&info, pSrc, nSize);
+					pSrc += nSize;
+					if (!a_bExFormat)
+					{
+						nSize -= 3;
+					}
+					else
+					{
+						if (nSize >= 0xFF + 0xF + 3)
+						{
+							nSize -= 0xFF + 0xF + 3;
+							*pDest++ = 0x10 | (nSize >> 12 & 0x0F);
+							*pDest++ = nSize >> 4 & 0xFF;
+						}
+						else if (nSize >= 0xF + 2)
+						{
+							nSize -= 0xF + 2;
+							*pDest++ = nSize >> 4 & 0x0F;
+						}
+						else
+						{
+							nSize -= 1;
+						}
+					}
+					if (a_pCompressed + a_uCompressedSize - pDest < 2)
+					{
+						bResult = false;
+						break;
+					}
+					*pDest++ = (nSize << 4 & 0xF0) | ((nOffset - 1) >> 8 & 0x0F);
+					*pDest++ = (nOffset - 1) & 0xFF;
+				}
+				if (a_pUncompressed + a_uUncompressedSize - pSrc <= 0)
+				{
+					break;
+				}
+			}
+			if (!bResult)
+			{
+				break;
+			}
 		}
 		if (!bResult)
 		{
 			break;
 		}
-		a_uCompressedSize = LZDstCount;
+		while ((pDest - a_pCompressed) % a_nCompressAlign != 0)
+		{
+			if (a_pCompressed + a_uCompressedSize - pDest < 1)
+			{
+				bResult = false;
+				break;
+			}
+			*pDest++ = 0;
+		}
+		if (!bResult)
+		{
+			break;
+		}
+		a_uCompressedSize = pDest - a_pCompressed;
 	} while (false);
 	delete[] pWork;
-	if (pAlignUncompressed != nullptr)
-	{
-		delete[] pAlignUncompressed;
-	}
 	return bResult;
 }
 
-//--------------------------------------------------------
-// With LZ77 Compression, searches for the longest matching string from the slide window.
-//  Arguments:    startp                 Pointer to starting position of data
-//                nextp                  Pointer to data where search will start
-//                remainSize             Size of remaining data
-//                offset                 Pointer to region storing matched offset
-//  Return:    TRUE if matching string is found
-//                FALSE if not found.
-//--------------------------------------------------------
-u32 CLz77::SearchLZ(LZCompressInfo * info, const u8 *nextp, u32 remainSize, u16 *offset, u32 maxLength)
+void CLz77::initTable(SCompressInfo* a_pInfo, void* a_pWork)
 {
-	const u8 *searchp;
-	const u8 *headp, *searchHeadp;
-	u16     maxOffset = 0;
-	u32     currLength = 2;
-	u32     tmpLength;
-	s32     w_offset;
-	s16    *const LZOffsetTable = info->LZOffsetTable;
-	const u16 windowPos = info->windowPos;
-	const u16 windowLen = info->windowLen;
+	a_pInfo->WindowPos = 0;
+	a_pInfo->WindowLen = 0;
+	a_pInfo->OffsetTable = static_cast<n16*>(a_pWork);
+	a_pInfo->ByteTable = static_cast<n16*>(a_pWork) + 4096;
+	a_pInfo->EndTable = static_cast<n16*>(a_pWork) + 4096 + 256;
+	for (int i = 0; i < 256; i++)
+	{
+		a_pInfo->ByteTable[i] = -1;
+		a_pInfo->EndTable[i] = -1;
+	}
+}
 
-	if (remainSize < 3)
+int CLz77::search(SCompressInfo* a_pInfo, const u8* a_pSrc, int& a_nOffset, int a_nMaxSize)
+{
+	if (a_nMaxSize < 3)
 	{
 		return 0;
 	}
-
-	w_offset = info->LZByteTable[*nextp];
-
-	while (w_offset != -1)
+	const u8* pSearch = nullptr;
+	int nSize = 2;
+	const u16 uWindowPos = a_pInfo->WindowPos;
+	const u16 uWindowLen = a_pInfo->WindowLen;
+	n16* pOffsetTable = a_pInfo->OffsetTable;
+	for (n16 nOffset = a_pInfo->ByteTable[*a_pSrc]; nOffset != -1; nOffset = pOffsetTable[nOffset])
 	{
-		if (w_offset < windowPos)
+		if (nOffset < uWindowPos)
 		{
-			searchp = nextp - windowPos + w_offset;
+			pSearch = a_pSrc - uWindowPos + nOffset;
 		}
 		else
 		{
-			searchp = nextp - windowLen - windowPos + w_offset;
+			pSearch = a_pSrc - uWindowLen - uWindowPos + nOffset;
 		}
-
-		/* This isn't needed, but it seems to make it a little faster */
-		if (*(searchp + 1) != *(nextp + 1) || *(searchp + 2) != *(nextp + 2))
+		if (*(pSearch + 1) != *(a_pSrc + 1) || *(pSearch + 2) != *(a_pSrc + 2))
 		{
-			w_offset = LZOffsetTable[w_offset];
 			continue;
 		}
-
-		if (nextp - searchp < 2)
+		if (a_pSrc - pSearch < 2)
 		{
-			// Since VRAM is 2-byte access (since there are times when data is read from VRAM), the search target data must be set to data that is two bytes before that.
-			// 
-			// 
-			// Because the offset is stored in 12 bits, the value is 4096 or less
 			break;
 		}
-		tmpLength = 3;
-		searchHeadp = searchp + 3;
-		headp = nextp + 3;
-
-		// Increments the compression size until the data ends or different data is encountered
-		while ((static_cast<u32>(headp - nextp) < remainSize) && (*headp == *searchHeadp))
+		int nCurrentSize = 3;
+		while (nCurrentSize < a_nMaxSize && *(pSearch + nCurrentSize) == *(a_pSrc + nCurrentSize))
 		{
-			headp++;
-			searchHeadp++;
-			tmpLength++;
-
-			// Because the data length is stored in 4 bits, the value is 18 or less (3 is added)
-			if (tmpLength == maxLength)
+			nCurrentSize++;
+		}
+		if (nCurrentSize > nSize)
+		{
+			nSize = nCurrentSize;
+			a_nOffset = a_pSrc - pSearch;
+			if (nSize == a_nMaxSize)
 			{
 				break;
 			}
 		}
-
-		if (tmpLength > currLength)
-		{
-			// Update the maximum-length offset
-			currLength = tmpLength;
-			maxOffset = static_cast<u16>(nextp - searchp);
-			if (currLength == maxLength || currLength == remainSize)
-			{
-				// This is the longest matching length, so end search
-				break;
-			}
-		}
-		w_offset = LZOffsetTable[w_offset];
 	}
-
-	if (currLength < 3)
+	if (nSize < 3)
 	{
 		return 0;
 	}
-	*offset = maxOffset;
-	return currLength;
+	return nSize;
 }
 
-//--------------------------------------------------------
-// Initialize the dictionary index
-//--------------------------------------------------------
-void CLz77::LZInitTable(LZCompressInfo * info, void *work)
+inline void CLz77::slide(SCompressInfo* a_pInfo, const u8* a_pSrc, int a_nSize)
 {
-	u16     i;
-
-	info->LZOffsetTable = static_cast<s16*>(work);
-	info->LZByteTable = static_cast<s16*>(work) + 4096;
-	info->LZEndTable = static_cast<s16*>(work) + 4096 + 256;
-
-	for (i = 0; i < 256; i++)
+	for (int i = 0; i < a_nSize; i++)
 	{
-		info->LZByteTable[i] = -1;
-		info->LZEndTable[i] = -1;
+		slideByte(a_pInfo, a_pSrc++);
 	}
-	info->windowPos = 0;
-	info->windowLen = 0;
 }
 
-//--------------------------------------------------------
-// Slide the dictionary 1 byte
-//--------------------------------------------------------
-void CLz77::SlideByte(LZCompressInfo * info, const u8 *srcp)
+void CLz77::slideByte(SCompressInfo* a_pInfo, const u8* a_pSrc)
 {
-	s16     offset;
-	u8      in_data = *srcp;
-	u16     insert_offset;
-
-	s16    *const LZByteTable = info->LZByteTable;
-	s16    *const LZOffsetTable = info->LZOffsetTable;
-	s16    *const LZEndTable = info->LZEndTable;
-	const u16 windowPos = info->windowPos;
-	const u16 windowLen = info->windowLen;
-
-	if (windowLen == 4096)
+	u8 uInData = *a_pSrc;
+	u16 uInsertOffset = 0;
+	const u16 uWindowPos = a_pInfo->WindowPos;
+	const u16 uWindowLen = a_pInfo->WindowLen;
+	n16* pOffsetTable = a_pInfo->OffsetTable;
+	n16* pByteTable = a_pInfo->ByteTable;
+	n16* pEndTable = a_pInfo->EndTable;
+	if (uWindowLen == 4096)
 	{
-		u8      out_data = *(srcp - 4096);
-		if ((LZByteTable[out_data] = LZOffsetTable[LZByteTable[out_data]]) == -1)
+		u8 uOutData = *(a_pSrc - 4096);
+		if ((pByteTable[uOutData] = pOffsetTable[pByteTable[uOutData]]) == -1)
 		{
-			LZEndTable[out_data] = -1;
+			pEndTable[uOutData] = -1;
 		}
-		insert_offset = windowPos;
+		uInsertOffset = uWindowPos;
 	}
 	else
 	{
-		insert_offset = windowLen;
+		uInsertOffset = uWindowLen;
 	}
-
-	offset = LZEndTable[in_data];
-	if (offset == -1)
+	n16 nOffset = pEndTable[uInData];
+	if (nOffset == -1)
 	{
-		LZByteTable[in_data] = static_cast<s16>(insert_offset);
-	}
-	else
-	{
-		LZOffsetTable[offset] = static_cast<s16>(insert_offset);
-	}
-	LZEndTable[in_data] = static_cast<s16>(insert_offset);
-	LZOffsetTable[insert_offset] = -1;
-
-	if (windowLen == 4096)
-	{
-		info->windowPos = static_cast<s16>((windowPos + 1) % 0x1000);
+		pByteTable[uInData] = uInsertOffset;
 	}
 	else
 	{
-		info->windowLen++;
+		pOffsetTable[nOffset] = uInsertOffset;
 	}
-}
-
-//--------------------------------------------------------
-// Slide the dictionary n bytes
-//--------------------------------------------------------
-inline void CLz77::LZSlide(LZCompressInfo * info, const u8 *srcp, u32 n)
-{
-	u32     i;
-
-	for (i = 0; i < n; i++)
+	pEndTable[uInData] = uInsertOffset;
+	pOffsetTable[uInsertOffset] = -1;
+	if (uWindowLen == 4096)
 	{
-		SlideByte(info, srcp++);
+		a_pInfo->WindowPos = (uWindowPos + 1) % 4096;
+	}
+	else
+	{
+		a_pInfo->WindowLen++;
 	}
 }
