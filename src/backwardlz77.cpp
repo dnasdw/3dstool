@@ -23,21 +23,21 @@ bool CBackwardLz77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u
 		const CompFooter* pCompFooter = reinterpret_cast<const CompFooter*>(a_pCompressed + a_uCompressedSize - sizeof(CompFooter));
 		u32 uTop = pCompFooter->bufferTopAndBottom & 0xFFFFFF;
 		u32 uBottom = pCompFooter->bufferTopAndBottom >> 24 & 0xFF;
-		if (uTop <= a_uCompressedSize && uBottom >= sizeof(CompFooter) && uBottom <= sizeof(CompFooter) + 3 && uTop >= uBottom && a_uCompressedSize + pCompFooter->originalBottom <= a_uUncompressedSize)
+		if (uBottom >= sizeof(CompFooter) && uBottom <= sizeof(CompFooter) + 3 && uTop >= uBottom && uTop <= a_uCompressedSize && a_uUncompressedSize >= a_uCompressedSize + pCompFooter->originalBottom)
 		{
 			a_uUncompressedSize = a_uCompressedSize + pCompFooter->originalBottom;
 			memcpy(a_pUncompressed, a_pCompressed, a_uCompressedSize);
 			u8* pDest = a_pUncompressed + a_uUncompressedSize;
 			u8* pSrc = a_pUncompressed + a_uCompressedSize - uBottom;
 			u8* pEnd = a_pUncompressed + a_uCompressedSize - uTop;
-			while (pEnd < pSrc)
+			while (pSrc - pEnd > 0)
 			{
 				u8 uFlag = *--pSrc;
 				for (int i = 0; i < 8; i++)
 				{
 					if ((uFlag << i & 0x80) == 0)
 					{
-						if (pDest < pEnd)
+						if (pDest - pEnd < 1 || pSrc - pEnd < 1)
 						{
 							bResult = false;
 							break;
@@ -46,7 +46,7 @@ bool CBackwardLz77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u
 					}
 					else
 					{
-						if (pSrc - 2 < pEnd)
+						if (pSrc - pEnd < 2)
 						{
 							bResult = false;
 							break;
@@ -54,18 +54,23 @@ bool CBackwardLz77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u
 						int nSize = *--pSrc;
 						int nOffset = (((nSize & 0x0F) << 8) | *--pSrc) + 3;
 						nSize = (nSize >> 4 & 0x0F) + 3;
-						if (pDest - nSize < pEnd)
+						if (nSize > pDest - pEnd)
 						{
 							bResult = false;
 							break;
 						}
 						u8* pData = pDest + nOffset;
+						if (pData > a_pUncompressed + a_uUncompressedSize)
+						{
+							bResult = false;
+							break;
+						}
 						for (int j = 0; j < nSize; j++)
 						{
 							*--pDest = *--pData;
 						}
 					}
-					if (pSrc <= pEnd)
+					if (pSrc - pEnd <= 0)
 					{
 						break;
 					}
@@ -93,73 +98,63 @@ bool CBackwardLz77::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize,
 	bool bResult = true;
 	if (a_uUncompressedSize > sizeof(CompFooter) && a_uCompressedSize >= a_uUncompressedSize)
 	{
-		u8* pDest = a_pCompressed + a_uUncompressedSize;
-		const u8* pSrc = a_pUncompressed + a_uUncompressedSize;
-		while (pSrc - a_pUncompressed > 0 && pDest - a_pCompressed > 0)
+		u8* pWork = new u8[s_nCompressWorkSize];
+		do
 		{
-			u8* pFlag = --pDest;
-			*pFlag = 0;
-			for (int i = 0; i < 8; i++)
+			SCompressInfo info;
+			initTable(&info, pWork);
+			const int kMaxSize = 0xF + 3;
+			const u8* pSrc = a_pUncompressed + a_uUncompressedSize;
+			u8* pDest = a_pCompressed + a_uUncompressedSize;
+			while (pSrc - a_pUncompressed > 0 && pDest - a_pCompressed > 0)
 			{
-				if (pSrc - a_pUncompressed > 0)
+				u8* pFlag = --pDest;
+				*pFlag = 0;
+				for (int i = 0; i < 8; i++)
 				{
-					int nOffsetMax = static_cast<int>(min<ptrdiff_t>(0x1002, a_pUncompressed + a_uUncompressedSize - pSrc));
-					int nSizeMax = static_cast<int>(min<ptrdiff_t>(0x12, pSrc - a_pUncompressed));
-					nSizeMax = min(nSizeMax, nOffsetMax);
 					int nOffset = 0;
-					int nSize = 0;
-					for (int nCurrentOffset = 3; nCurrentOffset <= nOffsetMax; nCurrentOffset++)
-					{
-						int nCurrentSizeMax = min(nSizeMax, nCurrentOffset);
-						int nCurrentSize = 0;
-						for (nCurrentSize = 0; nCurrentSize < nCurrentSizeMax; nCurrentSize++)
-						{
-							if (*(pSrc - nCurrentSize - 1) != *(pSrc + nCurrentOffset - nCurrentSize - 1))
-							{
-								break;
-							}
-						}
-						if (nCurrentSize > nSize)
-						{
-							nSize = nCurrentSize;
-							nOffset = nCurrentOffset;
-							if (nSize == nSizeMax)
-							{
-								break;
-							}
-						}
-					}
-					if (nSize >= 3)
-					{
-						if (pDest - a_pCompressed < 2)
-						{
-							bResult = false;
-							break;
-						}
-						pSrc -= nSize;
-						nOffset -= 3;
-						nSize -= 3;
-						*--pDest = (nSize << 4 & 0xF0) | (nOffset >> 8 & 0xF);
-						*--pDest = nOffset & 0xFF;
-						*pFlag |= 0x80 >> i;
-					}
-					else
+					int nSize = search(&info, pSrc, nOffset, min(min(kMaxSize, pSrc - a_pUncompressed), a_pUncompressed + a_uUncompressedSize - pSrc));
+					if (nSize < 3)
 					{
 						if (pDest - a_pCompressed < 1)
 						{
 							bResult = false;
 							break;
 						}
+						slide(&info, pSrc, 1);
 						*--pDest = *--pSrc;
 					}
+					else
+					{
+						if (pDest - a_pCompressed < 2)
+						{
+							bResult = false;
+							break;
+						}
+						*pFlag |= 0x80 >> i;
+						slide(&info, pSrc, nSize);
+						pSrc -= nSize;
+						nSize -= 3;
+						*--pDest = (nSize << 4 & 0xF0) | ((nOffset - 3) >> 8 & 0xF);
+						*--pDest = (nOffset - 3) & 0xFF;
+					}
+					if (pSrc - a_pUncompressed <= 0)
+					{
+						break;
+					}
 				}
-				else
+				if (!bResult)
 				{
 					break;
 				}
 			}
-		}
-		a_uCompressedSize = static_cast<u32>(a_pCompressed + a_uUncompressedSize - pDest);
+			if (!bResult)
+			{
+				break;
+			}
+			a_uCompressedSize = static_cast<u32>(a_pCompressed + a_uUncompressedSize - pDest);
+		} while (false);
+		delete[] pWork;
 	}
 	else
 	{
@@ -185,9 +180,8 @@ bool CBackwardLz77::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize,
 				}
 				else
 				{
-					int nOffset = pCompressBuffer[--uCompressBufferSize];
-					nOffset = nOffset << 8 | pCompressBuffer[--uCompressBufferSize];
-					int nSize = (nOffset >> 12 & 0xF) + 3;
+					int nSize = (pCompressBuffer[--uCompressBufferSize] >> 4 & 0x0F) + 3;
+					uCompressBufferSize--;
 					uOrigSize -= nSize;
 					if (uOrigSize < uCompressBufferSize)
 					{
@@ -232,4 +226,128 @@ bool CBackwardLz77::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize,
 
 CBackwardLz77::CBackwardLz77()
 {
+}
+
+void CBackwardLz77::initTable(SCompressInfo* a_pInfo, void* a_pWork)
+{
+	a_pInfo->WindowPos = 0;
+	a_pInfo->WindowLen = 0;
+	a_pInfo->OffsetTable = static_cast<n16*>(a_pWork);
+	a_pInfo->ReversedOffsetTable = static_cast<n16*>(a_pWork) + 4098;
+	a_pInfo->ByteTable = static_cast<n16*>(a_pWork) + 4098 + 4098;
+	a_pInfo->EndTable = static_cast<n16*>(a_pWork) + 4098 + 4098 + 256;
+	for (int i = 0; i < 256; i++)
+	{
+		a_pInfo->ByteTable[i] = -1;
+		a_pInfo->EndTable[i] = -1;
+	}
+}
+
+int CBackwardLz77::search(SCompressInfo* a_pInfo, const u8* a_pSrc, int& a_nOffset, int a_nMaxSize)
+{
+	if (a_nMaxSize < 3)
+	{
+		return 0;
+	}
+	const u8* pSearch = nullptr;
+	int nSize = 2;
+	const u16 uWindowPos = a_pInfo->WindowPos;
+	const u16 uWindowLen = a_pInfo->WindowLen;
+	n16* pReversedOffsetTable = a_pInfo->ReversedOffsetTable;
+	for (n16 nOffset = a_pInfo->EndTable[*(a_pSrc - 1)]; nOffset != -1; nOffset = pReversedOffsetTable[nOffset])
+	{
+		if (nOffset < uWindowPos)
+		{
+			pSearch = a_pSrc + uWindowPos - nOffset;
+		}
+		else
+		{
+			pSearch = a_pSrc + uWindowLen + uWindowPos - nOffset;
+		}
+		if (pSearch - a_pSrc < 3)
+		{
+			continue;
+		}
+		if (*(pSearch - 2) != *(a_pSrc - 2) || *(pSearch - 3) != *(a_pSrc - 3))
+		{
+			continue;
+		}
+		int nMaxSize = min(a_nMaxSize, pSearch - a_pSrc);
+		int nCurrentSize = 3;
+		while (nCurrentSize < nMaxSize && *(pSearch - nCurrentSize - 1) == *(a_pSrc - nCurrentSize - 1))
+		{
+			nCurrentSize++;
+		}
+		if (nCurrentSize > nSize)
+		{
+			nSize = nCurrentSize;
+			a_nOffset = pSearch - a_pSrc;
+			if (nSize == a_nMaxSize)
+			{
+				break;
+			}
+		}
+	}
+	if (nSize < 3)
+	{
+		return 0;
+	}
+	return nSize;
+}
+
+inline void CBackwardLz77::slide(SCompressInfo* a_pInfo, const u8* a_pSrc, int a_nSize)
+{
+	for (int i = 0; i < a_nSize; i++)
+	{
+		slideByte(a_pInfo, a_pSrc--);
+	}
+}
+
+void CBackwardLz77::slideByte(SCompressInfo* a_pInfo, const u8* a_pSrc)
+{
+	u8 uInData = *(a_pSrc - 1);
+	u16 uInsertOffset = 0;
+	const u16 uWindowPos = a_pInfo->WindowPos;
+	const u16 uWindowLen = a_pInfo->WindowLen;
+	n16* pOffsetTable = a_pInfo->OffsetTable;
+	n16* pReversedOffsetTable = a_pInfo->ReversedOffsetTable;
+	n16* pByteTable = a_pInfo->ByteTable;
+	n16* pEndTable = a_pInfo->EndTable;
+	if (uWindowLen == 4098)
+	{
+		u8 uOutData = *(a_pSrc + 4097);
+		if ((pByteTable[uOutData] = pOffsetTable[pByteTable[uOutData]]) == -1)
+		{
+			pEndTable[uOutData] = -1;
+		}
+		else
+		{
+			pReversedOffsetTable[pByteTable[uOutData]] = -1;
+		}
+		uInsertOffset = uWindowPos;
+	}
+	else
+	{
+		uInsertOffset = uWindowLen;
+	}
+	n16 nOffset = pEndTable[uInData];
+	if (nOffset == -1)
+	{
+		pByteTable[uInData] = uInsertOffset;
+	}
+	else
+	{
+		pOffsetTable[nOffset] = uInsertOffset;
+	}
+	pEndTable[uInData] = uInsertOffset;
+	pOffsetTable[uInsertOffset] = -1;
+	pReversedOffsetTable[uInsertOffset] = nOffset;
+	if (uWindowLen == 4098)
+	{
+		a_pInfo->WindowPos = (uWindowPos + 1) % 4098;
+	}
+	else
+	{
+		a_pInfo->WindowLen++;
+	}
 }
