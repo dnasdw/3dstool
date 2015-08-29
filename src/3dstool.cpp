@@ -1200,7 +1200,6 @@ bool C3dsTool::extractFile()
 			banner.SetFileName(m_pFileName);
 			banner.SetVerbose(m_bVerbose);
 			banner.SetBannerDirName(m_pBannerDirName);
-			banner.SetUncompress(m_bUncompress);
 			bResult = banner.ExtractFile();
 		}
 		break;
@@ -1287,9 +1286,7 @@ bool C3dsTool::createFile()
 			CBanner banner;
 			banner.SetFileName(m_pFileName);
 			banner.SetVerbose(m_bVerbose);
-			banner.SetCompressAlign(m_nCompressAlign);
 			banner.SetBannerDirName(m_pBannerDirName);
-			banner.SetCompress(m_bCompress);
 			bResult = banner.CreateFile();
 		}
 	}
@@ -1519,10 +1516,8 @@ int C3dsTool::sample()
 	printf("3dstool -xuvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n");
 	printf("# extract romfs\n");
 	printf("3dstool -xvtf romfs romfs.bin --romfs-dir romfs\n\n");
-	printf("# extract banner without LZ77Ex uncompress\n");
+	printf("# extract banner\n");
 	printf("3dstool -xvtf banner banner.bnr --banner-dir banner\n\n");
-	printf("# extract banner with LZ77Ex uncompress\n");
-	printf("3dstool -xvtfu banner banner.bnr --banner-dir banner\n\n");
 	printf("# create cci with pad 0xFF\n");
 	printf("3dstool -cvt017f cci 0.cxi 1.cfa 7.cfa output.3ds --header ncsdheader.bin\n\n");
 	printf("# create cci without pad\n");
@@ -1553,10 +1548,8 @@ int C3dsTool::sample()
 	printf("3dstool -cvtf romfs romfs.bin --romfs-dir romfs\n\n");
 	printf("# create romfs with reference\n");
 	printf("3dstool -cvtf romfs romfs.bin --romfs-dir romfs --romfs original_romfs.bin\n\n");
-	printf("# create banner without LZ77Ex compress\n");
+	printf("# create banner\n");
 	printf("3dstool -cvtf banner banner.bnr --banner-dir banner\n\n");
-	printf("# create banner with LZ77Ex compress\n");
-	printf("3dstool -cvtfz banner banner.bnr --banner-dir banner\n\n");
 	printf("# encrypt file with AES-CTR encryption, standalone\n");
 	printf("3dstool -evf file.bin --key 00000000000000000000000000000000 --counter 00000000000000000000000000000000\n\n");
 	printf("# encrypt file with xor encryption, standalone\n");

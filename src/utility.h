@@ -26,6 +26,7 @@
 #endif
 #include <errno.h>
 #include <locale.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,6 +92,8 @@ typedef struct stat SStat;
 #endif
 
 #define CONVERT_ENDIAN(n) (((n) >> 24 & 0xFF) | ((n) >> 8 & 0xFF00) | (((n) & 0xFF00) << 8) | (((n) & 0xFF) << 24))
+
+#define DNA_ARRAY_COUNT(a) (sizeof(a) / sizeof(a[0]))
 
 void FSetLocale();
 
@@ -215,6 +218,11 @@ u16string FSWToU16(const wstring& a_sString);
 #define FSUnicodeToU16(x) FSU8ToU16(x)
 #endif
 
+string FFormatV(const char* a_szFormat, va_list a_vaList);
+wstring FFormatV(const wchar_t* a_szFormat, va_list a_vaList);
+string FFormat(const char* a_szFormat, ...);
+wstring FFormat(const wchar_t* a_szFormat, ...);
+
 template<typename T>
 bool FSStartsWith(const T& a_sString, const T& a_sPrefix, typename T::size_type a_stStart = 0)
 {
@@ -224,6 +232,8 @@ bool FSStartsWith(const T& a_sString, const T& a_sPrefix, typename T::size_type 
 	}
 	return a_sString.compare(a_stStart, a_sPrefix.size(), a_sPrefix) == 0;
 }
+
+const String& FGetModuleFile();
 
 const String& FGetModuleDir();
 

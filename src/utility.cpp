@@ -129,40 +129,91 @@ u16string FSWToU16(const wstring& a_sString)
 }
 #endif
 
-const String& FGetModuleDir()
+static const n32 s_kFormatBufferSize = 4096;
+
+string FFormatV(const char* a_szFormat, va_list a_vaList)
+{
+	static char c_szBuffer[s_kFormatBufferSize] = {};
+	vsnprintf(c_szBuffer, s_kFormatBufferSize, a_szFormat, a_vaList);
+	return c_szBuffer;
+}
+
+wstring FFormatV(const wchar_t* a_szFormat, va_list a_vaList)
+{
+	static wchar_t c_szBuffer[s_kFormatBufferSize] = {};
+	vswprintf(c_szBuffer, s_kFormatBufferSize, a_szFormat, a_vaList);
+	return c_szBuffer;
+}
+
+string FFormat(const char* a_szFormat, ...)
+{
+	va_list vaList;
+	va_start(vaList, a_szFormat);
+	std::string sFormatted = FFormatV(a_szFormat, vaList);
+	va_end(vaList);
+	return sFormatted;
+}
+
+wstring FFormat(const wchar_t* a_szFormat, ...)
+{
+	va_list vaList;
+	va_start(vaList, a_szFormat);
+	std::wstring sFormatted = FFormatV(a_szFormat, vaList);
+	va_end(vaList);
+	return sFormatted;
+}
+
+const String& FGetModuleFile()
 {
 	const int nMaxPath = 4096;
-	static String sDir;
-	sDir.resize(nMaxPath, STR('\0'));
+	static String sFile;
+	sFile.clear();
+	sFile.resize(nMaxPath, STR('\0'));
+	size_t uSize = 0;
 #if _3DSTOOL_COMPILER == COMPILER_MSC
-	GetModuleFileNameW(nullptr, &sDir.front(), nMaxPath);
+	uSize = GetModuleFileNameW(nullptr, &sFile.front(), nMaxPath);
 #elif defined(_3DSTOOL_APPLE)
 	char path[nMaxPath] = {};
 	u32 uPathSize = static_cast<u32>(sizeof(path));
 	if (_NSGetExecutablePath(path, &uPathSize) != 0)
 	{
 		printf("ERROR: _NSGetExecutablePath error\n\n");
+		sFile.erase();
 	}
-	else if (realpath(path, &sDir.front()) == nullptr)
+	else if (realpath(path, &sFile.front()) == nullptr)
 	{
-		sDir.erase();
+		sFile.erase();
 	}
+	uSize = strlen(sFile.c_str());
 #else
-	ssize_t nCount = readlink("/proc/self/exe", &sDir.front(), nMaxPath);
+	ssize_t nCount = readlink("/proc/self/exe", &sFile.front(), nMaxPath);
 	if (nCount == -1)
 	{
 		printf("ERROR: readlink /proc/self/exe error\n\n");
+		sFile[0] = '\0';
 	}
 	else
 	{
-		sDir[nCount] = '\0';
+		sFile[nCount] = '\0';
 	}
+	uSize = strlen(sFile.c_str());
 #endif
-	replace(sDir.begin(), sDir.end(), STR('\\'), STR('/'));
+	sFile.erase(uSize);
+	replace(sFile.begin(), sFile.end(), STR('\\'), STR('/'));
+	return sFile;
+}
+
+const String& FGetModuleDir()
+{
+	static String sDir = FGetModuleFile();
 	String::size_type nPos = sDir.rfind(STR('/'));
 	if (nPos != String::npos)
 	{
 		sDir.erase(nPos);
+	}
+	else
+	{
+		sDir.erase();
 	}
 	return sDir;
 }
