@@ -273,6 +273,7 @@ int C3dsTool::CheckOptions()
 				printf("ERROR: no --banner-dir option\n\n");
 				return 1;
 			}
+			break;
 		default:
 			break;
 		}
@@ -1116,6 +1117,8 @@ bool C3dsTool::checkFileType()
 		case kFileTypeBanner:
 			bMatch = CBanner::IsBannerFile(m_pFileName);
 			break;
+		default:
+			break;
 		}
 		if (!bMatch)
 		{
@@ -1203,6 +1206,8 @@ bool C3dsTool::extractFile()
 			bResult = banner.ExtractFile();
 		}
 		break;
+	default:
+		break;
 	}
 	return bResult;
 }
@@ -1289,6 +1294,9 @@ bool C3dsTool::createFile()
 			banner.SetBannerDirName(m_pBannerDirName);
 			bResult = banner.CreateFile();
 		}
+		break;
+	default:
+		break;
 	}
 	return bResult;
 }
@@ -1357,6 +1365,8 @@ bool C3dsTool::uncompressFile()
 		case kCompressTypeLzEx:
 			bResult = CLz77::GetUncompressedSize(pCompressed, uCompressedSize, uUncompressedSize);
 			break;
+		default:
+			break;
 		}
 		if (bResult)
 		{
@@ -1369,6 +1379,8 @@ bool C3dsTool::uncompressFile()
 			case kCompressTypeLz:
 			case kCompressTypeLzEx:
 				bResult = CLz77::Uncompress(pCompressed, uCompressedSize, pUncompressed, uUncompressedSize);
+				break;
+			default:
 				break;
 			}
 			if (bResult)
@@ -1418,6 +1430,8 @@ bool C3dsTool::compressFile()
 		case kCompressTypeLzEx:
 			uCompressedSize = CLz77::GetCompressBoundSize(uUncompressedSize, m_nCompressAlign);
 			break;
+		default:
+			break;
 		}
 		u8* pCompressed = new u8[uCompressedSize];
 		switch (m_eCompressType)
@@ -1430,6 +1444,8 @@ bool C3dsTool::compressFile()
 			break;
 		case kCompressTypeLzEx:
 			bReuslt = CLz77::CompressLzEx(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
+			break;
+		default:
 			break;
 		}
 		if (bReuslt)

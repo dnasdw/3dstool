@@ -12,12 +12,13 @@ An all-in-one tool for extracting/creating 3ds roms.
 - v1.0.5 @ 2015.01.05 - Fix diff bug
 - v1.0.6 @ 2015.01.22 - Fix create romfs with reference bug
 - v1.0.7 @ 2015.01.23 - Support banner
+- v1.0.8 @ 2015.08.30 - Refactoring compression and fix banner bug
 
 ## Platforms
 
-- Cygwin *1.7.33+*
-- Linux *(Tested on Ubuntu 14.04+, CentOS 6.3+)*
-- Mac OS X *10.9+*
+- Cygwin
+- Linux *(Tested on Linux Mint 17.1)*
+- Mac OS X *10.10+*
 - Windows *XP+*
 
 ## Building
@@ -44,7 +45,7 @@ make
 mkdir project
 cd project
 cmake -DBUILD64=OFF ..
-cmake -DBUILD64=OFF ..
+cmake ..
 make
 ~~~
 
@@ -56,24 +57,10 @@ make install
 
 ## Usage
 
-### Windows
-
-~~~
-3dstool.exe [option...] [option]...
-~~~
-
-### Other
-
 ~~~
 3dstool [option...] [option]...
 ~~~
 
-> Remember to do `chmod +x 3dstool` first
-
 ## Options
 
 See `3dstool --help` messages.
-
-## FAQ
-
-Nothing here for now.
