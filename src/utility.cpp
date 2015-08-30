@@ -266,7 +266,9 @@ bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const char* a_pXorFileNa
 	n64 nXorSize = FFtell(fpXor);
 	if (nXorSize < a_nSize && a_bVerbose)
 	{
-		printf("INFO: xor file %s size less than data size\n\n", a_pXorFileName);
+		fclose(fpXor);
+		printf("ERROR: xor file %s size less than data size\n\n", a_pXorFileName);
+		return false;
 	}
 	FFseek(fpXor, 0, SEEK_SET);
 	const n64 nBufferSize = 0x100000;
@@ -331,7 +333,9 @@ bool FEncryptAesCtrFile(const char* a_pDataFileName, u8 a_uKey[16], u8 a_uAesCtr
 	{
 		if (a_bVerbose)
 		{
-			printf("INFO: data file %s size less than data offset + data size\n\n", a_pDataFileName);
+			fclose(fpData);
+			printf("ERROR: data file %s size less than data offset + data size\n\n", a_pDataFileName);
+			return false;
 		}
 		a_nDataSize = nDataSize - a_nDataOffset;
 	}
@@ -383,7 +387,9 @@ bool FEncryptXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n6
 	{
 		if (a_bVerbose)
 		{
-			printf("INFO: data file %s size less than data offset + data size\n\n", a_pDataFileName);
+			fclose(fpData);
+			printf("ERROR: data file %s size less than data offset + data size\n\n", a_pDataFileName);
+			return false;
 		}
 		a_nDataSize = nDataSize - a_nDataOffset;
 	}
@@ -399,7 +405,10 @@ bool FEncryptXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n6
 	{
 		if (a_bVerbose)
 		{
-			printf("INFO: xor file %s size less than data size\n\n", a_pXorFileName);
+			fclose(fpXor);
+			fclose(fpData);
+			printf("ERROR: xor file %s size less than data size\n\n", a_pXorFileName);
+			return false;
 		}
 		a_nDataSize = nXorSize - a_nXorOffset;
 	}
@@ -446,7 +455,9 @@ bool FEncryptXorData(void* a_pData, const char* a_pXorFileName, n64 a_nDataSize,
 	{
 		if (a_bVerbose)
 		{
-			printf("INFO: xor file %s size less than data size\n\n", a_pXorFileName);
+			fclose(fpXor);
+			printf("ERROR: xor file %s size less than data size\n\n", a_pXorFileName);
+			return false;
 		}
 		a_nDataSize = nXorSize - a_nXorOffset;
 	}

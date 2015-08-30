@@ -25,6 +25,7 @@
 #include <unistd.h>
 #endif
 #include <errno.h>
+#include <inttypes.h>
 #include <locale.h>
 #include <stdarg.h>
 #include <stdint.h>

@@ -46,11 +46,11 @@ bool CBanner::ExtractFile()
 	fread(&m_CbmdHeader, sizeof(m_CbmdHeader), 1, m_fpBanner);
 	if (m_CbmdHeader.CbmdOffset != 0)
 	{
-		printf("INFO: cbmd offset 0x%X != 0\n\n", m_CbmdHeader.CbmdOffset);
+		printf("INFO: cbmd offset 0x%" PRIX32 " != 0\n\n", m_CbmdHeader.CbmdOffset);
 	}
 	if (m_CbmdHeader.CgfxOffset[0] != sizeof(m_CbmdHeader))
 	{
-		printf("INFO: cgfx 0 offset 0x%X != 0x%X\n\n", m_CbmdHeader.CgfxOffset[0], sizeof(m_CbmdHeader));
+		printf("INFO: cgfx 0 offset 0x%" PRIX32 " != 0x%" PRIX32 "\n\n", m_CbmdHeader.CgfxOffset[0], static_cast<u32>(sizeof(m_CbmdHeader)));
 	}
 	if (!FMakeDir(FSAToUnicode(m_pBannerDirName).c_str()))
 	{

@@ -163,7 +163,7 @@ bool CPatch::ApplyPatchFile()
 	calculateVersion();
 	if (m_uVersion > 0x010000)
 	{
-		printf("ERROR: not support patch file version %u.%u.%u\n\n", m_3dsPatchSystemHeader.VersionMajor, m_3dsPatchSystemHeader.VersionMinor, m_3dsPatchSystemHeader.VersionPatchLevel);
+		printf("ERROR: not support patch file version %" PRIu8 ".%" PRIu8 ".%" PRIu8 "\n\n", m_3dsPatchSystemHeader.VersionMajor, m_3dsPatchSystemHeader.VersionMinor, m_3dsPatchSystemHeader.VersionPatchLevel);
 		fclose(m_fpPatch);
 		fclose(m_fpOld);
 		return false;
@@ -267,7 +267,7 @@ bool CPatch::ApplyPatchFile()
 		}
 		else
 		{
-			printf("ERROR: unknown patch command %02X\n\n", uPatchCommand);
+			printf("ERROR: unknown patch command %02" PRIX8 "\n\n", uPatchCommand);
 			break;
 		}
 	} while (true);

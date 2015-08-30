@@ -27,7 +27,7 @@ bool CSpace::AddSpace(n64 a_nOffset, n64 a_nSize)
 		SBuffer& buffer = *it;
 		if ((nTop >= buffer.Top && nTop < buffer.Bottom) || (nBottom > buffer.Top && nBottom <= buffer.Bottom))
 		{
-			printf("ERROR: [0x%llX, 0x%llX) [0x%llX, 0x%llX) overlap\n\n", nTop, nBottom, buffer.Top, buffer.Bottom);
+			printf("ERROR: [0x%" PRIX64 ", 0x%" PRIX64 ") [0x%" PRIX64 ", 0x%" PRIX64 ") overlap\n\n", nTop, nBottom, buffer.Top, buffer.Bottom);
 			return false;
 		}
 		if (nBottom < buffer.Top)
