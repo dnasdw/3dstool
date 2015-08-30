@@ -11,7 +11,7 @@ IF NOT DEFINED VCVARSALL (
 )
 CALL %VCVARSALL% amd64
 SET rootdir=%~dp0
-SET target=WIN64
+SET target=windows_x86_64
 SET prefix=%rootdir%%target%
 SET openssldir=%prefix%\ssl
 SET /P openssl_version=<"%rootdir%openssl.txt"

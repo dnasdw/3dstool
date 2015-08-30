@@ -3,7 +3,7 @@
 rootdir=`dirname $0`
 cd $rootdir
 rootdir=`pwd`
-target=i386
+target=linux_x86_32
 prefix=$rootdir/$target
 openssldir=$prefix/ssl
 openssl_version=`cat $rootdir/openssl.txt`
