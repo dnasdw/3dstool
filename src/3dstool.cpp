@@ -18,6 +18,7 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ "compress", 'z', "compress the target file" },
 	{ "trim", 'r', "trim the cci file" },
 	{ "pad", 'p', "pad the cci file" },
+	{ "trim-romfs", 0, "trim the romfs file leave level3 only" },
 	{ "diff", 0, "create the patch file from the old file and the new file" },
 	{ "patch", 0, "apply the patch file to the target file"},
 	{ "sample", 0, "show the samples" },
@@ -87,6 +88,7 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ nullptr, 0, "\nromfs:" },
 	{ nullptr, 0, " extract/create:" },
 	{ "romfs-dir", 0, "the romfs dir for the romfs file" },
+	{ "romfs-level3-only", 0, "no header, level1, level2 in the romfs file"},
 	{ nullptr, 0, "\nbanner:" },
 	{ nullptr, 0, " extract/create:" },
 	{ "banner-dir", 0, "the banner dir for the banner file"},
@@ -123,6 +125,7 @@ C3dsTool::C3dsTool()
 	, m_pRomFsXorFileName(nullptr)
 	, m_pExeFsDirName(nullptr)
 	, m_pRomFsDirName(nullptr)
+	, m_bRomFsLevel3Only(false)
 	, m_pBannerDirName(nullptr)
 	, m_bUncompress(false)
 	, m_bCompress(false)
@@ -412,6 +415,14 @@ int C3dsTool::CheckOptions()
 			printf("INFO: ignore --type option\n");
 		}
 	}
+	if (m_eAction == kActionTrimRomFs)
+	{
+		if (!CRomFs::IsRomFsFile(m_pFileName, false))
+		{
+			printf("ERROR: %s is not a romfs file\n\n", m_pFileName);
+			return 1;
+		}
+	}
 	if (m_eAction == kActionDiff)
 	{
 		if (m_pOldFileName == nullptr)
@@ -534,6 +545,14 @@ int C3dsTool::Action()
 			return 1;
 		}
 	}
+	if (m_eAction == kActionTrimRomFs)
+	{
+		if (!trimRomFsFile())
+		{
+			printf("ERROR: trim romfs file failed\n\n");
+			return 1;
+		}
+	}
 	if (m_eAction == kActionDiff)
 	{
 		if (!diffFile())
@@ -638,6 +657,17 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			m_eAction = kActionPad;
 		}
 		else if (m_eAction != kActionPad && m_eAction != kActionHelp)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+	}
+	else if (strcmp(a_pName, "trim-romfs") == 0)
+	{
+		if (m_eAction == kActionNone)
+		{
+			m_eAction = kActionTrimRomFs;
+		}
+		else if (m_eAction != kActionTrimRomFs && m_eAction != kActionHelp)
 		{
 			return kParseOptionReturnOptionConflict;
 		}
@@ -1037,6 +1067,10 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_pRomFsDirName = a_pArgv[++a_nIndex];
 	}
+	else if (strcmp(a_pName, "romfs-level3-only") == 0)
+	{
+		m_bRomFsLevel3Only = true;
+	}
 	else if (strcmp(a_pName, "banner-dir") == 0)
 	{
 		if (a_nIndex + 1 > a_nArgc)
@@ -1080,7 +1114,7 @@ bool C3dsTool::checkFileType()
 		{
 			m_eFileType = kFileTypeExefs;
 		}
-		else if (CRomFs::IsRomFsFile(m_pFileName))
+		else if (CRomFs::IsRomFsFile(m_pFileName, m_bRomFsLevel3Only))
 		{
 			m_eFileType = kFileTypeRomfs;
 		}
@@ -1112,7 +1146,7 @@ bool C3dsTool::checkFileType()
 			bMatch = CExeFs::IsExeFsFile(m_pFileName, 0);
 			break;
 		case kFileTypeRomfs:
-			bMatch = CRomFs::IsRomFsFile(m_pFileName);
+			bMatch = CRomFs::IsRomFsFile(m_pFileName, m_bRomFsLevel3Only);
 			break;
 		case kFileTypeBanner:
 			bMatch = CBanner::IsBannerFile(m_pFileName);
@@ -1194,6 +1228,7 @@ bool C3dsTool::extractFile()
 			romFs.SetFileName(m_pFileName);
 			romFs.SetVerbose(m_bVerbose);
 			romFs.SetRomFsDirName(m_pRomFsDirName);
+			romFs.SetRomFsLevel3Only(m_bRomFsLevel3Only);
 			bResult = romFs.ExtractFile();
 		}
 		break;
@@ -1282,7 +1317,11 @@ bool C3dsTool::createFile()
 			romFs.SetFileName(m_pFileName);
 			romFs.SetVerbose(m_bVerbose);
 			romFs.SetRomFsDirName(m_pRomFsDirName);
-			romFs.SetRomFsFileName(m_pRomFsFileName);
+			romFs.SetRomFsLevel3Only(m_bRomFsLevel3Only);
+			if (!m_bRomFsLevel3Only)
+			{
+				romFs.SetRomFsFileName(m_pRomFsFileName);
+			}
 			bResult = romFs.CreateFile();
 		}
 		break;
@@ -1487,6 +1526,15 @@ bool C3dsTool::padFile()
 	return bResult;
 }
 
+bool C3dsTool::trimRomFsFile()
+{
+	CRomFs romFs;
+	romFs.SetFileName(m_pFileName);
+	romFs.SetVerbose(m_bVerbose);
+	bool bResult = romFs.TrimRomFsFile();
+	return bResult;
+}
+
 bool C3dsTool::diffFile()
 {
 	CPatch patch;
@@ -1532,6 +1580,8 @@ int C3dsTool::sample()
 	printf("3dstool -xuvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n");
 	printf("# extract romfs\n");
 	printf("3dstool -xvtf romfs romfs.bin --romfs-dir romfs\n\n");
+	printf("# extract romfs level3\n");
+	printf("3dstool -xvtf romfs title.romfs --romfs-dir romfs --romfs-level3-only\n\n");
 	printf("# extract banner\n");
 	printf("3dstool -xvtf banner banner.bnr --banner-dir banner\n\n");
 	printf("# create cci with pad 0xFF\n");
@@ -1562,6 +1612,8 @@ int C3dsTool::sample()
 	printf("3dstool -czvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n");
 	printf("# create romfs without reference\n");
 	printf("3dstool -cvtf romfs romfs.bin --romfs-dir romfs\n\n");
+	printf("# create romfs level3\n");
+	printf("3dstool -cvtf romfs title.romfs --romfs-dir romfs --romfs-level3-only\n\n");
 	printf("# create romfs with reference\n");
 	printf("3dstool -cvtf romfs romfs.bin --romfs-dir romfs --romfs original_romfs.bin\n\n");
 	printf("# create banner\n");
@@ -1588,6 +1640,8 @@ int C3dsTool::sample()
 	printf("3dstool -vtf cci input.3ds --trim --trim-after-partition 2\n\n");
 	printf("# pad cci with 0xFF\n");
 	printf("3dstool -vtf cci input.3ds --pad\n\n");
+	printf("# trim romfs leave level3 only\n\n");
+	printf("3dstool -vf romfs.bin --trim-romfs\n\n");
 	printf("# create patch file without optimization\n");
 	printf("3dstool --diff -v --old old.bin --new new.bin --patch-file patch.3ps\n\n");
 	printf("# create patch file with cci optimization\n");

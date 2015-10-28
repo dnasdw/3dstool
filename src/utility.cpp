@@ -149,7 +149,7 @@ string FFormat(const char* a_szFormat, ...)
 {
 	va_list vaList;
 	va_start(vaList, a_szFormat);
-	std::string sFormatted = FFormatV(a_szFormat, vaList);
+	string sFormatted = FFormatV(a_szFormat, vaList);
 	va_end(vaList);
 	return sFormatted;
 }
@@ -158,7 +158,7 @@ wstring FFormat(const wchar_t* a_szFormat, ...)
 {
 	va_list vaList;
 	va_start(vaList, a_szFormat);
-	std::wstring sFormatted = FFormatV(a_szFormat, vaList);
+	wstring sFormatted = FFormatV(a_szFormat, vaList);
 	va_end(vaList);
 	return sFormatted;
 }

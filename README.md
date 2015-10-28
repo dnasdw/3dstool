@@ -13,6 +13,7 @@ An all-in-one tool for extracting/creating 3ds roms.
 - v1.0.6 @ 2015.01.22 - Fix create romfs with reference bug
 - v1.0.7 @ 2015.01.23 - Support banner
 - v1.0.8 @ 2015.08.30 - Refactoring compression and fix banner bug
+- v1.0.9 @ 2015.10.28 - Support romfs level3 only
 
 ## Platforms
 

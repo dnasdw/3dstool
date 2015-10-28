@@ -24,6 +24,7 @@ public:
 		kActionCompress,
 		kActionTrim,
 		kActionPad,
+		kActionTrimRomFs,
 		kActionDiff,
 		kActionPatch,
 		kActionSample,
@@ -37,7 +38,7 @@ public:
 		kFileTypeCfa,
 		kFileTypeExefs,
 		kFileTypeRomfs,
-		kFileTypeBanner,
+		kFileTypeBanner
 	};
 	enum ECompressType
 	{
@@ -70,6 +71,7 @@ private:
 	bool compressFile();
 	bool trimFile();
 	bool padFile();
+	bool trimRomFsFile();
 	bool diffFile();
 	bool patchFile();
 	int sample();
@@ -105,6 +107,7 @@ private:
 	const char* m_pRomFsXorFileName;
 	const char* m_pExeFsDirName;
 	const char* m_pRomFsDirName;
+	bool m_bRomFsLevel3Only;
 	const char* m_pBannerDirName;
 	bool m_bUncompress;
 	bool m_bCompress;

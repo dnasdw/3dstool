@@ -41,6 +41,11 @@ void CRomFs::SetRomFsDirName(const char* a_pRomFsDirName)
 	m_sRomFsDirName = FSAToUnicode(a_pRomFsDirName);
 }
 
+void CRomFs::SetRomFsLevel3Only(bool a_bRomFsLevel3Only)
+{
+	m_bRomFsLevel3Only = a_bRomFsLevel3Only;
+}
+
 void CRomFs::SetRomFsFileName(const char* a_pRomFsFileName)
 {
 	m_pRomFsFileName = a_pRomFsFileName;
@@ -54,8 +59,15 @@ bool CRomFs::ExtractFile()
 	{
 		return false;
 	}
-	fread(&m_RomFsHeader, sizeof(m_RomFsHeader), 1, m_fpRomFs);
-	m_nLevel3Offset = FAlign(FAlign(m_RomFsHeader.Size, s_nSHA256BlockSize) + m_RomFsHeader.Level0Size, s_nBlockSize);
+	if (m_bRomFsLevel3Only)
+	{
+		m_nLevel3Offset = 0;
+	}
+	else
+	{
+		fread(&m_RomFsHeader, sizeof(m_RomFsHeader), 1, m_fpRomFs);
+		m_nLevel3Offset = FAlign(FAlign(m_RomFsHeader.Size, s_nSHA256BlockSize) + m_RomFsHeader.Level0Size, s_nBlockSize);
+	}
 	FFseek(m_fpRomFs, m_nLevel3Offset, SEEK_SET);
 	fread(&m_RomFsMetaInfo, sizeof(m_RomFsMetaInfo), 1, m_fpRomFs);
 	pushExtractStackElement(true, 0, STR("/"));
@@ -99,7 +111,7 @@ bool CRomFs::CreateFile()
 	remap();
 	createHeader();
 	initLevelBuffer();
-	n64 nFileSize = FAlign(m_LevelBuffer[2].FilePos + m_RomFsHeader.Level2.Size, s_nBlockSize);
+	n64 nFileSize = FAlign(m_bRomFsLevel3Only ? m_LevelBuffer[3].FilePos + m_RomFsHeader.Level3.Size : m_LevelBuffer[2].FilePos + m_RomFsHeader.Level2.Size, s_nBlockSize);
 	m_fpRomFs = FFopen(m_pFileName, "wb");
 	if (m_fpRomFs == nullptr)
 	{
@@ -114,17 +126,57 @@ bool CRomFs::CreateFile()
 	return bResult;
 }
 
-bool CRomFs::IsRomFsFile(const char* a_pFileName)
+bool CRomFs::TrimRomFsFile()
+{
+	bool bResult = true;
+	m_fpRomFs = FFopen(m_pFileName, "rb+");
+	if (m_fpRomFs == nullptr)
+	{
+		return false;
+	}
+	fread(&m_RomFsHeader, sizeof(m_RomFsHeader), 1, m_fpRomFs);
+	m_nLevel3Offset = FAlign(FAlign(m_RomFsHeader.Size, s_nSHA256BlockSize) + m_RomFsHeader.Level0Size, s_nBlockSize);
+	n64 nLevel3Size = FAlign(m_RomFsHeader.Level3.Size, s_nBlockSize);
+	const n64 nBufferSize = 0x100000;
+	u8* pBuffer = new u8[nBufferSize];
+	int nIndex = 0;
+	while (nLevel3Size > 0)
+	{
+		n64 nSize = nLevel3Size > nBufferSize ? nBufferSize : nLevel3Size;
+		FFseek(m_fpRomFs, m_nLevel3Offset + nIndex * nBufferSize, SEEK_SET);
+		fread(pBuffer, 1, static_cast<size_t>(nSize), m_fpRomFs);
+		FFseek(m_fpRomFs, nIndex * nBufferSize, SEEK_SET);
+		fwrite(pBuffer, 1, static_cast<size_t>(nSize), m_fpRomFs);
+		nLevel3Size -= nSize;
+		nIndex++;
+	}
+	nLevel3Size = FAlign(m_RomFsHeader.Level3.Size, s_nBlockSize);
+	FChsize(FFileno(m_fpRomFs), nLevel3Size);
+	fclose(m_fpRomFs);
+	return bResult;
+}
+
+bool CRomFs::IsRomFsFile(const char* a_pFileName, bool a_bRomFsLevel3Only)
 {
 	FILE* fp = FFopen(a_pFileName, "rb");
 	if (fp == nullptr)
 	{
 		return false;
 	}
-	SRomFsHeader romFsHeader;
-	fread(&romFsHeader, sizeof(romFsHeader), 1, fp);
-	fclose(fp);
-	return romFsHeader.Signature == s_uSignature;
+	if (a_bRomFsLevel3Only)
+	{
+		SRomFsMetaInfo romFsMetaInfo;
+		fread(&romFsMetaInfo, sizeof(romFsMetaInfo), 1, fp);
+		fclose(fp);
+		return romFsMetaInfo.Size == sizeof(romFsMetaInfo) && romFsMetaInfo.Section[0].Offset == sizeof(romFsMetaInfo);
+	}
+	else
+	{
+		SRomFsHeader romFsHeader;
+		fread(&romFsHeader, sizeof(romFsHeader), 1, fp);
+		fclose(fp);
+		return romFsHeader.Signature == s_uSignature;
+	}
 }
 
 void CRomFs::pushExtractStackElement(bool a_bIsDir, n32 a_nEntryOffset, const String& a_sPrefix)
@@ -856,29 +908,38 @@ void CRomFs::createHeader()
 void CRomFs::initLevelBuffer()
 {
 	n64 nFileSize = 0;
-	m_LevelBuffer[0].Data.resize(s_nBlockSize, 0);
-	m_LevelBuffer[0].DataPos = 0;
-	m_LevelBuffer[0].FilePos = nFileSize;
-	m_nLevel3Offset = FAlign(FAlign(sizeof(m_RomFsHeader), s_nSHA256BlockSize) + m_RomFsHeader.Level0Size, s_nBlockSize);
-	nFileSize = m_nLevel3Offset;
+	if (!m_bRomFsLevel3Only)
+	{
+		m_LevelBuffer[0].Data.resize(s_nBlockSize, 0);
+		m_LevelBuffer[0].DataPos = 0;
+		m_LevelBuffer[0].FilePos = nFileSize;
+		m_nLevel3Offset = FAlign(FAlign(sizeof(m_RomFsHeader), s_nSHA256BlockSize) + m_RomFsHeader.Level0Size, s_nBlockSize);
+		nFileSize = m_nLevel3Offset;
+	}
 	m_LevelBuffer[3].Data.resize(s_nBlockSize, 0);
 	m_LevelBuffer[3].DataPos = 0;
 	m_LevelBuffer[3].FilePos = nFileSize;
 	nFileSize += FAlign(m_RomFsHeader.Level3.Size, s_nBlockSize);
-	m_LevelBuffer[1].Data.resize(s_nBlockSize, 0);
-	m_LevelBuffer[1].DataPos = 0;
-	m_LevelBuffer[1].FilePos = nFileSize;
-	nFileSize += FAlign(m_RomFsHeader.Level1.Size, s_nBlockSize);
-	m_LevelBuffer[2].Data.resize(s_nBlockSize, 0);
-	m_LevelBuffer[2].DataPos = 0;
-	m_LevelBuffer[2].FilePos = nFileSize;
+	if (!m_bRomFsLevel3Only)
+	{
+		m_LevelBuffer[1].Data.resize(s_nBlockSize, 0);
+		m_LevelBuffer[1].DataPos = 0;
+		m_LevelBuffer[1].FilePos = nFileSize;
+		nFileSize += FAlign(m_RomFsHeader.Level1.Size, s_nBlockSize);
+		m_LevelBuffer[2].Data.resize(s_nBlockSize, 0);
+		m_LevelBuffer[2].DataPos = 0;
+		m_LevelBuffer[2].FilePos = nFileSize;
+	}
 }
 
 bool CRomFs::updateLevelBuffer()
 {
 	bool bResult = true;
-	writeBuffer(0, &m_RomFsHeader, sizeof(m_RomFsHeader));
-	alignBuffer(0, s_nSHA256BlockSize);
+	if (!m_bRomFsLevel3Only)
+	{
+		writeBuffer(0, &m_RomFsHeader, sizeof(m_RomFsHeader));
+		alignBuffer(0, s_nSHA256BlockSize);
+	}
 	writeBuffer(3, &m_RomFsMetaInfo, sizeof(m_RomFsMetaInfo));
 	writeBuffer(3, &*m_vDirBucket.begin(), m_RomFsMetaInfo.Section[kSectionTypeDirHash].Size);
 	for (int i = 0; i < static_cast<int>(m_vCreateDir.size()); i++)
@@ -927,14 +988,21 @@ bool CRomFs::updateLevelBuffer()
 		}
 	}
 	alignBuffer(3, s_nBlockSize);
-	alignBuffer(2, s_nBlockSize);
-	alignBuffer(1, s_nBlockSize);
-	alignBuffer(0, s_nBlockSize);
+	if (!m_bRomFsLevel3Only)
+	{
+		alignBuffer(2, s_nBlockSize);
+		alignBuffer(1, s_nBlockSize);
+		alignBuffer(0, s_nBlockSize);
+	}
 	return bResult;
 }
 
 void CRomFs::writeBuffer(int a_nLevel, const void* a_pSrc, n64 a_nSize)
 {
+	if (m_bRomFsLevel3Only && a_nLevel != 3)
+	{
+		return;
+	}
 	const u8* pSrc = static_cast<const u8*>(a_pSrc);
 	do
 	{
@@ -951,7 +1019,7 @@ void CRomFs::writeBuffer(int a_nLevel, const void* a_pSrc, n64 a_nSize)
 		}
 		if (m_LevelBuffer[a_nLevel].DataPos == s_nBlockSize)
 		{
-			if (a_nLevel != 0)
+			if (!m_bRomFsLevel3Only && a_nLevel != 0)
 			{
 				writeBuffer(a_nLevel - 1, SHA256(&*m_LevelBuffer[a_nLevel].Data.begin(), s_nBlockSize, nullptr), s_nSHA256BlockSize);
 			}
@@ -967,6 +1035,10 @@ void CRomFs::writeBuffer(int a_nLevel, const void* a_pSrc, n64 a_nSize)
 
 bool CRomFs::writeBufferFromFile(int a_nLevel, const String& a_sPath, n64 a_nSize)
 {
+	if (m_bRomFsLevel3Only && a_nLevel != 3)
+	{
+		return true;
+	}
 	FILE* fp = FFopenUnicode(a_sPath.c_str(), STR("rb"));
 	if (fp == nullptr)
 	{
@@ -991,6 +1063,10 @@ bool CRomFs::writeBufferFromFile(int a_nLevel, const String& a_sPath, n64 a_nSiz
 
 void CRomFs::alignBuffer(int a_nLevel, int a_nAlignment)
 {
+	if (m_bRomFsLevel3Only && a_nLevel != 3)
+	{
+		return;
+	}
 	m_LevelBuffer[a_nLevel].DataPos = static_cast<int>(FAlign(m_LevelBuffer[a_nLevel].DataPos, a_nAlignment));
 	writeBuffer(a_nLevel, nullptr, 0);
 }

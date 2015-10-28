@@ -118,10 +118,12 @@ public:
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
 	void SetRomFsDirName(const char* a_pRomFsDirName);
+	void SetRomFsLevel3Only(bool a_bRomFsLevel3Only);
 	void SetRomFsFileName(const char* a_pRomFsFileName);
 	bool ExtractFile();
 	bool CreateFile();
-	static bool IsRomFsFile(const char* a_pFileName);
+	bool TrimRomFsFile();
+	static bool IsRomFsFile(const char* a_pFileName, bool a_bRomFsLevel3Only);
 	static const u32 s_uSignature;
 	static const int s_nBlockSizePower;
 	static const int s_nBlockSize;
@@ -163,6 +165,7 @@ private:
 	const char* m_pFileName;
 	bool m_bVerbose;
 	String m_sRomFsDirName;
+	bool m_bRomFsLevel3Only;
 	const char* m_pRomFsFileName;
 	FILE* m_fpRomFs;
 	SRomFsHeader m_RomFsHeader;
