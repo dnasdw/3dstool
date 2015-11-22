@@ -238,7 +238,7 @@ void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, u8 a_uKey[16], u8 a_u
 	AES_KEY aesKey;
 	AES_set_encrypt_key(a_uKey, 128, &aesKey);
 	u8 uEcountBuf[16] = {};
-	u32 nNum = 0;
+	u32 uNum = 0;
 	const n64 nBufferSize = 0x100000;
 	u8* pInBuffer = new u8[nBufferSize];
 	u8* pOutBuffer = new u8[nBufferSize];
@@ -247,7 +247,7 @@ void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, u8 a_uKey[16], u8 a_u
 	{
 		n64 nSize = a_nSize > nBufferSize ? nBufferSize : a_nSize;
 		fread(pInBuffer, 1, static_cast<size_t>(nSize), a_fpSrc);
-		AES_ctr128_encrypt(pInBuffer, pOutBuffer, static_cast<size_t>(nSize), &aesKey, a_uAesCtr, uEcountBuf, &nNum);
+		AES_ctr128_encrypt(pInBuffer, pOutBuffer, static_cast<size_t>(nSize), &aesKey, a_uAesCtr, uEcountBuf, &uNum);
 		fwrite(pOutBuffer, 1, static_cast<size_t>(nSize), a_fpDest);
 		a_nSize -= nSize;
 	}
@@ -342,7 +342,7 @@ bool FEncryptAesCtrFile(const char* a_pDataFileName, u8 a_uKey[16], u8 a_uAesCtr
 	AES_KEY aesKey;
 	AES_set_encrypt_key(a_uKey, 128, &aesKey);
 	u8 uEcountBuf[16] = {};
-	u32 nNum = 0;
+	u32 uNum = 0;
 	n64 nIndex = 0;
 	const n64 nBufferSize = 0x100000;
 	u8* pInBuffer = new u8[nBufferSize];
@@ -352,7 +352,7 @@ bool FEncryptAesCtrFile(const char* a_pDataFileName, u8 a_uKey[16], u8 a_uAesCtr
 		n64 nSize = a_nDataSize > nBufferSize ? nBufferSize : a_nDataSize;
 		FFseek(fpData, a_nDataOffset + nIndex * nBufferSize, SEEK_SET);
 		fread(pInBuffer, 1, static_cast<size_t>(nSize), fpData);
-		AES_ctr128_encrypt(pInBuffer, pOutBuffer, static_cast<size_t>(nSize), &aesKey, a_uAesCtr, uEcountBuf, &nNum);
+		AES_ctr128_encrypt(pInBuffer, pOutBuffer, static_cast<size_t>(nSize), &aesKey, a_uAesCtr, uEcountBuf, &uNum);
 		FFseek(fpData, a_nDataOffset + nIndex * nBufferSize, SEEK_SET);
 		fwrite(pOutBuffer, 1, static_cast<size_t>(nSize), fpData);
 		a_nDataSize -= nSize;

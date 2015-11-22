@@ -18,7 +18,6 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ "compress", 'z', "compress the target file" },
 	{ "trim", 'r', "trim the cci file" },
 	{ "pad", 'p', "pad the cci file" },
-	{ "trim-romfs", 0, "trim the romfs file leave level3 only" },
 	{ "diff", 0, "create the patch file from the old file and the new file" },
 	{ "patch", 0, "apply the patch file to the target file"},
 	{ "sample", 0, "show the samples" },
@@ -27,8 +26,8 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ "type", 't', "[[card|cci|3ds]|[nand|exec|cxi]|[data|cfa]|exefs|romfs|banner]\n\t\tthe type of the file, optional" },
 	{ "file", 'f', "the target file, required" },
 	{ "verbose", 'v', "show the info" },
-	{ nullptr, 0, " cci/cxi/cfa/exefs:" },
-	{ nullptr, 0, "  extract/create:" },
+	{ nullptr, 0, " extract/create:" },
+	{ nullptr, 0, "  cci/cxi/cfa/exefs:" },
 	{ "header", 0, "the header file of the target file" },
 	{ nullptr, 0, " encrypt:" },
 	{ "key0", 0, "short for --key 00000000000000000000000000000000" },
@@ -46,7 +45,9 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ nullptr, 0, "  patch:" },
 	{ "patch-file", 0, "the patch file" },
 	{ nullptr, 0, "\ncci:" },
-	{ nullptr, 0, " extract/create:" },
+	{ nullptr, 0, " create:" },
+	{ "not-pad", 0, "do not add the pad data" },
+	{ nullptr, 0, "  extract:" },
 	{ "partition0", '0', "the cxi file of the cci file at partition 0" },
 	{ "partition1", '1', "the cfa file of the cci file at partition 1" },
 	{ "partition2", '2', "the cfa file of the cci file at partition 2" },
@@ -61,9 +62,6 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ nullptr, 0, " create:" },
 	{ "not-update-exh-hash", 0, nullptr },
 	{ "not-update-extendedheader-hash", 0, "do not update the extendedheader hash" },
-	{ "not-update-exefs-hash", 0, "do not update the exefs super block hash" },
-	{ "not-update-romfs-hash", 0, "do not update the romfs super block hash" },
-	{ "not-pad", 0, "do not add the pad data" },
 	{ nullptr, 0, "  extract:" },
 	{ "exh", 0, nullptr },
 	{ "extendedheader", 0, "the extendedheader file of the cxi file" },
@@ -71,16 +69,19 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ "logoregion", 0, "the logoregion file of the cxi file" },
 	{ "plain", 0, nullptr },
 	{ "plainregion", 0, "the plainregion file of the cxi file" },
-	{ "exefs", 0, "the exefs file of the cxi file" },
 	{ nullptr, 0, "   encrypt:" },
 	{ "exh-xor", 0, nullptr },
 	{ "extendedheader-xor", 0, "the xor data file used by encrypt the extendedheader of the cxi file" },
-	{ "exefs-xor", 0, "the xor data file used by encrypt the exefs of the cxi file" },
 	{ "exefs-top-xor", 0, "the xor data file used by encrypt the top section of the exefs of the cxi file" },
 	{ nullptr, 0, " cfa:" },
-	{ nullptr, 0, "  extract/create:" },
+	{ nullptr, 0, "  create:" },
+	{ "not-update-exefs-hash", 0, "do not update the exefs super block hash" },
+	{ "not-update-romfs-hash", 0, "do not update the romfs super block hash" },
+	{ nullptr, 0, "   extract:" },
+	{ "exefs", 0, "the exefs file of the cxi/cfa file" },
 	{ "romfs", 0, "the romfs file of the cxi/cfa file" },
-	{ nullptr, 0, "   encrypt:" },
+	{ nullptr, 0, "    encrypt:" },
+	{ "exefs-xor", 0, "the xor data file used by encrypt the exefs of the cxi/cfa file" },
 	{ "romfs-xor", 0, "the xor data file used by encrypt the romfs of the cxi/cfa file" },
 	{ nullptr, 0, "\nexefs:" },
 	{ nullptr, 0, " extract/create:" },
@@ -88,7 +89,6 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ nullptr, 0, "\nromfs:" },
 	{ nullptr, 0, " extract/create:" },
 	{ "romfs-dir", 0, "the romfs dir for the romfs file" },
-	{ "romfs-level3-only", 0, "no header, level1, level2 in the romfs file"},
 	{ nullptr, 0, "\nbanner:" },
 	{ nullptr, 0, " extract/create:" },
 	{ "banner-dir", 0, "the banner dir for the banner file"},
@@ -109,11 +109,11 @@ C3dsTool::C3dsTool()
 	, m_pOldFileName(nullptr)
 	, m_pNewFileName(nullptr)
 	, m_pPatchFileName(nullptr)
+	, m_bNotPad(false)
 	, m_nLastPartitionIndex(7)
 	, m_bNotUpdateExtendedHeaderHash(false)
 	, m_bNotUpdateExeFsHash(false)
 	, m_bNotUpdateRomFsHash(false)
-	, m_bNotPad(false)
 	, m_pExtendedHeaderFileName(nullptr)
 	, m_pLogoRegionFileName(nullptr)
 	, m_pPlainRegionFileName(nullptr)
@@ -125,7 +125,6 @@ C3dsTool::C3dsTool()
 	, m_pRomFsXorFileName(nullptr)
 	, m_pExeFsDirName(nullptr)
 	, m_pRomFsDirName(nullptr)
-	, m_bRomFsLevel3Only(false)
 	, m_pBannerDirName(nullptr)
 	, m_bUncompress(false)
 	, m_bCompress(false)
@@ -415,14 +414,6 @@ int C3dsTool::CheckOptions()
 			printf("INFO: ignore --type option\n");
 		}
 	}
-	if (m_eAction == kActionTrimRomFs)
-	{
-		if (!CRomFs::IsRomFsFile(m_pFileName, false))
-		{
-			printf("ERROR: %s is not a romfs file\n\n", m_pFileName);
-			return 1;
-		}
-	}
 	if (m_eAction == kActionDiff)
 	{
 		if (m_pOldFileName == nullptr)
@@ -545,14 +536,6 @@ int C3dsTool::Action()
 			return 1;
 		}
 	}
-	if (m_eAction == kActionTrimRomFs)
-	{
-		if (!trimRomFsFile())
-		{
-			printf("ERROR: trim romfs file failed\n\n");
-			return 1;
-		}
-	}
 	if (m_eAction == kActionDiff)
 	{
 		if (!diffFile())
@@ -657,17 +640,6 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			m_eAction = kActionPad;
 		}
 		else if (m_eAction != kActionPad && m_eAction != kActionHelp)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-	}
-	else if (strcmp(a_pName, "trim-romfs") == 0)
-	{
-		if (m_eAction == kActionNone)
-		{
-			m_eAction = kActionTrimRomFs;
-		}
-		else if (m_eAction != kActionTrimRomFs && m_eAction != kActionHelp)
 		{
 			return kParseOptionReturnOptionConflict;
 		}
@@ -919,6 +891,10 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_pNcchFileName[nIndex] = a_pArgv[++a_nIndex];
 	}
+	else if (strcmp(a_pName, "not-pad") == 0)
+	{
+		m_bNotPad = true;
+	}
 	else if (strcmp(a_pName, "trim-after-partition") == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
@@ -942,10 +918,6 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 	else if (strcmp(a_pName, "not-update-romfs-hash") == 0)
 	{
 		m_bNotUpdateRomFsHash = true;
-	}
-	else if (strcmp(a_pName, "not-pad") == 0)
-	{
-		m_bNotPad = true;
 	}
 	else if (strcmp(a_pName, "extendedheader") == 0 || strcmp(a_pName, "exh") == 0)
 	{
@@ -1067,10 +1039,6 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_pRomFsDirName = a_pArgv[++a_nIndex];
 	}
-	else if (strcmp(a_pName, "romfs-level3-only") == 0)
-	{
-		m_bRomFsLevel3Only = true;
-	}
 	else if (strcmp(a_pName, "banner-dir") == 0)
 	{
 		if (a_nIndex + 1 > a_nArgc)
@@ -1114,7 +1082,7 @@ bool C3dsTool::checkFileType()
 		{
 			m_eFileType = kFileTypeExefs;
 		}
-		else if (CRomFs::IsRomFsFile(m_pFileName, m_bRomFsLevel3Only))
+		else if (CRomFs::IsRomFsFile(m_pFileName))
 		{
 			m_eFileType = kFileTypeRomfs;
 		}
@@ -1146,7 +1114,7 @@ bool C3dsTool::checkFileType()
 			bMatch = CExeFs::IsExeFsFile(m_pFileName, 0);
 			break;
 		case kFileTypeRomfs:
-			bMatch = CRomFs::IsRomFsFile(m_pFileName, m_bRomFsLevel3Only);
+			bMatch = CRomFs::IsRomFsFile(m_pFileName);
 			break;
 		case kFileTypeBanner:
 			bMatch = CBanner::IsBannerFile(m_pFileName);
@@ -1206,7 +1174,9 @@ bool C3dsTool::extractFile()
 			ncch.SetHeaderFileName(m_pHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
 			ncch.SetKey(m_uKey);
+			ncch.SetExeFsFileName(m_pExeFsFileName);
 			ncch.SetRomFsFileName(m_pRomFsFileName);
+			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 			ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
 			bResult = ncch.ExtractFile();
 		}
@@ -1228,7 +1198,6 @@ bool C3dsTool::extractFile()
 			romFs.SetFileName(m_pFileName);
 			romFs.SetVerbose(m_bVerbose);
 			romFs.SetRomFsDirName(m_pRomFsDirName);
-			romFs.SetRomFsLevel3Only(m_bRomFsLevel3Only);
 			bResult = romFs.ExtractFile();
 		}
 		break;
@@ -1294,8 +1263,11 @@ bool C3dsTool::createFile()
 			ncch.SetHeaderFileName(m_pHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
 			ncch.SetKey(m_uKey);
+			ncch.SetNotUpdateExeFsHash(m_bNotUpdateExeFsHash);
 			ncch.SetNotUpdateRomFsHash(m_bNotUpdateRomFsHash);
+			ncch.SetExeFsFileName(m_pExeFsFileName);
 			ncch.SetRomFsFileName(m_pRomFsFileName);
+			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 			ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
 			bResult = ncch.CreateFile();
 		}
@@ -1317,11 +1289,7 @@ bool C3dsTool::createFile()
 			romFs.SetFileName(m_pFileName);
 			romFs.SetVerbose(m_bVerbose);
 			romFs.SetRomFsDirName(m_pRomFsDirName);
-			romFs.SetRomFsLevel3Only(m_bRomFsLevel3Only);
-			if (!m_bRomFsLevel3Only)
-			{
-				romFs.SetRomFsFileName(m_pRomFsFileName);
-			}
+			romFs.SetRomFsFileName(m_pRomFsFileName);
 			bResult = romFs.CreateFile();
 		}
 		break;
@@ -1376,6 +1344,7 @@ bool C3dsTool::encryptFile()
 		ncch.SetVerbose(m_bVerbose);
 		ncch.SetEncryptMode(m_nEncryptMode);
 		ncch.SetKey(m_uKey);
+		ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 		ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
 		bResult = ncch.EncryptFile();
 	}
@@ -1526,15 +1495,6 @@ bool C3dsTool::padFile()
 	return bResult;
 }
 
-bool C3dsTool::trimRomFsFile()
-{
-	CRomFs romFs;
-	romFs.SetFileName(m_pFileName);
-	romFs.SetVerbose(m_bVerbose);
-	bool bResult = romFs.TrimRomFsFile();
-	return bResult;
-}
-
 bool C3dsTool::diffFile()
 {
 	CPatch patch;
@@ -1580,16 +1540,12 @@ int C3dsTool::sample()
 	printf("3dstool -xuvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n");
 	printf("# extract romfs\n");
 	printf("3dstool -xvtf romfs romfs.bin --romfs-dir romfs\n\n");
-	printf("# extract romfs level3\n");
-	printf("3dstool -xvtf romfs title.romfs --romfs-dir romfs --romfs-level3-only\n\n");
 	printf("# extract banner\n");
 	printf("3dstool -xvtf banner banner.bnr --banner-dir banner\n\n");
 	printf("# create cci with pad 0xFF\n");
 	printf("3dstool -cvt017f cci 0.cxi 1.cfa 7.cfa output.3ds --header ncsdheader.bin\n\n");
 	printf("# create cci without pad\n");
 	printf("3dstool -cvt017f cci 0.cxi 1.cfa 7.cfa output.3ds --header ncsdheader.bin --not-pad\n\n");
-	printf("# create cxi without encryption but with calculate hash\n");
-	printf("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.bcma.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin\n\n");
 	printf("# create cxi without encryption and calculate hash\n");
 	printf("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.bcma.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --not-update-exh-hash --not-update-exefs-hash --not-update-romfs-hash\n\n");
 	printf("# create cxi with AES-CTR encryption and calculate hash\n");
@@ -1598,8 +1554,6 @@ int C3dsTool::sample()
 	printf("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.bcma.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.Main.exheader.xorpad --exefs-xor 000400000XXXXX00.Main.exefs_norm.xorpad --romfs-xor 000400000XXXXX00.Main.romfs.xorpad\n\n");
 	printf("# create cxi with 7.x xor encryption and calculate hash\n");
 	printf("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.bcma.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.Main.exheader.xorpad --exefs-xor 000400000XXXXX00.Main.exefs_norm.xorpad --exefs-top-xor 000400000XXXXX00.Main.exefs_7x.xorpad --romfs-xor 000400000XXXXX00.Main.romfs.xorpad\n\n");
-	printf("# create cfa without encryption but with calculate hash\n");
-	printf("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin\n\n");
 	printf("# create cfa without encryption and calculate hash\n");
 	printf("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --not-update-romfs-hash\n\n");
 	printf("# create cfa with AES-CTR encryption and calculate hash\n");
@@ -1612,8 +1566,6 @@ int C3dsTool::sample()
 	printf("3dstool -czvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n");
 	printf("# create romfs without reference\n");
 	printf("3dstool -cvtf romfs romfs.bin --romfs-dir romfs\n\n");
-	printf("# create romfs level3\n");
-	printf("3dstool -cvtf romfs title.romfs --romfs-dir romfs --romfs-level3-only\n\n");
 	printf("# create romfs with reference\n");
 	printf("3dstool -cvtf romfs romfs.bin --romfs-dir romfs --romfs original_romfs.bin\n\n");
 	printf("# create banner\n");
@@ -1635,13 +1587,11 @@ int C3dsTool::sample()
 	printf("# compress file with LZ77Ex, standalone\n");
 	printf("3dstool -zvf logo.bcma --compress-type lzex --compress-out logo.bcma.lz\n\n");
 	printf("# trim cci without pad\n");
-	printf("3dstool -vtf cci input.3ds --trim\n\n");
+	printf("3dstool --trim -vtf cci input.3ds\n\n");
 	printf("# trim cci reserve partition 0~2\n");
-	printf("3dstool -vtf cci input.3ds --trim --trim-after-partition 2\n\n");
+	printf("3dstool --trim -vtf cci input.3ds --trim-after-partition 2\n\n");
 	printf("# pad cci with 0xFF\n");
-	printf("3dstool -vtf cci input.3ds --pad\n\n");
-	printf("# trim romfs leave level3 only\n\n");
-	printf("3dstool -vf romfs.bin --trim-romfs\n\n");
+	printf("3dstool --pad -vtf cci input.3ds\n\n");
 	printf("# create patch file without optimization\n");
 	printf("3dstool --diff -v --old old.bin --new new.bin --patch-file patch.3ps\n\n");
 	printf("# create patch file with cci optimization\n");

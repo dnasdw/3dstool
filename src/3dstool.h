@@ -24,7 +24,6 @@ public:
 		kActionCompress,
 		kActionTrim,
 		kActionPad,
-		kActionTrimRomFs,
 		kActionDiff,
 		kActionPatch,
 		kActionSample,
@@ -71,7 +70,6 @@ private:
 	bool compressFile();
 	bool trimFile();
 	bool padFile();
-	bool trimRomFsFile();
 	bool diffFile();
 	bool patchFile();
 	int sample();
@@ -91,11 +89,11 @@ private:
 	const char* m_pNewFileName;
 	const char* m_pPatchFileName;
 	const char* m_pNcchFileName[8];
+	bool m_bNotPad;
 	int m_nLastPartitionIndex;
 	bool m_bNotUpdateExtendedHeaderHash;
 	bool m_bNotUpdateExeFsHash;
 	bool m_bNotUpdateRomFsHash;
-	bool m_bNotPad;
 	const char* m_pExtendedHeaderFileName;
 	const char* m_pLogoRegionFileName;
 	const char* m_pPlainRegionFileName;
@@ -107,7 +105,6 @@ private:
 	const char* m_pRomFsXorFileName;
 	const char* m_pExeFsDirName;
 	const char* m_pRomFsDirName;
-	bool m_bRomFsLevel3Only;
 	const char* m_pBannerDirName;
 	bool m_bUncompress;
 	bool m_bCompress;

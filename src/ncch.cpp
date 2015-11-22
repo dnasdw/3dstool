@@ -830,19 +830,9 @@ bool CNcch::createRomFs()
 		{
 			printf("load: %s\n", m_pRomFsFileName);
 		}
-		SRomFsHeader romFsHeader;
 		FFseek(fp, 0, SEEK_END);
 		n64 nFileSize = FFtell(fp);
-		if (nFileSize < sizeof(romFsHeader))
-		{
-			fclose(fp);
-			clearRomFs();
-			printf("ERROR: romfs is too short\n\n");
-			return false;
-		}
-		FFseek(fp, 0, SEEK_SET);
-		fread(&romFsHeader, sizeof(romFsHeader), 1, fp);
-		n64 nSuperBlockSize = FAlign(FAlign(sizeof(romFsHeader), CRomFs::s_nSHA256BlockSize) + romFsHeader.Level0Size, m_nMediaUnitSize);
+		n64 nSuperBlockSize = FAlign(FAlign(sizeof(SRomFsHeader), CRomFs::s_nSHA256BlockSize), m_nMediaUnitSize);
 		if (nFileSize < nSuperBlockSize)
 		{
 			fclose(fp);

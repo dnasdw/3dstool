@@ -161,12 +161,14 @@ bool CExeFs::extractSection(int a_nIndex)
 	string sName = reinterpret_cast<const char*>(m_ExeFsSuperBlock.m_Header[a_nIndex].name);
 	if (!sName.empty())
 	{
+		bool bTopSection = false;
 		auto it = m_mPath.find(sName);
 		if (it == m_mPath.end())
 		{
 			if (a_nIndex == 0)
 			{
 				sPath = m_sExeFsDirName + STR("/code.bin");
+				bTopSection = true;
 			}
 			else
 			{
@@ -192,7 +194,7 @@ bool CExeFs::extractSection(int a_nIndex)
 			{
 				FPrintf(STR("save: %s\n"), sPath.c_str());
 			}
-			if (a_nIndex == 0 && m_bUncompress)
+			if (bTopSection && m_bUncompress)
 			{
 				u32 uCompressedSize = m_ExeFsSuperBlock.m_Header[a_nIndex].size;
 				FFseek(m_fpExeFs, sizeof(m_ExeFsSuperBlock) + m_ExeFsSuperBlock.m_Header[a_nIndex].offset, SEEK_SET);
@@ -220,7 +222,7 @@ bool CExeFs::extractSection(int a_nIndex)
 				}
 				delete[] pCompressed;
 			}
-			if (a_nIndex != 0 || !m_bUncompress || !bResult)
+			if (!bTopSection || !m_bUncompress || !bResult)
 			{
 				FCopyFile(fp, m_fpExeFs, sizeof(m_ExeFsSuperBlock) + m_ExeFsSuperBlock.m_Header[a_nIndex].offset, m_ExeFsSuperBlock.m_Header[a_nIndex].size);
 			}
@@ -263,12 +265,14 @@ bool CExeFs::createSection(int a_nIndex)
 	string sName = reinterpret_cast<const char*>(m_ExeFsSuperBlock.m_Header[a_nIndex].name);
 	if (!sName.empty())
 	{
+		bool bTopSection = false;
 		auto it = m_mPath.find(sName);
 		if (it == m_mPath.end())
 		{
 			if (a_nIndex == 0)
 			{
 				sPath = m_sExeFsDirName + STR("/code.bin");
+				bTopSection = true;
 			}
 			else
 			{
@@ -303,7 +307,7 @@ bool CExeFs::createSection(int a_nIndex)
 			fread(pData, 1, uFileSize, fp);
 			fclose(fp);
 			bool bCompressResult = false;
-			if (a_nIndex == 0 && m_bCompress)
+			if (bTopSection && m_bCompress)
 			{
 				u32 uCompressedSize = uFileSize;
 				u8* pCompressed = new u8[uCompressedSize];
@@ -316,7 +320,7 @@ bool CExeFs::createSection(int a_nIndex)
 				}
 				delete[] pCompressed;
 			}
-			if (a_nIndex != 0 || !m_bCompress || !bCompressResult)
+			if (!bTopSection || !m_bCompress || !bCompressResult)
 			{
 				SHA256(pData, uFileSize, m_ExeFsSuperBlock.m_Hash[7 - a_nIndex]);
 				fwrite(pData, 1, uFileSize, m_fpExeFs);
