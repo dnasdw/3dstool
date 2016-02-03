@@ -59,9 +59,9 @@ string FSWToU8(const wstring& a_sString)
 	return c_cvt_u8.to_bytes(a_sString);
 }
 
-string FSU16ToU8(const u16string& a_sString)
+string FSU16ToU8(const U16String& a_sString)
 {
-	static wstring_convert<codecvt_utf8_utf16<char16_t>, char16_t> c_cvt_u8_u16;
+	static wstring_convert<codecvt_utf8_utf16<Char16_t>, Char16_t> c_cvt_u8_u16;
 	return c_cvt_u8_u16.to_bytes(a_sString);
 }
 
@@ -77,18 +77,18 @@ wstring FSAToW(const string& a_sString)
 	return c_cvt_a.from_bytes(a_sString);
 }
 
-wstring FSU16ToW(const u16string& a_sString)
+wstring FSU16ToW(const U16String& a_sString)
 {
 	return FSU8ToW(FSU16ToU8(a_sString));
 }
 
-u16string FSU8ToU16(const string& a_sString)
+U16String FSU8ToU16(const string& a_sString)
 {
-	static wstring_convert<codecvt_utf8_utf16<char16_t>, char16_t> c_cvt_u8_u16;
+	static wstring_convert<codecvt_utf8_utf16<Char16_t>, Char16_t> c_cvt_u8_u16;
 	return c_cvt_u8_u16.from_bytes(a_sString);
 }
 
-u16string FSWToU16(const wstring& a_sString)
+U16String FSWToU16(const wstring& a_sString)
 {
 	return FSU8ToU16(FSWToU8(a_sString));
 }
@@ -98,9 +98,9 @@ string FSWToU8(const wstring& a_sString)
 	return FSTToT<wstring, string>(a_sString, "WCHAR_T", "UTF-8");
 }
 
-string FSU16ToU8(const u16string& a_sString)
+string FSU16ToU8(const U16String& a_sString)
 {
-	return FSTToT<u16string, string>(a_sString, "UTF-16LE", "UTF-8");
+	return FSTToT<U16String, string>(a_sString, "UTF-16LE", "UTF-8");
 }
 
 wstring FSU8ToW(const string& a_sString)
@@ -113,19 +113,19 @@ wstring FSAToW(const string& a_sString)
 	return FSTToT<string, wstring>(a_sString, g_sLocaleName, "WCHAR_T");
 }
 
-wstring FSU16ToW(const u16string& a_sString)
+wstring FSU16ToW(const U16String& a_sString)
 {
-	return FSTToT<u16string, wstring>(a_sString, "UTF-16LE", "WCHAR_T");
+	return FSTToT<U16String, wstring>(a_sString, "UTF-16LE", "WCHAR_T");
 }
 
-u16string FSU8ToU16(const string& a_sString)
+U16String FSU8ToU16(const string& a_sString)
 {
-	return FSTToT<string, u16string>(a_sString, "UTF-8", "UTF-16LE");
+	return FSTToT<string, U16String>(a_sString, "UTF-8", "UTF-16LE");
 }
 
-u16string FSWToU16(const wstring& a_sString)
+U16String FSWToU16(const wstring& a_sString)
 {
-	return FSTToT<wstring, u16string>(a_sString, "WCHAR_T", "UTF-16LE");
+	return FSTToT<wstring, U16String>(a_sString, "WCHAR_T", "UTF-16LE");
 }
 #endif
 

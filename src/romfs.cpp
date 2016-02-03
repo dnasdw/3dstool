@@ -229,7 +229,7 @@ void CRomFs::readEntry(SExtractStackElement& a_Element)
 	{
 		FFseek(m_fpRomFs, m_nLevel3Offset + m_RomFsMetaInfo.Section[kSectionTypeDir].Offset + a_Element.EntryOffset, SEEK_SET);
 		fread(&a_Element.Entry.Dir, sizeof(a_Element.Entry.Dir), 1, m_fpRomFs);
-		char16_t* pEntryName = new char16_t[a_Element.Entry.Dir.NameSize / 2 + 1];
+		Char16_t* pEntryName = new Char16_t[a_Element.Entry.Dir.NameSize / 2 + 1];
 		fread(pEntryName, 2, a_Element.Entry.Dir.NameSize / 2, m_fpRomFs);
 		pEntryName[a_Element.Entry.Dir.NameSize / 2] = 0;
 		a_Element.EntryName = FSU16ToUnicode(pEntryName);
@@ -239,7 +239,7 @@ void CRomFs::readEntry(SExtractStackElement& a_Element)
 	{
 		FFseek(m_fpRomFs, m_nLevel3Offset + m_RomFsMetaInfo.Section[kSectionTypeFile].Offset + a_Element.EntryOffset, SEEK_SET);
 		fread(&a_Element.Entry.File, sizeof(a_Element.Entry.File), 1, m_fpRomFs);
-		char16_t* pEntryName = new char16_t[a_Element.Entry.File.NameSize / 2 + 1];
+		Char16_t* pEntryName = new Char16_t[a_Element.Entry.File.NameSize / 2 + 1];
 		fread(pEntryName, 2, a_Element.Entry.File.NameSize / 2, m_fpRomFs);
 		pEntryName[a_Element.Entry.File.NameSize / 2] = 0;
 		a_Element.EntryName = FSU16ToUnicode(pEntryName);
@@ -585,7 +585,7 @@ u32 CRomFs::computeBucketCount(u32 a_uEntries)
 	return uBucket;
 }
 
-u32 CRomFs::hash(n32 a_nParentOffset, u16string& a_sEntryName)
+u32 CRomFs::hash(n32 a_nParentOffset, U16String& a_sEntryName)
 {
 	u32 uHash = a_nParentOffset ^ 123456789;
 	for (int i = 0; i < static_cast<int>(a_sEntryName.size()); i++)

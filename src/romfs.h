@@ -90,7 +90,7 @@ public:
 	struct SEntry
 	{
 		String Path;
-		u16string EntryName;
+		U16String EntryName;
 		int EntryNameSize;
 		n32 EntryOffset;
 		n32 BucketIndex;
@@ -146,7 +146,7 @@ private:
 	void subDirOffset(n32& a_nOffset, int a_nIndex);
 	void createHash();
 	u32 computeBucketCount(u32 a_uEntries);
-	u32 hash(n32 a_nParentOffset, u16string& a_sEntryName);
+	u32 hash(n32 a_nParentOffset, U16String& a_sEntryName);
 	void redirectOffset();
 	void redirectOffset(n32& a_nOffset, bool a_bIsDir);
 	void createMetaInfo();

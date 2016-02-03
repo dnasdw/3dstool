@@ -6,8 +6,10 @@
 
 #if defined(_MSC_VER)
 #define _3DSTOOL_COMPILER COMPILER_MSC
+#define _3DSTOOL_COMPILER_VERSION _MSC_VER
 #else
 #define _3DSTOOL_COMPILER COMPILER_GNUC
+#define _3DSTOOL_COMPILER_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 #endif
 
 #if _3DSTOOL_COMPILER == COMPILER_MSC
@@ -55,6 +57,13 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 
 #if _3DSTOOL_COMPILER == COMPILER_MSC
+#if _3DSTOOL_COMPILER_VERSION >= 1900
+typedef u16 Char16_t;
+typedef std::basic_string<Char16_t> U16String;
+#else
+typedef char16_t Char16_t;
+typedef u16string U16String;
+#endif
 typedef wstring String;
 typedef wregex Regex;
 typedef struct _stat64 SStat;
@@ -73,6 +82,8 @@ typedef struct _stat64 SStat;
 #define MSC_POP_PACKED <poppack.h>
 #define GNUC_PACKED
 #else
+typedef char16_t Char16_t;
+typedef u16string U16String;
 typedef string String;
 typedef regex Regex;
 typedef struct stat SStat;
@@ -202,12 +213,12 @@ TDest FSTToT(const TSrc& a_sString, const string& a_sSrcType, const string& a_sD
 #endif
 
 string FSWToU8(const wstring& a_sString);
-string FSU16ToU8(const u16string& a_sString);
+string FSU16ToU8(const U16String& a_sString);
 wstring FSU8ToW(const string& a_sString);
 wstring FSAToW(const string& a_sString);
-wstring FSU16ToW(const u16string& a_sString);
-u16string FSU8ToU16(const string& a_sString);
-u16string FSWToU16(const wstring& a_sString);
+wstring FSU16ToW(const U16String& a_sString);
+U16String FSU8ToU16(const string& a_sString);
+U16String FSWToU16(const wstring& a_sString);
 
 #if _3DSTOOL_COMPILER == COMPILER_MSC
 #define FSAToUnicode(x) FSAToW(x)

@@ -452,7 +452,7 @@ bool CPatch::createPatchFile(n64 a_nOffsetOld, n64 a_nSizeOld, n64 a_nOffsetNew,
 			uBuffer[nBufferPos++] = pFileBufferNew[i % nFileBufferSize];
 			if (nBufferPos >= nBufferSize)
 			{
-				nSeekOffset = a_nOffsetNew + i - nBufferPos - nBaseOffset;
+				nSeekOffset = a_nOffsetNew + i + 1 - nBufferPos - nBaseOffset;
 				nBaseOffset += nSeekOffset + nBufferPos;
 				writeSeekWrite(bSeekSet, nSeekOffset, nBufferPos, uBuffer);
 				bSeekSet = false;
