@@ -281,7 +281,7 @@ int CBackwardLz77::search(SCompressInfo* a_pInfo, const u8* a_pSrc, int& a_nOffs
 		if (nCurrentSize > nSize)
 		{
 			nSize = nCurrentSize;
-			a_nOffset = pSearch - a_pSrc;
+			a_nOffset = static_cast<int>(pSearch - a_pSrc);
 			if (nSize == a_nMaxSize)
 			{
 				break;

@@ -298,7 +298,7 @@ bool CLz77::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_p
 		{
 			break;
 		}
-		a_uCompressedSize = pDest - a_pCompressed;
+		a_uCompressedSize = static_cast<u32>(pDest - a_pCompressed);
 	} while (false);
 	delete[] pWork;
 	return bResult;
@@ -355,7 +355,7 @@ int CLz77::search(SCompressInfo* a_pInfo, const u8* a_pSrc, int& a_nOffset, int 
 		if (nCurrentSize > nSize)
 		{
 			nSize = nCurrentSize;
-			a_nOffset = a_pSrc - pSearch;
+			a_nOffset = static_cast<int>(a_pSrc - pSearch);
 			if (nSize == a_nMaxSize)
 			{
 				break;
