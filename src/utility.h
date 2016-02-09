@@ -27,7 +27,46 @@
 #include <unistd.h>
 #endif
 #include <errno.h>
+#if _3DSTOOL_COMPILER != COMPILER_MSC || (_3DSTOOL_COMPILER == COMPILER_MSC && _3DSTOOL_COMPILER_VERSION >= 1800)
 #include <inttypes.h>
+#else
+#ifndef _PFX_8
+#define _PFX_8 "hh"
+#endif
+#ifndef _PFX_16
+#define _PFX_16 "h"
+#endif
+#ifndef _PFX_32
+#define _PFX_32 "l"
+#endif
+#ifndef _PFX_64
+#define _PFX_64 "ll"
+#endif
+#ifndef PRIu8
+#define PRIu8 _PFX_8 "u"
+#endif
+#ifndef PRIu16
+#define PRIu16 _PFX_16 "u"
+#endif
+#ifndef PRIu32
+#define PRIu32 _PFX_32 "u"
+#endif
+#ifndef PRIu64
+#define PRIu64 _PFX_64 "u"
+#endif
+#ifndef PRIX8
+#define PRIX8 _PFX_8 "X"
+#endif
+#ifndef PRIX16
+#define PRIX16 _PFX_16 "X"
+#endif
+#ifndef PRIX32
+#define PRIX32 _PFX_32 "X"
+#endif
+#ifndef PRIX64
+#define PRIX64 _PFX_64 "X"
+#endif
+#endif
 #include <locale.h>
 #include <stdarg.h>
 #include <stdint.h>
