@@ -35,8 +35,8 @@ public:
 		kFileTypeCci,
 		kFileTypeCxi,
 		kFileTypeCfa,
-		kFileTypeExefs,
-		kFileTypeRomfs,
+		kFileTypeExeFs,
+		kFileTypeRomFs,
 		kFileTypeBanner
 	};
 	enum ECompressType
@@ -79,8 +79,8 @@ private:
 	bool m_bVerbose;
 	const char* m_pHeaderFileName;
 	int m_nEncryptMode;
-	u8 m_uKey[16];
-	string m_sCounter;
+	CBigNum m_Key;
+	CBigNum m_Counter;
 	const char* m_pXorFileName;
 	n32 m_nCompressAlign;
 	ECompressType m_eCompressType;
@@ -103,9 +103,12 @@ private:
 	const char* m_pExeFsXorFileName;
 	const char* m_pExeFsTopXorFileName;
 	const char* m_pRomFsXorFileName;
+	bool m_bExeFsTopAutoKey;
+	bool m_bRomFsAutoKey;
 	const char* m_pExeFsDirName;
 	const char* m_pRomFsDirName;
 	const char* m_pBannerDirName;
+	bool m_bCounterValid;
 	bool m_bUncompress;
 	bool m_bCompress;
 	const char* m_pMessage;

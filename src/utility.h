@@ -83,6 +83,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "bignum.h"
 
 using namespace std;
 
@@ -147,10 +148,6 @@ typedef struct stat SStat;
 #define DNA_ARRAY_COUNT(a) (sizeof(a) / sizeof(a[0]))
 
 void FSetLocale();
-
-u8 FCHexToU8(char a_cHex);
-
-bool FSHexToU8(string a_sHex, u8* a_pArray);
 
 n32 FSToN32(const string& a_sString);
 
@@ -223,18 +220,18 @@ TDest FSTToT(const TSrc& a_sString, const string& a_sSrcType, const string& a_sD
 		return sConverted;
 	}
 	size_t nStringLeft = a_sString.size() * sizeof(typename TSrc::value_type);
-	static const n32 c_kBufferSize = 1024;
-	static const n32 c_kConvertBufferSize = c_kBufferSize - 4;
-	char buffer[c_kBufferSize];
+	static const n32 c_nBufferSize = 1024;
+	static const n32 c_nConvertBufferSize = c_nBufferSize - 4;
+	char buffer[c_nBufferSize];
 	do
 	{
 		typename TSrc::value_type* pString = const_cast<typename TSrc::value_type*>(a_sString.c_str());
 		char* pBuffer = buffer;
-		size_t nBufferLeft = c_kConvertBufferSize;
+		size_t nBufferLeft = c_nConvertBufferSize;
 		n32 nError = iconv(cvt, reinterpret_cast<char**>(&pString), &nStringLeft, &pBuffer, &nBufferLeft);
 		if (nError == 0 || (nError == static_cast<size_t>(-1) && errno == E2BIG))
 		{
-			*reinterpret_cast<typename TDest::value_type*>(buffer + c_kConvertBufferSize - nBufferLeft) = 0;
+			*reinterpret_cast<typename TDest::value_type*>(buffer + c_nConvertBufferSize - nBufferLeft) = 0;
 			sConverted += reinterpret_cast<typename TDest::value_type*>(buffer);
 			if (nError == 0)
 			{
@@ -290,17 +287,19 @@ const String& FGetModuleDir();
 
 void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize);
 
-void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, u8 a_uKey[16], u8 a_uAesCtr[16], n64 a_nSrcOffset, n64 a_nSize, bool a_bVerbose);
+void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nSrcOffset, n64 a_nSize);
 
-bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, bool a_bVerbose);
+bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize);
 
 void FPadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData);
 
-bool FEncryptAesCtrFile(const char* a_pDataFileName, u8 a_uKey[16], u8 a_uAesCtr[16], n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, bool a_bVerbose);
+bool FEncryptAesCtrFile(const char* a_pDataFileName, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset);
 
-bool FEncryptXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset, bool a_bVerbose);
+bool FEncryptXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset);
 
-bool FEncryptXorData(void* a_pData, const char* a_pXorFileName, n64 a_nDataSize, n64 a_nXorOffset, bool a_bVerbose);
+void FEncryptAesCtrData(void* a_pData, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataSize, n64 a_nXorOffset);
+
+bool FEncryptXorData(void* a_pData, const char* a_pXorFileName, n64 a_nDataSize, n64 a_nXorOffset);
 
 bool FGetFileSize(const String::value_type* a_pFileName, n64& a_nFileSize);
 

@@ -351,7 +351,7 @@ bool CPatch::createNcsdPatchFile()
 
 bool CPatch::createNcchPatchFile(C3dsTool::EFileType a_eFileType, n64 a_nOffsetOld, n64 a_nOffsetNew, bool a_bCreateCheck)
 {
-	static const char* pPartName[5] = { "extendedheader", "logoregion", "plainregion", "exefs", "romfs" };
+	static const char* c_pPartName[5] = { "extendedheader", "logoregion", "plainregion", "exefs", "romfs" };
 	CNcch ncchOld;
 	ncchOld.SetFileType(a_eFileType);
 	ncchOld.SetFilePtr(m_fpOld);
@@ -386,7 +386,7 @@ bool CPatch::createNcchPatchFile(C3dsTool::EFileType a_eFileType, n64 a_nOffsetO
 				{
 					continue;
 				}
-				printf("INFO: create patch from %s\n", pPartName[i]);
+				printf("INFO: create patch from %s\n", c_pPartName[i]);
 				if (nOffsetNew != nOffsetOld)
 				{
 					if (nSizeOld != 0 && nSizeNew != 0)

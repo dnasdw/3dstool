@@ -123,8 +123,8 @@ bool CExeFs::IsExeFsFile(const char* a_pFileName, n64 a_nOffset)
 
 bool CExeFs::IsExeFsSuperBlock(const ExeFsSuperBlock& a_ExeFsSuperBlock)
 {
-	static const u8 uReserved[sizeof(a_ExeFsSuperBlock.m_Reserved)] = {};
-	return a_ExeFsSuperBlock.m_Header[0].offset == 0 && memcmp(a_ExeFsSuperBlock.m_Reserved, uReserved, sizeof(a_ExeFsSuperBlock.m_Reserved)) == 0;
+	static const u8 c_uReserved[sizeof(a_ExeFsSuperBlock.m_Reserved)] = {};
+	return a_ExeFsSuperBlock.m_Header[0].offset == 0 && memcmp(a_ExeFsSuperBlock.m_Reserved, c_uReserved, sizeof(a_ExeFsSuperBlock.m_Reserved)) == 0;
 }
 
 bool CExeFs::extractHeader()

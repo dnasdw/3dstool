@@ -97,7 +97,7 @@ public:
 	void SetVerbose(bool a_bVerbose);
 	void SetHeaderFileName(const char* a_pHeaderFileName);
 	void SetEncryptMode(int a_nEncryptMode);
-	void SetKey(u8 a_uKey[16]);
+	void SetKey(const CBigNum& a_Key);
 	void SetNotUpdateExtendedHeaderHash(bool a_bNotUpdateExtendedHeaderHash);
 	void SetNotUpdateExeFsHash(bool a_bNotUpdateExeFsHash);
 	void SetNotUpdateRomFsHash(bool a_bNotUpdateRomFsHash);
@@ -110,6 +110,8 @@ public:
 	void SetExeFsXorFileName(const char* a_pExeFsXorFileName);
 	void SetExeFsTopXorFileName(const char* a_pExeFsTopXorFileName);
 	void SetRomFsXorFileName(const char* a_pRomFsXorFileName);
+	void SetExeFsTopAutoKey(bool a_bExeFsTopAutoKey);
+	void SetRomFsAutoKey(bool a_bRomFsAutoKey);
 	void SetFilePtr(FILE* a_fpNcch);
 	void SetOffset(n64 a_nOffset);
 	SNcchHeader& GetNcchHeader();
@@ -126,6 +128,8 @@ private:
 	void calculateMediaUnitSize();
 	void calculateOffsetSize();
 	void calculateAlignment();
+	void calculateKey();
+	void calculateCounter(EAesCtrType a_eAesCtrType);
 	bool extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const char* a_pType);
 	bool createHeader();
 	bool createExtendedHeader();
@@ -139,15 +143,17 @@ private:
 	void clearExeFs();
 	void clearRomFs();
 	void alignFileSize(n64 a_nAlignment);
-	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, const char* a_pType);
+	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
 	bool encryptXorFile(const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
-	static void getAesCounter(NcchCommonHeaderStruct* a_pNcch, EAesCtrType a_eAesCtrType, n64 a_nMediaUnitSize, u8 a_uAesCtr[16]);
+	static const CBigNum s_Slot0x18KeyX;
+	static const CBigNum s_Slot0x1BKeyX;
+	static const CBigNum s_Slot0x25KeyX;
 	C3dsTool::EFileType m_eFileType;
 	const char* m_pFileName;
 	bool m_bVerbose;
 	const char* m_pHeaderFileName;
 	int m_nEncryptMode;
-	u8 m_uKey[16];
+	CBigNum m_Key;
 	bool m_bNotUpdateExtendedHeaderHash;
 	bool m_bNotUpdateExeFsHash;
 	bool m_bNotUpdateRomFsHash;
@@ -160,13 +166,15 @@ private:
 	const char* m_pExeFsXorFileName;
 	const char* m_pExeFsTopXorFileName;
 	const char* m_pRomFsXorFileName;
+	bool m_bExeFsTopAutoKey;
+	bool m_bRomFsAutoKey;
 	FILE* m_fpNcch;
 	n64 m_nOffset;
 	SNcchHeader m_NcchHeader;
 	n64 m_nMediaUnitSize;
 	n64 m_nOffsetAndSize[kOffsetSizeIndexCount * 2];
 	bool m_bAlignToBlockSize;
-	u8 m_uAesCtr[16];
+	CBigNum m_Counter;
 	const char* m_pXorFileName;
 };
 

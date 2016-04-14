@@ -1,5 +1,7 @@
 #include "backwardlz77.h"
 
+const int CBackwardLz77::s_nCompressWorkSize = (4098 + 4098 + 256 + 256) * sizeof(n16);
+
 bool CBackwardLz77::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, u32& a_uUncompressedSize)
 {
 	bool bResult = true;

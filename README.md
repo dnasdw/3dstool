@@ -16,12 +16,13 @@ An all-in-one tool for extracting/creating 3ds roms.
 - v1.0.9 @ 2015.10.28 - Support romfs level3 only
 - v1.0.10 @ 2015.11.22 - Support exefs in cfa and abandon romfs level3 only
 - v1.0.11 @ 2016.02.04 - Fix diff bug and support VS2015
+- v1.0.12 @ 2016.04.14 - Support 7.x auto encryption
 
 ## Platforms
 
 - Cygwin
-- Linux *(Tested on Linux Mint 17.1)*
-- Mac OS X *10.10+*
+- Linux
+- Mac OS X
 - Windows *XP+*
 
 ## Building

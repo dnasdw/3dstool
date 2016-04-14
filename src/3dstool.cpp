@@ -23,7 +23,7 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ "sample", 0, "show the samples" },
 	{ "help", 'h', "show this help" },
 	{ nullptr, 0, "\ncommon:" },
-	{ "type", 't', "[[card|cci|3ds]|[nand|exec|cxi]|[data|cfa]|exefs|romfs|banner]\n\t\tthe type of the file, optional" },
+	{ "type", 't', "[[card|cci|3ds]|[exec|cxi]|[data|cfa]|exefs|romfs|banner]\n\t\tthe type of the file, optional" },
 	{ "file", 'f', "the target file, required" },
 	{ "verbose", 'v', "show the info" },
 	{ nullptr, 0, " extract/create:" },
@@ -73,6 +73,7 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ "exh-xor", 0, nullptr },
 	{ "extendedheader-xor", 0, "the xor data file used by encrypt the extendedheader of the cxi file" },
 	{ "exefs-top-xor", 0, "the xor data file used by encrypt the top section of the exefs of the cxi file" },
+	{ "exefs-top-auto-key", 0, "use the known key to encrypt the top section of the exefs of the cxi file" },
 	{ nullptr, 0, " cfa:" },
 	{ nullptr, 0, "  create:" },
 	{ "not-update-exefs-hash", 0, "do not update the exefs super block hash" },
@@ -83,6 +84,7 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ nullptr, 0, "    encrypt:" },
 	{ "exefs-xor", 0, "the xor data file used by encrypt the exefs of the cxi/cfa file" },
 	{ "romfs-xor", 0, "the xor data file used by encrypt the romfs of the cxi/cfa file" },
+	{ "romfs-auto-key", 0, "use the known key to encrypt the romfs of the cxi/cfa file" },
 	{ nullptr, 0, "\nexefs:" },
 	{ nullptr, 0, " extract/create:" },
 	{ "exefs-dir", 0, "the exefs dir for the exefs file" },
@@ -123,14 +125,16 @@ C3dsTool::C3dsTool()
 	, m_pExeFsXorFileName(nullptr)
 	, m_pExeFsTopXorFileName(nullptr)
 	, m_pRomFsXorFileName(nullptr)
+	, m_bExeFsTopAutoKey(false)
+	, m_bRomFsAutoKey(false)
 	, m_pExeFsDirName(nullptr)
 	, m_pRomFsDirName(nullptr)
 	, m_pBannerDirName(nullptr)
+	, m_bCounterValid(false)
 	, m_bUncompress(false)
 	, m_bCompress(false)
 	, m_pMessage(nullptr)
 {
-	memset(m_uKey, 0, sizeof(m_uKey));
 	memset(m_pNcchFileName, 0, sizeof(m_pNcchFileName));
 }
 
@@ -255,14 +259,14 @@ int C3dsTool::CheckOptions()
 				return 1;
 			}
 			break;
-		case kFileTypeExefs:
+		case kFileTypeExeFs:
 			if (m_pHeaderFileName == nullptr && m_pExeFsDirName == nullptr)
 			{
 				printf("ERROR: nothing to be extract\n\n");
 				return 1;
 			}
 			break;
-		case kFileTypeRomfs:
+		case kFileTypeRomFs:
 			if (m_pRomFsDirName == nullptr)
 			{
 				printf("ERROR: no --romfs-dir option\n\n");
@@ -289,7 +293,7 @@ int C3dsTool::CheckOptions()
 		}
 		else
 		{
-			if (m_eFileType == kFileTypeCci || m_eFileType == kFileTypeCxi || m_eFileType == kFileTypeCfa || m_eFileType == kFileTypeExefs)
+			if (m_eFileType == kFileTypeCci || m_eFileType == kFileTypeCxi || m_eFileType == kFileTypeCfa || m_eFileType == kFileTypeExeFs)
 			{
 				if (m_pHeaderFileName == nullptr)
 				{
@@ -321,7 +325,7 @@ int C3dsTool::CheckOptions()
 					return 1;
 				}
 			}
-			else if (m_eFileType == kFileTypeExefs)
+			else if (m_eFileType == kFileTypeExeFs)
 			{
 				if (m_pExeFsDirName == nullptr)
 				{
@@ -329,7 +333,7 @@ int C3dsTool::CheckOptions()
 					return 1;
 				}
 			}
-			else if (m_eFileType == kFileTypeRomfs)
+			else if (m_eFileType == kFileTypeRomFs)
 			{
 				if (m_pRomFsDirName == nullptr)
 				{
@@ -692,7 +696,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			m_eFileType = kFileTypeCci;
 		}
-		else if (strcmp(pType, "nand") == 0 || strcmp(pType, "exec") == 0 || strcmp(pType, "cxi") == 0)
+		else if (strcmp(pType, "exec") == 0 || strcmp(pType, "cxi") == 0)
 		{
 			m_eFileType = kFileTypeCxi;
 		}
@@ -702,11 +706,11 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		else if (strcmp(pType, "exefs") == 0)
 		{
-			m_eFileType = kFileTypeExefs;
+			m_eFileType = kFileTypeExeFs;
 		}
 		else if (strcmp(pType, "romfs") == 0)
 		{
-			m_eFileType = kFileTypeRomfs;
+			m_eFileType = kFileTypeRomFs;
 		}
 		else if (strcmp(pType, "banner") == 0)
 		{
@@ -748,7 +752,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		FSHexToU8("00000000000000000000000000000000", m_uKey);
+		m_Key = 0;
 	}
 	else if (strcmp(a_pName, "key") == 0)
 	{
@@ -765,10 +769,11 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnOptionConflict;
 		}
 		string sKey = a_pArgv[++a_nIndex];
-		if (sKey.size() != 32 || sKey.find_first_not_of("0123456789ABCDEFabcdef") != string::npos || !FSHexToU8(sKey, m_uKey))
+		if (sKey.size() != 32 || sKey.find_first_not_of("0123456789ABCDEFabcdef") != string::npos)
 		{
 			return kParseOptionReturnUnknownArgument;
 		}
+		m_Key = sKey.c_str();
 	}
 	else if (strcmp(a_pName, "counter") == 0)
 	{
@@ -784,11 +789,13 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_sCounter = a_pArgv[++a_nIndex];
-		if (m_sCounter.size() != 32 || m_sCounter.find_first_not_of("0123456789ABCDEFabcdef") != string::npos)
+		string sCounter = a_pArgv[++a_nIndex];
+		if (sCounter.size() != 32 || sCounter.find_first_not_of("0123456789ABCDEFabcdef") != string::npos)
 		{
 			return kParseOptionReturnUnknownArgument;
 		}
+		m_Counter = sCounter.c_str();
+		m_bCounterValid = true;
 	}
 	else if (strcmp(a_pName, "xor") == 0)
 	{
@@ -1005,6 +1012,10 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
+		if (m_bExeFsTopAutoKey)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
 		m_pExeFsTopXorFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "romfs-xor") == 0)
@@ -1021,7 +1032,43 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
+		if (m_bRomFsAutoKey)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
 		m_pRomFsXorFileName = a_pArgv[++a_nIndex];
+	}
+	else if (strcmp(a_pName, "exefs-top-auto-key") == 0)
+	{
+		if (m_nEncryptMode == CNcch::kEncryptModeNone)
+		{
+			m_nEncryptMode = CNcch::kEncryptModeXor;
+		}
+		else if (m_nEncryptMode != CNcch::kEncryptModeXor)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+		if (m_pExeFsTopXorFileName != nullptr)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+		m_bExeFsTopAutoKey = true;
+	}
+	else if (strcmp(a_pName, "romfs-auto-key") == 0)
+	{
+		if (m_nEncryptMode == CNcch::kEncryptModeNone)
+		{
+			m_nEncryptMode = CNcch::kEncryptModeXor;
+		}
+		else if (m_nEncryptMode != CNcch::kEncryptModeXor)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+		if (m_pRomFsXorFileName != nullptr)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+		m_bRomFsAutoKey = true;
 	}
 	else if (strcmp(a_pName, "exefs-dir") == 0)
 	{
@@ -1080,11 +1127,11 @@ bool C3dsTool::checkFileType()
 		}
 		else if (CExeFs::IsExeFsFile(m_pFileName, 0))
 		{
-			m_eFileType = kFileTypeExefs;
+			m_eFileType = kFileTypeExeFs;
 		}
 		else if (CRomFs::IsRomFsFile(m_pFileName))
 		{
-			m_eFileType = kFileTypeRomfs;
+			m_eFileType = kFileTypeRomFs;
 		}
 		else if (CBanner::IsBannerFile(m_pFileName))
 		{
@@ -1110,10 +1157,10 @@ bool C3dsTool::checkFileType()
 		case kFileTypeCfa:
 			bMatch = CNcch::IsCfaFile(m_pFileName);
 			break;
-		case kFileTypeExefs:
+		case kFileTypeExeFs:
 			bMatch = CExeFs::IsExeFsFile(m_pFileName, 0);
 			break;
-		case kFileTypeRomfs:
+		case kFileTypeRomFs:
 			bMatch = CRomFs::IsRomFsFile(m_pFileName);
 			break;
 		case kFileTypeBanner:
@@ -1153,7 +1200,7 @@ bool C3dsTool::extractFile()
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_pHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
-			ncch.SetKey(m_uKey);
+			ncch.SetKey(m_Key);
 			ncch.SetExtendedHeaderFileName(m_pExtendedHeaderFileName);
 			ncch.SetLogoRegionFileName(m_pLogoRegionFileName);
 			ncch.SetPlainRegionFileName(m_pPlainRegionFileName);
@@ -1163,6 +1210,8 @@ bool C3dsTool::extractFile()
 			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 			ncch.SetExeFsTopXorFileName(m_pExeFsTopXorFileName);
 			ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
+			ncch.SetExeFsTopAutoKey(m_bExeFsTopAutoKey);
+			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 			bResult = ncch.ExtractFile();
 		}
 		break;
@@ -1173,15 +1222,16 @@ bool C3dsTool::extractFile()
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_pHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
-			ncch.SetKey(m_uKey);
+			ncch.SetKey(m_Key);
 			ncch.SetExeFsFileName(m_pExeFsFileName);
 			ncch.SetRomFsFileName(m_pRomFsFileName);
 			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 			ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
+			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 			bResult = ncch.ExtractFile();
 		}
 		break;
-	case kFileTypeExefs:
+	case kFileTypeExeFs:
 		{
 			CExeFs exeFs;
 			exeFs.SetFileName(m_pFileName);
@@ -1192,7 +1242,7 @@ bool C3dsTool::extractFile()
 			bResult = exeFs.ExtractFile();
 		}
 		break;
-	case kFileTypeRomfs:
+	case kFileTypeRomFs:
 		{
 			CRomFs romFs;
 			romFs.SetFileName(m_pFileName);
@@ -1239,7 +1289,7 @@ bool C3dsTool::createFile()
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_pHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
-			ncch.SetKey(m_uKey);
+			ncch.SetKey(m_Key);
 			ncch.SetNotUpdateExtendedHeaderHash(m_bNotUpdateExtendedHeaderHash);
 			ncch.SetNotUpdateExeFsHash(m_bNotUpdateExeFsHash);
 			ncch.SetNotUpdateRomFsHash(m_bNotUpdateRomFsHash);
@@ -1252,6 +1302,8 @@ bool C3dsTool::createFile()
 			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 			ncch.SetExeFsTopXorFileName(m_pExeFsTopXorFileName);
 			ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
+			ncch.SetExeFsTopAutoKey(m_bExeFsTopAutoKey);
+			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 			bResult = ncch.CreateFile();
 		}
 		break;
@@ -1262,17 +1314,18 @@ bool C3dsTool::createFile()
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_pHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
-			ncch.SetKey(m_uKey);
+			ncch.SetKey(m_Key);
 			ncch.SetNotUpdateExeFsHash(m_bNotUpdateExeFsHash);
 			ncch.SetNotUpdateRomFsHash(m_bNotUpdateRomFsHash);
 			ncch.SetExeFsFileName(m_pExeFsFileName);
 			ncch.SetRomFsFileName(m_pRomFsFileName);
 			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 			ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
+			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 			bResult = ncch.CreateFile();
 		}
 		break;
-	case kFileTypeExefs:
+	case kFileTypeExeFs:
 		{
 			CExeFs exeFs;
 			exeFs.SetFileName(m_pFileName);
@@ -1283,7 +1336,7 @@ bool C3dsTool::createFile()
 			bResult = exeFs.CreateFile();
 		}
 		break;
-	case kFileTypeRomfs:
+	case kFileTypeRomFs:
 		{
 			CRomFs romFs;
 			romFs.SetFileName(m_pFileName);
@@ -1311,18 +1364,13 @@ bool C3dsTool::createFile()
 bool C3dsTool::encryptFile()
 {
 	bool bResult = false;
-	if (m_nEncryptMode == CNcch::kEncryptModeAesCtr && !m_sCounter.empty())
+	if (m_nEncryptMode == CNcch::kEncryptModeAesCtr && m_bCounterValid)
 	{
-		u8 uAesCtr[16] = {};
-		bResult = FSHexToU8(m_sCounter, uAesCtr);
-		if (bResult)
-		{
-			bResult = FEncryptAesCtrFile(m_pFileName, m_uKey, uAesCtr, 0, 0, true, m_bVerbose);
-		}
+		bResult = FEncryptAesCtrFile(m_pFileName, m_Key, m_Counter, 0, 0, true, 0);
 	}
 	else if (m_nEncryptMode == CNcch::kEncryptModeXor && m_pXorFileName != nullptr)
 	{
-		bResult = FEncryptXorFile(m_pFileName, m_pXorFileName, 0, 0, true, 0, m_bVerbose);
+		bResult = FEncryptXorFile(m_pFileName, m_pXorFileName, 0, 0, true, 0);
 	}
 	else if (CNcch::IsCxiFile(m_pFileName))
 	{
@@ -1330,11 +1378,13 @@ bool C3dsTool::encryptFile()
 		ncch.SetFileName(m_pFileName);
 		ncch.SetVerbose(m_bVerbose);
 		ncch.SetEncryptMode(m_nEncryptMode);
-		ncch.SetKey(m_uKey);
+		ncch.SetKey(m_Key);
 		ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
 		ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 		ncch.SetExeFsTopXorFileName(m_pExeFsTopXorFileName);
 		ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
+		ncch.SetExeFsTopAutoKey(m_bExeFsTopAutoKey);
+		ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 		bResult = ncch.EncryptFile();
 	}
 	else if (CNcch::IsCfaFile(m_pFileName))
@@ -1343,9 +1393,10 @@ bool C3dsTool::encryptFile()
 		ncch.SetFileName(m_pFileName);
 		ncch.SetVerbose(m_bVerbose);
 		ncch.SetEncryptMode(m_nEncryptMode);
-		ncch.SetKey(m_uKey);
+		ncch.SetKey(m_Key);
 		ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 		ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
+		ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 		bResult = ncch.EncryptFile();
 	}
 	return bResult;
@@ -1528,6 +1579,8 @@ int C3dsTool::sample()
 	printf("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.bcma.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.Main.exheader.xorpad --exefs-xor 000400000XXXXX00.Main.exefs_norm.xorpad --romfs-xor 000400000XXXXX00.Main.romfs.xorpad\n\n");
 	printf("# extract cxi with 7.x xor encryption\n");
 	printf("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.bcma.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.Main.exheader.xorpad --exefs-xor 000400000XXXXX00.Main.exefs_norm.xorpad --exefs-top-xor 000400000XXXXX00.Main.exefs_7x.xorpad --romfs-xor 000400000XXXXX00.Main.romfs.xorpad\n\n");
+	printf("# extract cxi with 7.x auto encryption\n");
+	printf("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.bcma.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.Main.exheader.xorpad --exefs-xor 000400000XXXXX00.Main.exefs_norm.xorpad --exefs-top-auto-key --romfs-auto-key\n\n");
 	printf("# extract cfa without encryption\n");
 	printf("3dstool -xvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin\n\n");
 	printf("# extract cfa with AES-CTR encryption\n");
@@ -1554,6 +1607,8 @@ int C3dsTool::sample()
 	printf("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.bcma.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.Main.exheader.xorpad --exefs-xor 000400000XXXXX00.Main.exefs_norm.xorpad --romfs-xor 000400000XXXXX00.Main.romfs.xorpad\n\n");
 	printf("# create cxi with 7.x xor encryption and calculate hash\n");
 	printf("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.bcma.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.Main.exheader.xorpad --exefs-xor 000400000XXXXX00.Main.exefs_norm.xorpad --exefs-top-xor 000400000XXXXX00.Main.exefs_7x.xorpad --romfs-xor 000400000XXXXX00.Main.romfs.xorpad\n\n");
+	printf("# create cxi with 7.x auto encryption and calculate hash\n");
+	printf("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.bcma.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.Main.exheader.xorpad --exefs-xor 000400000XXXXX00.Main.exefs_norm.xorpad --exefs-top-auto-key --romfs-auto-key\n\n");
 	printf("# create cfa without encryption and calculate hash\n");
 	printf("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --not-update-romfs-hash\n\n");
 	printf("# create cfa with AES-CTR encryption and calculate hash\n");

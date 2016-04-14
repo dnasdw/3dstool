@@ -1,5 +1,7 @@
 #include "lz77.h"
 
+const int CLz77::s_nCompressWorkSize = (4096 + 256 + 256) * sizeof(n16);
+
 bool CLz77::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, u32& a_uUncompressedSize)
 {
 	bool bResult = true;
