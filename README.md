@@ -17,6 +17,7 @@ An all-in-one tool for extracting/creating 3ds roms.
 - v1.0.10 @ 2015.11.22 - Support exefs in cfa and abandon romfs level3 only
 - v1.0.11 @ 2016.02.04 - Fix diff bug and support VS2015
 - v1.0.12 @ 2016.04.14 - Support 7.x auto encryption
+- v1.0.13 @ 2016.04.20 - Fix romfs 7.x auto encryption bug
 
 ## Platforms
 
