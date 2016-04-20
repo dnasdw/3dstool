@@ -970,7 +970,7 @@ bool CNcch::createRomFs()
 		}
 		delete[] pBuffer;
 		calculateCounter(kAesCtrTypeRomFs);
-		if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_pRomFsXorFileName == nullptr))
+		if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_pRomFsXorFileName == nullptr && !m_bRomFsAutoKey))
 		{
 			FCopyFile(m_fpNcch, fp, 0, nFileSize);
 		}
