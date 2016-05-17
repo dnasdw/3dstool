@@ -160,7 +160,7 @@ const String& FGetModuleFile()
 	if (nCount == -1)
 	{
 		printf("ERROR: readlink /proc/self/exe error\n\n");
-		sFile[0] = '\0';
+		sFile.erase();
 	}
 	else
 	{

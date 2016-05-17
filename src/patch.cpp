@@ -152,6 +152,10 @@ bool CPatch::ApplyPatchFile()
 		fclose(m_fpOld);
 		return false;
 	}
+	FFseek(m_fpPatch, -8, SEEK_END);
+	n64 n3psOffset = 0;
+	fread(&n3psOffset, 8, 1, m_fpPatch);
+	FFseek(m_fpPatch, -n3psOffset, SEEK_END);
 	fread(&m_3dsPatchSystemHeader, sizeof(m_3dsPatchSystemHeader), 1, m_fpPatch);
 	if (m_3dsPatchSystemHeader.Signature != s_uSignature)
 	{
@@ -205,9 +209,10 @@ bool CPatch::ApplyPatchFile()
 		printf("ERROR: %s was already patched\n\n", m_pFileName);
 		fclose(m_fpPatch);
 		fclose(m_fpOld);
-		return bResult;
+		return true;
 	}
-	FFseek(m_fpPatch, sizeof(m_3dsPatchSystemHeader), SEEK_SET);
+	FFseek(m_fpPatch, -n3psOffset, SEEK_END);
+	FFseek(m_fpPatch, sizeof(m_3dsPatchSystemHeader), SEEK_CUR);
 	do
 	{
 		fread(&uPatchCommand, 1, 1, m_fpPatch);

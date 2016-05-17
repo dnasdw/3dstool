@@ -1,13 +1,18 @@
 IF DEFINED VS90COMNTOOLS (
   SET VCVARSALL="%VS90COMNTOOLS%..\..\VC\vcvarsall.bat"
+  SET target_lib_suffix=""
 ) ELSE IF DEFINED VS140COMNTOOLS (
   SET VCVARSALL="%VS140COMNTOOLS%..\..\VC\vcvarsall.bat"
+  SET target_lib_suffix="_msvc14"
 ) ELSE IF DEFINED VS120COMNTOOLS (
   SET VCVARSALL="%VS120COMNTOOLS%..\..\VC\vcvarsall.bat"
+  SET target_lib_suffix=""
 ) ELSE IF DEFINED VS110COMNTOOLS (
   SET VCVARSALL="%VS110COMNTOOLS%..\..\VC\vcvarsall.bat"
+  SET target_lib_suffix=""
 ) ELSE IF DEFINED VS100COMNTOOLS (
   SET VCVARSALL="%VS100COMNTOOLS%..\..\VC\vcvarsall.bat"
+  SET target_lib_suffix=""
 )
 IF NOT DEFINED VCVARSALL (
   ECHO Can not find VC2008 or VC2010 or VC2012 or VC2013 or VC2015 installed!
@@ -31,8 +36,8 @@ nmake -f ms\nt.mak
 nmake -f ms\nt.mak install
 MD "%rootdir%..\..\include\%target%"
 XCOPY "%prefix%\include" "%rootdir%..\..\include\%target%" /S /Y
-MD "%rootdir%..\..\lib\%target%"
-COPY /Y "%prefix%\lib\libeay32.lib" "%rootdir%..\..\lib\%target%"
+MD "%rootdir%..\..\lib\%target%%target_lib_suffix%"
+COPY /Y "%prefix%\lib\libeay32.lib" "%rootdir%..\..\lib\%target%%target_lib_suffix%"
 CD /D "%cwdir%"
 RD /S /Q "%rootdir%%version%"
 RD /S /Q "%prefix%"
