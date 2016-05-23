@@ -14,8 +14,7 @@ struct NcchCommonHeaderStruct
 	u16 NcchVersion;
 	u8 Reserved0[4];
 	u64 ProgramId;
-	u8 TempFlag;
-	u8 Reserved1[15];
+	u8 Reserved1[16];
 	u8 LogoRegionHash[32];
 	u8 ProductCode[16];
 	u8 ExtendedHeaderHash[32];
@@ -125,6 +124,7 @@ public:
 	static const u32 s_uSignature;
 	static const int s_nBlockSize;
 private:
+	string& getExtKey();
 	void calculateMediaUnitSize();
 	void calculateOffsetSize();
 	void calculateAlignment();
@@ -145,6 +145,7 @@ private:
 	void alignFileSize(n64 a_nAlignment);
 	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
 	bool encryptXorFile(const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
+	static size_t onDownload(char* a_pData, size_t a_uSize, size_t a_uNmemb, void* a_pUserData);
 	static const CBigNum s_Slot0x18KeyX;
 	static const CBigNum s_Slot0x1BKeyX;
 	static const CBigNum s_Slot0x25KeyX;
@@ -174,6 +175,7 @@ private:
 	n64 m_nMediaUnitSize;
 	n64 m_nOffsetAndSize[kOffsetSizeIndexCount * 2];
 	bool m_bAlignToBlockSize;
+	string m_sExtKey;
 	CBigNum m_Counter;
 	const char* m_pXorFileName;
 };

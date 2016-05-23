@@ -2,6 +2,7 @@
 #include "exefs.h"
 #include "extendedheader.h"
 #include "romfs.h"
+#include <curl/curl.h>
 #include <openssl/sha.h>
 
 const u32 CNcch::s_uSignature = CONVERT_ENDIAN('NCCH');
@@ -523,6 +524,11 @@ bool CNcch::IsCfaFile(const char* a_pFileName)
 	return bIsCfaFile;
 }
 
+string& CNcch::getExtKey()
+{
+	return m_sExtKey;
+}
+
 void CNcch::calculateMediaUnitSize()
 {
 	m_nMediaUnitSize = 1LL << (m_NcchHeader.Ncch.Flags[SizeType] + 9);
@@ -551,7 +557,7 @@ void CNcch::calculateKey()
 {
 	m_Key = 0;
 	CBigNum keyX;
-	switch (m_NcchHeader.Ncch.Flags[3])
+	switch (m_NcchHeader.Ncch.Flags[Encrypt7x])
 	{
 	case 0x01:
 		keyX = s_Slot0x25KeyX;
@@ -569,6 +575,127 @@ void CNcch::calculateKey()
 	for (int i = 0; i < 16; i++)
 	{
 		sKeyY += FFormat("%02X", m_NcchHeader.RSASignature[i]);
+	}
+	if ((m_NcchHeader.Ncch.Flags[Flag] & 0x20) != 0)
+	{
+		map<string, string> mExtKey;
+		String sExtKeyPath = FGetModuleDir() + STR("/ext_key.txt");
+		FILE* fp = FFopenUnicode(sExtKeyPath.c_str(), STR("rb"));
+		if (fp != nullptr)
+		{
+			FFseek(fp, 0, SEEK_END);
+			u32 uSize = static_cast<u32>(FFtell(fp));
+			FFseek(fp, 0, SEEK_SET);
+			char* pTxt = new char[uSize + 1];
+			fread(pTxt, 1, uSize, fp);
+			fclose(fp);
+			pTxt[uSize] = '\0';
+			string sTxt(pTxt);
+			delete[] pTxt;
+			vector<string> vTxt = FSSplitOf<string>(sTxt, "\r\n");
+			for (auto it = vTxt.begin(); it != vTxt.end(); ++it)
+			{
+				sTxt = FSTrim(*it);
+				if (!sTxt.empty() && !FSStartsWith<string>(sTxt, "//"))
+				{
+					vector<string> vExtKey = FSSplit<string>(sTxt, " ");
+					if (vExtKey.size() == 2)
+					{
+						if (!mExtKey.insert(make_pair(vExtKey[0], vExtKey[1])).second)
+						{
+							printf("INFO: multiple ext key for %s\n", vExtKey[0].c_str());
+						}
+					}
+					else
+					{
+						printf("INFO: unknown ext key record %s\n", sTxt.c_str());
+					}
+				}
+			}
+		}
+		u8* pProgramId = reinterpret_cast<u8*>(&m_NcchHeader.Ncch.ProgramId);
+		string sProgramId;
+		for (int i = 0; i < 8; i++)
+		{
+			sProgramId += FFormat("%02X", pProgramId[7 - i]);
+		}
+		auto it = mExtKey.find(sProgramId);
+		if (it != mExtKey.end())
+		{
+			m_sExtKey = it->second;
+		}
+		else
+		{
+			curl_global_init(CURL_GLOBAL_DEFAULT);
+			CURL* pCURL = curl_easy_init();
+			if (pCURL != nullptr)
+			{
+				curl_easy_setopt(pCURL, CURLOPT_URL, FFormat("https://kagiya-ctr.cdn.nintendo.net/title/0x%s/ext_key?country=JP", sProgramId.c_str()).c_str());
+				curl_easy_setopt(pCURL, CURLOPT_SSL_VERIFYPEER, 0L);
+				curl_easy_setopt(pCURL, CURLOPT_SSL_VERIFYHOST, 0L);
+				curl_easy_setopt(pCURL, CURLOPT_WRITEFUNCTION, &CNcch::onDownload);
+				curl_easy_setopt(pCURL, CURLOPT_WRITEDATA, this);
+				CURLcode code = curl_easy_perform(pCURL);
+				if (code != CURLE_OK)
+				{
+					printf("INFO: curl_easy_perform() failed: %s\n", curl_easy_strerror(code));
+					curl_easy_cleanup(pCURL);
+					curl_global_cleanup();
+					return;
+				}
+				curl_easy_cleanup(pCURL);
+			}
+			curl_global_cleanup();
+			string sExtKey = m_sExtKey;
+			m_sExtKey.clear();
+			for (int i = 0; i < static_cast<int>(sExtKey.size()); i++)
+			{
+				m_sExtKey += FFormat("%02X", static_cast<u8>(sExtKey[i]));
+			}
+			mExtKey.insert(make_pair(sProgramId, m_sExtKey));
+			fp = FFopenUnicode(sExtKeyPath.c_str(), STR("wb"));
+			if (fp != nullptr)
+			{
+				for (auto it = mExtKey.begin(); it != mExtKey.end(); ++it)
+				{
+					fprintf(fp, "%s %s\r\n", it->first.c_str(), it->second.c_str());
+				}
+				fclose(fp);
+			}
+		}
+		if (m_sExtKey.size() != 32 || m_sExtKey.find_first_not_of("0123456789ABCDEFabcdef") != string::npos)
+		{
+			printf("ERROR: can not find ext key for %s\n\n", sProgramId.c_str());
+			return;
+		}
+		string sExtKeyWithProgramId = m_sExtKey;
+		for (int i = 0; i < 8; i++)
+		{
+			sExtKeyWithProgramId += FFormat("%02X", pProgramId[i]);
+		}
+		CBigNum bigNum = sExtKeyWithProgramId.c_str();
+		u8 uBytes[32] = {};
+		bigNum.GetBytes(uBytes, 24);
+		u8 uSHA256[32] = {};
+		SHA256(uBytes, 24, uSHA256);
+		u8* pReserved0 = m_NcchHeader.Ncch.Reserved0;
+		for (int i = 0; i < static_cast<int>(DNA_ARRAY_COUNT(m_NcchHeader.Ncch.Reserved0)); i++)
+		{
+			if (pReserved0[i] != uSHA256[i])
+			{
+				printf("ERROR: ext key verification failed\n\n");
+				return;
+			}
+		}
+		sKeyY += m_sExtKey;
+		bigNum = sKeyY.c_str();
+		bigNum.GetBytes(uBytes, 32);
+		SHA256(uBytes, 32, uSHA256);
+		sKeyY.clear();
+		for (int i = 0; i < 16; i++)
+		{
+			sKeyY += FFormat("%02X", uSHA256[i]);
+		}
 	}
 	CBigNum keyY = sKeyY.c_str();
 	m_Key = ((keyX.Crol(2, 128) ^ keyY) + "1FF9E9AAC5FE0408024591DC5D52768A").Crol(87, 128);
@@ -1076,4 +1203,16 @@ bool CNcch::encryptXorFile(const char* a_pXorFileName, n64 a_nOffset, n64 a_nSiz
 		printf("INFO: %s is not decrypt or encrypt\n", a_pType);
 	}
 	return bResult;
+}
+
+size_t CNcch::onDownload(char* a_pData, size_t a_uSize, size_t a_uNmemb, void* a_pUserData)
+{
+	size_t uSize = a_uSize * a_uNmemb;
+	CNcch* pNcch = reinterpret_cast<CNcch*>(a_pUserData);
+	if (pNcch != nullptr)
+	{
+		string& sExtKey = pNcch->getExtKey();
+		sExtKey.append(a_pData, uSize);
+	}
+	return uSize;
 }
