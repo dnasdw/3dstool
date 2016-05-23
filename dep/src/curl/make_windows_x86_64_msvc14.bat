@@ -17,7 +17,7 @@ XCOPY "%rootdir%..\%version%" "%rootdir%%version%" /S /Y
 RD /S /Q "%rootdir%project"
 MD "%rootdir%project"
 CD /D "%rootdir%project"
-cmake -DBUILD_CURL_EXE=OFF -DBUILD_CURL_TESTS=OFF -DCURL_STATICLIB=ON -DCMAKE_INSTALL_PREFIX="%prefix%" -G %GENERATOR% "%rootdir%%version%"
+cmake -C "%rootdir%CMakeLists.txt" -DBUILD_CURL_EXE=OFF -DBUILD_CURL_TESTS=OFF -DCURL_STATICLIB=ON -DCMAKE_INSTALL_PREFIX="%prefix%" -G %GENERATOR% "%rootdir%%version%"
 cmake "%rootdir%%version%"
 cmake --build . --target install --config Release --clean-first
 MD "%rootdir%..\..\include\%target%"
