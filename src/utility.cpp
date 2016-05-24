@@ -141,7 +141,7 @@ const String& FGetModuleFile()
 	sFile.resize(nMaxPath, STR('\0'));
 	size_t uSize = 0;
 #if _3DSTOOL_COMPILER == COMPILER_MSC
-	uSize = GetModuleFileNameW(nullptr, &sFile.front(), nMaxPath);
+	uSize = GetModuleFileNameW(nullptr, &*sFile.begin(), nMaxPath);
 #elif defined(_3DSTOOL_APPLE)
 	char path[nMaxPath] = {};
 	u32 uPathSize = static_cast<u32>(sizeof(path));

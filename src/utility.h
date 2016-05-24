@@ -69,7 +69,18 @@
 #endif
 #include <locale.h>
 #include <stdarg.h>
+#if _3DSTOOL_COMPILER != COMPILER_MSC || (_3DSTOOL_COMPILER == COMPILER_MSC && _3DSTOOL_COMPILER_VERSION >= 1600)
 #include <stdint.h>
+#else
+typedef signed char        int8_t;
+typedef short              int16_t;
+typedef int                int32_t;
+typedef long long          int64_t;
+typedef unsigned char      uint8_t;
+typedef unsigned short     uint16_t;
+typedef unsigned int       uint32_t;
+typedef unsigned long long uint64_t;
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -97,6 +108,9 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 
 #if _3DSTOOL_COMPILER == COMPILER_MSC
+#if _3DSTOOL_COMPILER_VERSION < 1600
+#define nullptr NULL
+#endif
 #if _3DSTOOL_COMPILER_VERSION >= 1900
 typedef u16 Char16_t;
 typedef std::basic_string<Char16_t> U16String;
