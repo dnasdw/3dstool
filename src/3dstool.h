@@ -44,7 +44,9 @@ public:
 		kCompressTypeNone,
 		kCompressTypeBlz,
 		kCompressTypeLz,
-		kCompressTypeLzEx
+		kCompressTypeLzEx,
+		kCompressTypeH4,
+		kCompressTypeH8
 	};
 	struct SOption
 	{

@@ -5,7 +5,7 @@ const int CLz77::s_nCompressWorkSize = (4096 + 256 + 256) * sizeof(n16);
 bool CLz77::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, u32& a_uUncompressedSize)
 {
 	bool bResult = true;
-	if (a_uCompressedSize >= 4 && (a_pCompressed[0] & 0xF0) == 0x10 && (a_pCompressed[0] & 0x0F) <= 1)
+	if (a_uCompressedSize >= 4 && (a_pCompressed[0] & 0xF0) == 0x10 && ((a_pCompressed[0] & 0x0F) == 0 || (a_pCompressed[0] & 0x0F) == 1))
 	{
 		a_uUncompressedSize = *reinterpret_cast<const u32*>(a_pCompressed) >> 8 & 0xFFFFFF;
 		if (a_uUncompressedSize != 0 || a_uCompressedSize >= 8)
@@ -29,13 +29,13 @@ bool CLz77::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, 
 
 u32 CLz77::GetCompressBoundSize(u32 a_uUncompressedSize, n32 a_nCompressAlign)
 {
-	return ((a_uUncompressedSize <= 0xFFFFFF ? 4 : 8) + (a_uUncompressedSize + 7) / 8 * 9 + a_nCompressAlign - 1) / a_nCompressAlign * a_nCompressAlign;
+	return ((a_uUncompressedSize != 0 && a_uUncompressedSize <= 0xFFFFFF ? 4 : 8) + (a_uUncompressedSize + 7) / 8 * 9 + a_nCompressAlign - 1) / a_nCompressAlign * a_nCompressAlign;
 }
 
 bool CLz77::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUncompressed, u32& a_uUncompressedSize)
 {
 	bool bResult = true;
-	if (a_uCompressedSize >= 4 && (a_pCompressed[0] & 0xF0) == 0x10 && (a_pCompressed[0] & 0x0F) <= 1)
+	if (a_uCompressedSize >= 4 && (a_pCompressed[0] & 0xF0) == 0x10 && ((a_pCompressed[0] & 0x0F) == 0 || (a_pCompressed[0] & 0x0F) == 1))
 	{
 		u32 uUncompressedSize = *reinterpret_cast<const u32*>(a_pCompressed) >> 8 & 0xFFFFFF;
 		n32 nHeaderSize = 4;
@@ -185,7 +185,7 @@ bool CLz77::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_p
 	do
 	{
 		n32 nHeaderSize = 4;
-		if (a_uUncompressedSize <= 0xFFFFFF)
+		if (a_uUncompressedSize != 0 && a_uUncompressedSize <= 0xFFFFFF)
 		{
 			if (a_uCompressedSize < 4)
 			{

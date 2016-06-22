@@ -137,7 +137,7 @@ bool CBackwardLz77::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize,
 						slide(&info, pSrc, nSize);
 						pSrc -= nSize;
 						nSize -= 3;
-						*--pDest = (nSize << 4 & 0xF0) | ((nOffset - 3) >> 8 & 0xF);
+						*--pDest = (nSize << 4 & 0xF0) | ((nOffset - 3) >> 8 & 0x0F);
 						*--pDest = (nOffset - 3) & 0xFF;
 					}
 					if (pSrc - a_pUncompressed <= 0)
