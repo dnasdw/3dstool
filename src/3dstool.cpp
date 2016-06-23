@@ -8,6 +8,7 @@
 #include "ncsd.h"
 #include "patch.h"
 #include "romfs.h"
+#include "runlength.h"
 #include "yaz0.h"
 
 C3dsTool::SOption C3dsTool::s_Option[] =
@@ -39,7 +40,7 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ nullptr, 0, " compress:" },
 	{ "compress-align", 0, "[1|4|8|16|32]\n\t\tthe alignment of the compressed filesize" },
 	{ nullptr, 0, "  uncompress:" },
-	{ "compress-type", 0, "[blz|lz(ex)|h4|h8|yaz0]\n\t\tthe type of the compress" },
+	{ "compress-type", 0, "[blz|lz(ex)|h4|h8|rl|yaz0]\n\t\tthe type of the compress" },
 	{ "compress-out", 0, "the output file of uncompressed or compressed" },
 	{ nullptr, 0, " diff:" },
 	{ "old", 0, "the old file" },
@@ -857,6 +858,10 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			m_eCompressType = kCompressTypeH8;
 		}
+		else if (strcmp(pType, "rl") == 0)
+		{
+			m_eCompressType = kCompressTypeRl;
+		}
 		else if (strcmp(pType, "yaz0") == 0)
 		{
 			m_eCompressType = kCompressTypeYaz0;
@@ -1442,6 +1447,9 @@ bool C3dsTool::uncompressFile()
 		case kCompressTypeH8:
 			bResult = CHuffman::GetUncompressedSize(pCompressed, uCompressedSize, uUncompressedSize);
 			break;
+		case kCompressTypeRl:
+			bResult = CRunLength::GetUncompressedSize(pCompressed, uCompressedSize, uUncompressedSize);
+			break;
 		case kCompressTypeYaz0:
 			bResult = CYaz0::GetUncompressedSize(pCompressed, uCompressedSize, uUncompressedSize);
 			break;
@@ -1463,6 +1471,9 @@ bool C3dsTool::uncompressFile()
 			case kCompressTypeH4:
 			case kCompressTypeH8:
 				bResult = CHuffman::Uncompress(pCompressed, uCompressedSize, pUncompressed, uUncompressedSize);
+				break;
+			case kCompressTypeRl:
+				bResult = CRunLength::Uncompress(pCompressed, uCompressedSize, pUncompressed, uUncompressedSize);
 				break;
 			case kCompressTypeYaz0:
 				bResult = CYaz0::Uncompress(pCompressed, uCompressedSize, pUncompressed, uUncompressedSize);
@@ -1521,6 +1532,9 @@ bool C3dsTool::compressFile()
 		case kCompressTypeH8:
 			uCompressedSize = CHuffman::GetCompressBoundSize(uUncompressedSize, m_nCompressAlign);
 			break;
+		case kCompressTypeRl:
+			uCompressedSize = CRunLength::GetCompressBoundSize(uUncompressedSize, m_nCompressAlign);
+			break;
 		case kCompressTypeYaz0:
 			uCompressedSize = CYaz0::GetCompressBoundSize(uUncompressedSize, m_nCompressAlign);
 			break;
@@ -1544,6 +1558,9 @@ bool C3dsTool::compressFile()
 			break;
 		case kCompressTypeH8:
 			bReuslt = CHuffman::CompressH8(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
+			break;
+		case kCompressTypeRl:
+			bReuslt = CRunLength::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
 			break;
 		case kCompressTypeYaz0:
 			bReuslt = CYaz0::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
@@ -1693,6 +1710,10 @@ int C3dsTool::sample()
 	printf("3dstool -uvf input.bin --compress-type h8 --compress-out output.bin\n\n");
 	printf("# compress file with Huffman 8bits, standalone\n");
 	printf("3dstool -zvf input.bin --compress-type h8 --compress-out output.bin\n\n");
+	printf("# uncompress file with RunLength, standalone\n");
+	printf("3dstool -uvf input.bin --compress-type rl --compress-out output.bin\n\n");
+	printf("# compress file with RunLength, standalone\n");
+	printf("3dstool -zvf input.bin --compress-type rl --compress-out output.bin\n\n");
 	printf("# uncompress file with Yaz0, standalone\n");
 	printf("3dstool -uvf input.szs --compress-type yaz0 --compress-out output.sarc\n\n");
 	printf("# compress file with Yaz0, standalone\n");
