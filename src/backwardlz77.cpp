@@ -105,7 +105,7 @@ bool CBackwardLz77::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize,
 		{
 			SCompressInfo info;
 			initTable(&info, pWork);
-			const int kMaxSize = 0xF + 3;
+			const int nMaxSize = 0xF + 3;
 			const u8* pSrc = a_pUncompressed + a_uUncompressedSize;
 			u8* pDest = a_pCompressed + a_uUncompressedSize;
 			while (pSrc - a_pUncompressed > 0 && pDest - a_pCompressed > 0)
@@ -115,7 +115,7 @@ bool CBackwardLz77::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize,
 				for (int i = 0; i < 8; i++)
 				{
 					int nOffset = 0;
-					int nSize = search(&info, pSrc, nOffset, static_cast<int>(min<n64>(min<n64>(kMaxSize, pSrc - a_pUncompressed), a_pUncompressed + a_uUncompressedSize - pSrc)));
+					int nSize = search(&info, pSrc, nOffset, static_cast<int>(min<n64>(min<n64>(nMaxSize, pSrc - a_pUncompressed), a_pUncompressed + a_uUncompressedSize - pSrc)));
 					if (nSize < 3)
 					{
 						if (pDest - a_pCompressed < 1)

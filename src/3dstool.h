@@ -46,7 +46,8 @@ public:
 		kCompressTypeLz,
 		kCompressTypeLzEx,
 		kCompressTypeH4,
-		kCompressTypeH8
+		kCompressTypeH8,
+		kCompressTypeYaz0
 	};
 	struct SOption
 	{

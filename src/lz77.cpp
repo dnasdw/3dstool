@@ -207,7 +207,7 @@ bool CLz77::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_p
 		}
 		SCompressInfo info;
 		initTable(&info, pWork);
-		const int kMaxSize = a_bExFormat ? 0xFFFF + 0xFF + 0xF + 3 : 0xF + 3;
+		const int nMaxSize = a_bExFormat ? 0xFFFF + 0xFF + 0xF + 3 : 0xF + 3;
 		const u8* pSrc = a_pUncompressed;
 		u8* pDest = a_pCompressed + nHeaderSize;
 		while (a_pUncompressed + a_uUncompressedSize - pSrc > 0)
@@ -222,7 +222,7 @@ bool CLz77::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_p
 			for (int i = 0; i < 8; i++)
 			{
 				int nOffset = 0;
-				int nSize = search(&info, pSrc, nOffset, static_cast<int>(min<n64>(kMaxSize, a_pUncompressed + a_uUncompressedSize - pSrc)));
+				int nSize = search(&info, pSrc, nOffset, static_cast<int>(min<n64>(nMaxSize, a_pUncompressed + a_uUncompressedSize - pSrc)));
 				if (nSize < 3)
 				{
 					if (a_pCompressed + a_uCompressedSize - pDest < 1)
