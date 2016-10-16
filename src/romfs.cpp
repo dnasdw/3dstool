@@ -278,7 +278,7 @@ void CRomFs::buildBlackList()
 		string sTxt(pTxt);
 		delete[] pTxt;
 		vector<string> vTxt = FSSplitOf<string>(sTxt, "\r\n");
-		for (auto it = vTxt.begin(); it != vTxt.end(); ++it)
+		for (vector<string>::const_iterator it = vTxt.begin(); it != vTxt.end(); ++it)
 		{
 			sTxt = FSTrim(*it);
 			if (!sTxt.empty() && !FSStartsWith<string>(sTxt, "//"))
@@ -460,10 +460,10 @@ bool CRomFs::createEntryList()
 	return bResult;
 }
 
-bool CRomFs::matchInBlackList(const String& a_sPath)
+bool CRomFs::matchInBlackList(const String& a_sPath) const
 {
 	bool bMatch = false;
-	for (auto it = m_vBlackList.begin(); it != m_vBlackList.end(); ++it)
+	for (vector<Regex>::const_iterator it = m_vBlackList.begin(); it != m_vBlackList.end(); ++it)
 	{
 		if (regex_search(a_sPath, *it))
 		{
@@ -659,15 +659,15 @@ void CRomFs::remap()
 		{
 			return;
 		}
-		for (auto it = m_vCreateFile.begin(); it != m_vCreateFile.end(); ++it)
+		for (vector<SEntry>::const_iterator it = m_vCreateFile.begin(); it != m_vCreateFile.end(); ++it)
 		{
-			SEntry& currentEntry = *it;
+			const SEntry& currentEntry = *it;
 			m_mTravelInfo[currentEntry.Path] = currentEntry.Entry.File;
 		}
 		CSpace space;
 		if (m_nLevel3Offset + m_RomFsMetaInfo.DataOffset > romFs.m_nLevel3Offset + romFs.m_RomFsMetaInfo.DataOffset)
 		{
-			for (auto itRomFs = romFs.m_mTravelInfo.begin(); itRomFs != romFs.m_mTravelInfo.end(); ++itRomFs)
+			for (unordered_map<String, SCommonFileEntry>::iterator itRomFs = romFs.m_mTravelInfo.begin(); itRomFs != romFs.m_mTravelInfo.end(); ++itRomFs)
 			{
 				SCommonFileEntry& currentRomFsFileEntry = itRomFs->second;
 				n64 nDelta = currentRomFsFileEntry.FileOffset - (m_nLevel3Offset + m_RomFsMetaInfo.DataOffset);
@@ -687,10 +687,10 @@ void CRomFs::remap()
 			space.AddSpace(m_nLevel3Offset + m_RomFsMetaInfo.DataOffset, romFs.m_nLevel3Offset + romFs.m_RomFsMetaInfo.DataOffset - m_nLevel3Offset - m_RomFsMetaInfo.DataOffset);
 		}
 		m_RomFsHeader.Level3.Size = 0;
-		for (auto itRomFs = romFs.m_mTravelInfo.begin(); itRomFs != romFs.m_mTravelInfo.end(); ++itRomFs)
+		for (unordered_map<String, SCommonFileEntry>::iterator itRomFs = romFs.m_mTravelInfo.begin(); itRomFs != romFs.m_mTravelInfo.end(); ++itRomFs)
 		{
 			SCommonFileEntry& currentRomFsFileEntry = itRomFs->second;
-			auto it = m_mTravelInfo.find(itRomFs->first);
+			unordered_map<String, SCommonFileEntry>::iterator it = m_mTravelInfo.find(itRomFs->first);
 			if (it == m_mTravelInfo.end())
 			{
 				space.AddSpace(currentRomFsFileEntry.FileOffset, FAlign(currentRomFsFileEntry.FileSize, s_nFileSizeAlignment));
@@ -724,10 +724,10 @@ void CRomFs::remap()
 		{
 			space.SubSpace(FAlign(m_nLevel3Offset + m_RomFsMetaInfo.DataOffset + m_RomFsHeader.Level3.Size, s_nFileSizeAlignment), FAlign(romFs.m_nLevel3Offset + romFs.m_RomFsHeader.Level3.Size, s_nFileSizeAlignment) - FAlign(m_nLevel3Offset + m_RomFsMetaInfo.DataOffset + m_RomFsHeader.Level3.Size, s_nFileSizeAlignment));
 		}
-		for (auto it = m_mTravelInfo.begin(); it != m_mTravelInfo.end(); ++it)
+		for (unordered_map<String, SCommonFileEntry>::iterator it = m_mTravelInfo.begin(); it != m_mTravelInfo.end(); ++it)
 		{
 			SCommonFileEntry& currentFileEntry = it->second;
-			auto itRomFs = romFs.m_mTravelInfo.find(it->first);
+			unordered_map<String, SCommonFileEntry>::const_iterator itRomFs = romFs.m_mTravelInfo.find(it->first);
 			if (itRomFs == romFs.m_mTravelInfo.end())
 			{
 				currentFileEntry.FileOffset = -1;
@@ -747,7 +747,7 @@ void CRomFs::remap()
 				}
 			}
 		}
-		for (auto it = m_vCreateFile.begin(); it != m_vCreateFile.end(); ++it)
+		for (vector<SEntry>::iterator it = m_vCreateFile.begin(); it != m_vCreateFile.end(); ++it)
 		{
 			SEntry& currentEntry = *it;
 			currentEntry.Entry.File.FileOffset = m_mTravelInfo[currentEntry.Path].FileOffset;
@@ -916,9 +916,9 @@ bool CRomFs::updateLevelBuffer()
 				mCreateFile.insert(make_pair(m_vCreateFile[i].Entry.File.FileOffset, &m_vCreateFile[i]));
 			}
 		}
-		for (auto it = mCreateFile.begin(); it != mCreateFile.end(); ++it)
+		for (map<n64, SEntry*>::const_iterator it = mCreateFile.begin(); it != mCreateFile.end(); ++it)
 		{
-			SEntry& currentEntry = *it->second;
+			const SEntry& currentEntry = *it->second;
 			writeBuffer(3, nullptr, m_nLevel3Offset + m_RomFsMetaInfo.DataOffset + currentEntry.Entry.File.FileOffset - (m_LevelBuffer[3].FilePos + m_LevelBuffer[3].DataPos));
 			if (!writeBufferFromFile(3, currentEntry.Path, currentEntry.Entry.File.FileSize))
 			{

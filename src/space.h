@@ -18,7 +18,7 @@ public:
 	bool AddSpace(n64 a_nOffset, n64 a_nSize);
 	bool SubSpace(n64 a_nOffset, n64 a_nSize);
 	void Clear();
-	n64 GetSpace(n64 a_nSize);
+	n64 GetSpace(n64 a_nSize) const;
 private:
 	list<SBuffer> m_lBuffer;
 };

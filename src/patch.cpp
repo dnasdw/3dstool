@@ -311,7 +311,7 @@ bool CPatch::createNcsdPatchFile()
 		}
 	}
 	bitset<8> bsOver;
-	while (!bsOver.all())
+	while (bsOver.count() != bsOver.size())
 	{
 		for (int i = 7; i >= 0; i--)
 		{
@@ -377,7 +377,7 @@ bool CPatch::createNcchPatchFile(C3dsTool::EFileType a_eFileType, n64 a_nOffsetO
 		writeCheck(a_nOffsetNew + reinterpret_cast<u8*>(&ncchHeader.Ncch) - reinterpret_cast<u8*>(&ncchHeader), sizeof(ncchHeader.Ncch), uSHA256);
 	}
 	bitset<CNcch::kOffsetSizeIndexCount> bsOver;
-	while (!bsOver.all())
+	while (bsOver.count() != bsOver.size())
 	{
 		for (int i = CNcch::kOffsetSizeIndexRomFs; i >= 0; i--)
 		{

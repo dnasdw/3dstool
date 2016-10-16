@@ -17,7 +17,9 @@
 #include <Windows.h>
 #include <direct.h>
 #include <io.h>
+#if _3DSTOOL_COMPILER_VERSION >= 1600
 #include <codecvt>
+#endif
 #else
 #if defined(_3DSTOOL_APPLE)
 #include <mach-o/dyld.h>
@@ -97,6 +99,9 @@ typedef unsigned long long uint64_t;
 #include "bignum.h"
 
 using namespace std;
+#if _3DSTOOL_COMPILER == COMPILER_MSC && _3DSTOOL_COMPILER_VERSION < 1600
+using namespace std::tr1;
+#endif
 
 typedef int8_t n8;
 typedef int16_t n16;
@@ -111,7 +116,10 @@ typedef uint64_t u64;
 #if _3DSTOOL_COMPILER_VERSION < 1600
 #define nullptr NULL
 #endif
-#if _3DSTOOL_COMPILER_VERSION >= 1900
+#if _3DSTOOL_COMPILER_VERSION < 1600
+typedef wchar_t Char16_t;
+typedef std::wstring U16String;
+#elif _3DSTOOL_COMPILER_VERSION >= 1900
 typedef u16 Char16_t;
 typedef std::basic_string<Char16_t> U16String;
 #else
@@ -206,9 +214,9 @@ template<typename T>
 vector<T> FSSplitOf(const T& a_sString, const T& a_sSeparatorSet)
 {
 	vector<T> vString;
-	for (auto it = a_sString.begin(); it != a_sString.end(); ++it)
+	for (T::const_iterator it = a_sString.begin(); it != a_sString.end(); ++it)
 	{
-		auto itPos = find_first_of(it, a_sString.end(), a_sSeparatorSet.begin(), a_sSeparatorSet.end());
+		T::const_iterator itPos = find_first_of(it, a_sString.end(), a_sSeparatorSet.begin(), a_sSeparatorSet.end());
 		if (itPos != a_sString.end())
 		{
 			vString.push_back(a_sString.substr(it - a_sString.begin(), itPos - it));

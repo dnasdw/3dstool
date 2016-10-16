@@ -140,7 +140,7 @@ private:
 	bool pushFileEntry(const String& a_sEntryName, n32 a_nParentDirOffset);
 	void pushCreateStackElement(int a_nEntryOffset);
 	bool createEntryList();
-	bool matchInBlackList(const String& a_sPath);
+	bool matchInBlackList(const String& a_sPath) const;
 	void removeEmptyDirEntry();
 	void removeDirEntry(int a_nIndex);
 	void subDirOffset(n32& a_nOffset, int a_nIndex);

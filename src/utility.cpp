@@ -23,6 +23,57 @@ n32 FSToN32(const string& a_sString)
 }
 
 #if _3DSTOOL_COMPILER == COMPILER_MSC
+#if _3DSTOOL_COMPILER_VERSION < 1600
+string FSWToU8(const wstring& a_sString)
+{
+	int nLength = WideCharToMultiByte(CP_UTF8, 0, a_sString.c_str(), -1, nullptr, 0, nullptr, nullptr);
+	char* pTemp = new char[nLength];
+	WideCharToMultiByte(CP_UTF8, 0, a_sString.c_str(), -1, pTemp, nLength, nullptr, nullptr);
+	string sString = pTemp;
+	delete[] pTemp;
+	return sString;
+}
+
+string FSU16ToU8(const U16String& a_sString)
+{
+	return FSWToU8(a_sString);
+}
+
+wstring FSU8ToW(const string& a_sString)
+{
+	int nLength = MultiByteToWideChar(CP_UTF8, 0, a_sString.c_str(), -1, nullptr, 0);
+	wchar_t* pTemp = new wchar_t[nLength];
+	MultiByteToWideChar(CP_UTF8, 0, a_sString.c_str(), -1, pTemp, nLength);
+	wstring sString = pTemp;
+	delete[] pTemp;
+	return sString;
+}
+
+wstring FSAToW(const string& a_sString)
+{
+	int nLength = MultiByteToWideChar(CP_ACP, 0, a_sString.c_str(), -1, nullptr, 0);
+	wchar_t* pTemp = new wchar_t[nLength];
+	MultiByteToWideChar(CP_ACP, 0, a_sString.c_str(), -1, pTemp, nLength);
+	wstring sString = pTemp;
+	delete[] pTemp;
+	return sString;
+}
+
+wstring FSU16ToW(const U16String& a_sString)
+{
+	return a_sString;
+}
+
+U16String FSU8ToU16(const string& a_sString)
+{
+	return FSU8ToW(a_sString);
+}
+
+U16String FSWToU16(const wstring& a_sString)
+{
+	return a_sString;
+}
+#else
 string FSWToU8(const wstring& a_sString)
 {
 	static wstring_convert<codecvt_utf8<wchar_t>> c_cvt_u8;
@@ -62,6 +113,7 @@ U16String FSWToU16(const wstring& a_sString)
 {
 	return FSU8ToU16(FSWToU8(a_sString));
 }
+#endif
 #else
 string FSWToU8(const wstring& a_sString)
 {

@@ -593,7 +593,7 @@ void CNcch::calculateKey()
 			string sTxt(pTxt);
 			delete[] pTxt;
 			vector<string> vTxt = FSSplitOf<string>(sTxt, "\r\n");
-			for (auto it = vTxt.begin(); it != vTxt.end(); ++it)
+			for (vector<string>::const_iterator it = vTxt.begin(); it != vTxt.end(); ++it)
 			{
 				sTxt = FSTrim(*it);
 				if (!sTxt.empty() && !FSStartsWith<string>(sTxt, "//"))
@@ -619,7 +619,7 @@ void CNcch::calculateKey()
 		{
 			sProgramId += FFormat("%02X", pProgramId[7 - i]);
 		}
-		auto it = mExtKey.find(sProgramId);
+		map<string, string>::const_iterator it = mExtKey.find(sProgramId);
 		if (it != mExtKey.end())
 		{
 			m_sExtKey = it->second;
@@ -656,7 +656,7 @@ void CNcch::calculateKey()
 			fp = FFopenUnicode(sExtKeyPath.c_str(), STR("wb"));
 			if (fp != nullptr)
 			{
-				for (auto it = mExtKey.begin(); it != mExtKey.end(); ++it)
+				for (map<string, string>::const_iterator it = mExtKey.begin(); it != mExtKey.end(); ++it)
 				{
 					fprintf(fp, "%s %s\r\n", it->first.c_str(), it->second.c_str());
 				}

@@ -162,7 +162,7 @@ bool CExeFs::extractSection(int a_nIndex)
 	if (!sName.empty())
 	{
 		bool bTopSection = false;
-		auto it = m_mPath.find(sName);
+		unordered_map<string, String>::const_iterator it = m_mPath.find(sName);
 		if (it == m_mPath.end())
 		{
 			if (a_nIndex == 0)
@@ -266,7 +266,7 @@ bool CExeFs::createSection(int a_nIndex)
 	if (!sName.empty())
 	{
 		bool bTopSection = false;
-		auto it = m_mPath.find(sName);
+		unordered_map<string, String>::const_iterator it = m_mPath.find(sName);
 		if (it == m_mPath.end())
 		{
 			if (a_nIndex == 0)
