@@ -173,64 +173,6 @@ void FSetLocale();
 
 n32 FSToN32(const string& a_sString);
 
-template<typename T>
-T FSTrim(const T& a_sString)
-{
-	typename T::size_type stSize = a_sString.size();
-	typename T::size_type st = 0;
-	while (st < stSize && a_sString[st] >= 0 && a_sString[st] <= static_cast<typename T::value_type>(' '))
-	{
-		st++;
-	}
-	while (st < stSize && a_sString[stSize - 1] >= 0 && a_sString[stSize - 1] <= static_cast<typename T::value_type>(' '))
-	{
-		stSize--;
-	}
-	return (st > 0 || stSize < a_sString.size()) ? a_sString.substr(st, stSize - st) : a_sString;
-}
-
-template<typename T>
-vector<T> FSSplit(const T& a_sString, const T& a_sSeparator)
-{
-	vector<T> vString;
-	for (typename T::size_type nOffset = 0; nOffset < a_sString.size(); nOffset += a_sSeparator.size())
-	{
-		typename T::size_type nPos = a_sString.find(a_sSeparator, nOffset);
-		if (nPos != T::npos)
-		{
-			vString.push_back(a_sString.substr(nOffset, nPos - nOffset));
-			nOffset = nPos;
-		}
-		else
-		{
-			vString.push_back(a_sString.substr(nOffset));
-			break;
-		}
-	}
-	return vString;
-}
-
-template<typename T>
-vector<T> FSSplitOf(const T& a_sString, const T& a_sSeparatorSet)
-{
-	vector<T> vString;
-	for (T::const_iterator it = a_sString.begin(); it != a_sString.end(); ++it)
-	{
-		T::const_iterator itPos = find_first_of(it, a_sString.end(), a_sSeparatorSet.begin(), a_sSeparatorSet.end());
-		if (itPos != a_sString.end())
-		{
-			vString.push_back(a_sString.substr(it - a_sString.begin(), itPos - it));
-			it = itPos;
-		}
-		else
-		{
-			vString.push_back(a_sString.substr(it - a_sString.begin()));
-			break;
-		}
-	}
-	return vString;
-}
-
 #if _3DSTOOL_COMPILER != COMPILER_MSC
 template<typename TSrc, typename TDest>
 TDest FSTToT(const TSrc& a_sString, const string& a_sSrcType, const string& a_sDestType)
@@ -294,13 +236,81 @@ string FFormat(const char* a_szFormat, ...);
 wstring FFormat(const wchar_t* a_szFormat, ...);
 
 template<typename T>
-bool FSStartsWith(const T& a_sString, const T& a_sPrefix, typename T::size_type a_stStart = 0)
+bool FSStartsWith(const T& a_sString, const T& a_sPrefix, typename T::size_type a_uStart = 0)
 {
-	if (a_stStart > a_sString.size())
+	if (a_uStart > a_sString.size())
 	{
 		return false;
 	}
-	return a_sString.compare(a_stStart, a_sPrefix.size(), a_sPrefix) == 0;
+	return a_sString.compare(a_uStart, a_sPrefix.size(), a_sPrefix) == 0;
+}
+
+template<typename T>
+bool FSEndsWith(const T& a_sString, const T& a_sSuffix)
+{
+	if (a_sString.size() < a_sSuffix.size())
+	{
+		return false;
+	}
+	return a_sString.compare(a_sString.size() - a_sSuffix.size(), a_sSuffix.size(), a_sSuffix) == 0;
+}
+
+template<typename T>
+T FSTrim(const T& a_sString)
+{
+	typename T::size_type uSize = a_sString.size();
+	typename T::size_type uPos = 0;
+	while (uPos < uSize && a_sString[uPos] >= 0 && a_sString[uPos] <= static_cast<typename T::value_type>(' '))
+	{
+		uPos++;
+	}
+	while (uPos < uSize && a_sString[uSize - 1] >= 0 && a_sString[uSize - 1] <= static_cast<typename T::value_type>(' '))
+	{
+		uSize--;
+	}
+	return (uPos > 0 || uSize < a_sString.size()) ? a_sString.substr(uPos, uSize - uPos) : a_sString;
+}
+
+template<typename T>
+vector<T> FSSplit(const T& a_sString, const T& a_sSeparator)
+{
+	vector<T> vString;
+	for (typename T::size_type uOffset = 0; uOffset < a_sString.size(); uOffset += a_sSeparator.size())
+	{
+		typename T::size_type uPos = a_sString.find(a_sSeparator, uOffset);
+		if (uPos != T::npos)
+		{
+			vString.push_back(a_sString.substr(uOffset, uPos - uOffset));
+			uOffset = uPos;
+		}
+		else
+		{
+			vString.push_back(a_sString.substr(uOffset));
+			break;
+		}
+	}
+	return vString;
+}
+
+template<typename T>
+vector<T> FSSplitOf(const T& a_sString, const T& a_sSeparatorSet)
+{
+	vector<T> vString;
+	for (typename T::const_iterator it = a_sString.begin(); it != a_sString.end(); ++it)
+	{
+		typename T::const_iterator itPos = find_first_of(it, a_sString.end(), a_sSeparatorSet.begin(), a_sSeparatorSet.end());
+		if (itPos != a_sString.end())
+		{
+			vString.push_back(a_sString.substr(it - a_sString.begin(), itPos - it));
+			it = itPos;
+		}
+		else
+		{
+			vString.push_back(a_sString.substr(it - a_sString.begin()));
+			break;
+		}
+	}
+	return vString;
 }
 
 const String& FGetModuleFile();

@@ -68,7 +68,11 @@ public:
 	{
 		n32 ParentDirOffset;
 		n32 SiblingFileOffset;
-		n64 FileOffset;
+		union
+		{
+			n64 FileOffset;
+			u64 RemapIgnoreLevel;
+		};
 		n64 FileSize;
 		n32 PrevFileOffset;
 		n32 NameSize;
@@ -135,12 +139,13 @@ private:
 	bool extractFileEntry();
 	void readEntry(SExtractStackElement& a_Element);
 	void setupCreate();
-	void buildBlackList();
+	void buildIgnoreList();
 	void pushDirEntry(const String& a_sEntryName, n32 a_nParentDirOffset);
 	bool pushFileEntry(const String& a_sEntryName, n32 a_nParentDirOffset);
 	void pushCreateStackElement(int a_nEntryOffset);
 	bool createEntryList();
-	bool matchInBlackList(const String& a_sPath) const;
+	bool matchInIgnoreList(const String& a_sPath) const;
+	u32 getRemapIgnoreLevel(const String& a_sPath) const;
 	void removeEmptyDirEntry();
 	void removeDirEntry(int a_nIndex);
 	void subDirOffset(n32& a_nOffset, int a_nIndex);
@@ -169,13 +174,14 @@ private:
 	n64 m_nLevel3Offset;
 	SRomFsMetaInfo m_RomFsMetaInfo;
 	stack<SExtractStackElement> m_sExtractStack;
-	vector<Regex> m_vBlackList;
+	vector<Regex> m_vIgnoreList;
+	vector<Regex> m_vRemapIgnoreList;
 	vector<SEntry> m_vCreateDir;
 	vector<SEntry> m_vCreateFile;
 	stack<SCreateStackElement> m_sCreateStack;
 	vector<n32> m_vDirBucket;
 	vector<n32> m_vFileBucket;
-	unordered_map<String, SCommonFileEntry> m_mTravelInfo;
+	map<String, SCommonFileEntry> m_mTravelInfo;
 	bool m_bRemapped;
 	SLevelBuffer m_LevelBuffer[4];
 };

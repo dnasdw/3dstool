@@ -20,6 +20,7 @@ An all-in-one tool for extracting/creating 3ds roms.
 - v1.0.13 @ 2016.04.20 - Fix romfs 7.x auto encryption bug
 - v1.0.14 @ 2016.05.17 - Sync with exepatch and support VS2015
 - v1.0.15 @ 2016.05.23 - Support auto encryption with ext key
+- v1.0.16 @ 2016.11.01 - Support huffman, runlength, yaz0 compression, romfs remap ignore and VS2008SP1
 
 ## Platforms
 

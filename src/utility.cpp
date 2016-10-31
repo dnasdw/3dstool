@@ -228,10 +228,10 @@ const String& FGetModuleFile()
 const String& FGetModuleDir()
 {
 	static String sDir = FGetModuleFile();
-	String::size_type nPos = sDir.rfind(STR('/'));
-	if (nPos != String::npos)
+	String::size_type uPos = sDir.rfind(STR('/'));
+	if (uPos != String::npos)
 	{
-		sDir.erase(nPos);
+		sDir.erase(uPos);
 	}
 	else
 	{
