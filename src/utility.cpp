@@ -208,11 +208,15 @@ const String& FGetModuleFile()
 	}
 	uSize = strlen(sFile.c_str());
 #else
+    //First, we try the linux /proc path
 	ssize_t nCount = readlink("/proc/self/exe", &sFile.front(), nMaxPath);
 	if (nCount == -1)
 	{
-		printf("ERROR: readlink /proc/self/exe error\n\n");
-		sFile.erase();
+        nCount = readlink("/proc/curproc/file", &sFile.front(), nMaxPath);
+        if(nCount == -1) {
+    		printf("ERROR: readlink /proc/curproc/file error\n\n");
+	    	sFile.erase();
+        }
 	}
 	else
 	{
