@@ -21,7 +21,7 @@
 #include <codecvt>
 #endif
 #else
-#if defined(_3DSTOOL_APPLE)
+#if defined(__APPLE__)
 #include <mach-o/dyld.h>
 #endif
 #include <dirent.h>

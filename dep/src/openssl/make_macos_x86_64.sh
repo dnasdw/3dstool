@@ -4,7 +4,7 @@ cwdir=`pwd`
 rootdir=`dirname $0`
 cd "$rootdir"
 rootdir=`pwd`
-target=mac_x86_32
+target=macos_x86_64
 prefix=$rootdir/$target
 openssldir=$prefix/ssl
 version=`cat $rootdir/version.txt`
@@ -12,7 +12,7 @@ rm -rf "$rootdir/$version"
 mkdir "$rootdir/$version"
 cp -rf "$rootdir/../$version/"* "$rootdir/$version"
 cd "$rootdir/$version"
-./Configure no-shared no-asm no-dso --prefix="$prefix" --openssldir="$openssldir" darwin-i386-cc -m32 -fPIC
+./Configure no-shared no-asm no-dso --prefix="$prefix" --openssldir="$openssldir" darwin64-x86_64-cc -m64 -fPIC
 make
 make install
 mkdir "$rootdir/../../include/$target"

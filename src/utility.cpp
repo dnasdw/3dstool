@@ -194,7 +194,7 @@ const String& FGetModuleFile()
 	size_t uSize = 0;
 #if _3DSTOOL_COMPILER == COMPILER_MSC
 	uSize = GetModuleFileNameW(nullptr, &*sFile.begin(), nMaxPath);
-#elif defined(_3DSTOOL_APPLE)
+#elif defined(__APPLE__)
 	char path[nMaxPath] = {};
 	u32 uPathSize = static_cast<u32>(sizeof(path));
 	if (_NSGetExecutablePath(path, &uPathSize) != 0)
