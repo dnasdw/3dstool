@@ -38,10 +38,12 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ "counter", 0, "the hex string of the counter used by the AES-CTR encryption" },
 	{ "xor", 0, "the xor data file used by the xor encryption" },
 	{ nullptr, 0, " compress:" },
-	{ "compress-align", 0, "[1|4|8|16|32]\n\t\tthe alignment of the compressed filesize" },
+	{ "compress-align", 0, "[1|4|8|16|32]\n\t\tthe alignment of the compressed filesize, optional" },
 	{ nullptr, 0, "  uncompress:" },
 	{ "compress-type", 0, "[blz|lz(ex)|h4|h8|rl|yaz0]\n\t\tthe type of the compress" },
 	{ "compress-out", 0, "the output file of uncompressed or compressed" },
+	{ nullptr, 0, "  yaz0:" },
+	{ "yaz0-align", 0, "[0|128]\n\t\tthe alignment property of the yaz0 compressed file, optional" },
 	{ nullptr, 0, " diff:" },
 	{ "old", 0, "the old file" },
 	{ "new", 0, "the new file" },
@@ -111,6 +113,7 @@ C3dsTool::C3dsTool()
 	, m_nCompressAlign(1)
 	, m_eCompressType(kCompressTypeNone)
 	, m_pCompressOutFileName(nullptr)
+	, m_nYaz0Align(0)
 	, m_pOldFileName(nullptr)
 	, m_pNewFileName(nullptr)
 	, m_pPatchFileName(nullptr)
@@ -880,6 +883,21 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_pCompressOutFileName = a_pArgv[++a_nIndex];
 	}
+	else if (strcmp(a_pName, "yaz0-align") == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		char* pYaz0Align = a_pArgv[++a_nIndex];
+		n32 nYaz0Align = FSToN32(pYaz0Align);
+		if (nYaz0Align != 0 && nYaz0Align != 128)
+		{
+			m_pMessage = pYaz0Align;
+			return kParseOptionReturnUnknownArgument;
+		}
+		m_nYaz0Align = nYaz0Align;
+	}
 	else if (strcmp(a_pName, "old") == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
@@ -1563,7 +1581,7 @@ bool C3dsTool::compressFile()
 			bReuslt = CRunLength::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
 			break;
 		case kCompressTypeYaz0:
-			bReuslt = CYaz0::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
+			bReuslt = CYaz0::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign, m_nYaz0Align);
 			break;
 		default:
 			break;
@@ -1698,6 +1716,8 @@ int C3dsTool::sample()
 	printf("3dstool -uvf input.lz --compress-type lz --compress-out output.bin\n\n");
 	printf("# compress file with LZ77, standalone\n");
 	printf("3dstool -zvf input.bin --compress-type lz --compress-out output.lz\n\n");
+	printf("# compress file with LZ77 and align to 4 bytes, standalone\n");
+	printf("3dstool -zvf input.bin --compress-type lz --compress-out output.lz --compress-align 4\n\n");
 	printf("# uncompress file with LZ77Ex, standalone\n");
 	printf("3dstool -uvf logo.bcma.lz --compress-type lzex --compress-out logo.bcma\n\n");
 	printf("# compress file with LZ77Ex, standalone\n");
@@ -1718,6 +1738,8 @@ int C3dsTool::sample()
 	printf("3dstool -uvf input.szs --compress-type yaz0 --compress-out output.sarc\n\n");
 	printf("# compress file with Yaz0, standalone\n");
 	printf("3dstool -zvf input.sarc --compress-type yaz0 --compress-out output.szs\n\n");
+	printf("# compress file with Yaz0 and set the alignment property, standalone\n");
+	printf("3dstool -zvf input.sarc --compress-type yaz0 --compress-out output.szs --yaz0-align 128\n\n");
 	printf("# trim cci without pad\n");
 	printf("3dstool --trim -vtf cci input.3ds\n\n");
 	printf("# trim cci reserve partition 0~2\n");

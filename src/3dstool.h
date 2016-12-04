@@ -89,6 +89,7 @@ private:
 	n32 m_nCompressAlign;
 	ECompressType m_eCompressType;
 	const char* m_pCompressOutFileName;
+	n32 m_nYaz0Align;
 	const char* m_pOldFileName;
 	const char* m_pNewFileName;
 	const char* m_pPatchFileName;

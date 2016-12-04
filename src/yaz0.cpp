@@ -113,7 +113,7 @@ bool CYaz0::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUn
 	return bResult;
 }
 
-bool CYaz0::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign)
+bool CYaz0::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_pCompressed, u32& a_uCompressedSize, n32 a_nCompressAlign, n32 a_nYaz0Align)
 {
 	bool bResult = true;
 	u8* pWork = new u8[s_nCompressWorkSize];
@@ -126,7 +126,8 @@ bool CYaz0::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_p
 		}
 		*reinterpret_cast<u32*>(a_pCompressed) = CONVERT_ENDIAN('Yaz0');
 		*reinterpret_cast<u32*>(a_pCompressed + 4) = CONVERT_ENDIAN(a_uUncompressedSize);
-		*reinterpret_cast<u64*>(a_pCompressed + 8) = 0;
+		*reinterpret_cast<u32*>(a_pCompressed + 8) = CONVERT_ENDIAN(a_nYaz0Align);
+		*reinterpret_cast<u32*>(a_pCompressed + 12) = 0;
 		SCompressInfo info;
 		initTable(&info, pWork);
 		const int nMaxSize = 0xFF + 0xF + 3;
