@@ -1062,11 +1062,17 @@ bool CNcch::createRomFs()
 {
 	if (m_pRomFsFileName != nullptr)
 	{
+		bool bEncrypted = !CRomFs::IsRomFsFile(m_pRomFsFileName);
 		FILE* fp = FFopen(m_pRomFsFileName, "rb");
 		if (fp == nullptr)
 		{
 			clearRomFs();
 			return false;
+		}
+		if (bEncrypted && !m_bNotUpdateRomFsHash)
+		{
+			printf("INFO: romfs is encrypted\n");
+			m_bNotUpdateRomFsHash = true;
 		}
 		if (m_bVerbose)
 		{
@@ -1074,39 +1080,36 @@ bool CNcch::createRomFs()
 		}
 		FFseek(fp, 0, SEEK_END);
 		n64 nFileSize = FFtell(fp);
-		n64 nSuperBlockSize = FAlign(sizeof(SRomFsHeader), CRomFs::s_nSHA256BlockSize);
-		if (nFileSize < nSuperBlockSize)
+		if (!m_bNotUpdateRomFsHash)
 		{
-			fclose(fp);
-			clearRomFs();
-			printf("ERROR: romfs is too short\n\n");
-			return false;
-		}
-		FFseek(fp, 0, SEEK_SET);
-		SRomFsHeader romFsHeader;
-		fread(&romFsHeader, sizeof(romFsHeader), 1, fp);
-		nSuperBlockSize = FAlign(FAlign(sizeof(SRomFsHeader), CRomFs::s_nSHA256BlockSize) + romFsHeader.Level0Size, m_nMediaUnitSize);
-		if (nFileSize < nSuperBlockSize)
-		{
-			fclose(fp);
-			clearRomFs();
-			printf("ERROR: romfs is too short\n\n");
-			return false;
+			n64 nSuperBlockSize = FAlign(sizeof(SRomFsHeader), CRomFs::s_nSHA256BlockSize);
+			if (nFileSize < nSuperBlockSize)
+			{
+				fclose(fp);
+				clearRomFs();
+				printf("ERROR: romfs is too short\n\n");
+				return false;
+			}
+			FFseek(fp, 0, SEEK_SET);
+			SRomFsHeader romFsHeader;
+			fread(&romFsHeader, sizeof(romFsHeader), 1, fp);
+			nSuperBlockSize = FAlign(FAlign(sizeof(SRomFsHeader), CRomFs::s_nSHA256BlockSize) + romFsHeader.Level0Size, m_nMediaUnitSize);
+			if (nFileSize < nSuperBlockSize)
+			{
+				fclose(fp);
+				clearRomFs();
+				printf("ERROR: romfs is too short\n\n");
+				return false;
+			}
+			m_NcchHeader.Ncch.RomFsHashRegionSize = static_cast<u32>(nSuperBlockSize / m_nMediaUnitSize);
+			FFseek(fp, 0, SEEK_SET);
+			u8* pBuffer = new u8[static_cast<size_t>(nSuperBlockSize)];
+			fread(pBuffer, 1, static_cast<size_t>(nSuperBlockSize), fp);
+			SHA256(pBuffer, static_cast<size_t>(nSuperBlockSize), m_NcchHeader.Ncch.RomFsSuperBlockHash);
+			delete[] pBuffer;
 		}
 		m_NcchHeader.Ncch.RomFsOffset = m_NcchHeader.Ncch.ContentSize;
 		m_NcchHeader.Ncch.RomFsSize = static_cast<u32>(FAlign(nFileSize, m_nMediaUnitSize) / m_nMediaUnitSize);
-		if (!m_bNotUpdateRomFsHash)
-		{
-			m_NcchHeader.Ncch.RomFsHashRegionSize = static_cast<u32>(nSuperBlockSize / m_nMediaUnitSize);
-		}
-		FFseek(fp, 0, SEEK_SET);
-		u8* pBuffer = new u8[static_cast<size_t>(nSuperBlockSize)];
-		fread(pBuffer, 1, static_cast<size_t>(nSuperBlockSize), fp);
-		if (!m_bNotUpdateRomFsHash)
-		{
-			SHA256(pBuffer, static_cast<size_t>(nSuperBlockSize), m_NcchHeader.Ncch.RomFsSuperBlockHash);
-		}
-		delete[] pBuffer;
 		calculateCounter(kAesCtrTypeRomFs);
 		if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_pRomFsXorFileName == nullptr && !m_bRomFsAutoKey))
 		{
