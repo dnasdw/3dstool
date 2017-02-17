@@ -118,10 +118,10 @@ typedef uint64_t u64;
 #endif
 #if _3DSTOOL_COMPILER_VERSION < 1600
 typedef wchar_t Char16_t;
-typedef std::wstring U16String;
+typedef wstring U16String;
 #elif _3DSTOOL_COMPILER_VERSION >= 1900
 typedef u16 Char16_t;
-typedef std::basic_string<Char16_t> U16String;
+typedef basic_string<Char16_t> U16String;
 #else
 typedef char16_t Char16_t;
 typedef u16string U16String;
