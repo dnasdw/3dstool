@@ -119,8 +119,8 @@ extern "C" {
 
 #if !(defined(VMS) || defined(__VMS)) /* VMS uses logical names instead */
 #if defined(HEADER_CRYPTLIB_H) && !defined(OPENSSLDIR)
-#define ENGINESDIR "/home/dnasdw/3dstool/dep/src/openssl/linux_x86_64/lib/engines"
-#define OPENSSLDIR "/home/dnasdw/3dstool/dep/src/openssl/linux_x86_64/ssl"
+#define ENGINESDIR "/tmp/3dstool_openssl/linux_x86_64/lib/engines"
+#define OPENSSLDIR "/tmp/3dstool_openssl/linux_x86_64/ssl"
 #endif
 #endif
 
@@ -151,7 +151,7 @@ extern "C" {
  * - Intel P6 because partial register stalls are very expensive;
  * - elder Alpha because it lacks byte load/store instructions;
  */
-#define RC4_INT unsigned int
+#define RC4_INT unsigned char
 #endif
 #if !defined(RC4_CHUNK)
 /*
@@ -191,7 +191,7 @@ extern "C" {
 
 #if defined(HEADER_BF_LOCL_H) && !defined(CONFIG_HEADER_BF_LOCL_H)
 #define CONFIG_HEADER_BF_LOCL_H
-#undef BF_PTR
+#define BF_PTR
 #endif /* HEADER_BF_LOCL_H */
 
 #if defined(HEADER_DES_LOCL_H) && !defined(CONFIG_HEADER_DES_LOCL_H)

@@ -119,8 +119,8 @@ extern "C" {
 
 #if !(defined(VMS) || defined(__VMS)) /* VMS uses logical names instead */
 #if defined(HEADER_CRYPTLIB_H) && !defined(OPENSSLDIR)
-#define ENGINESDIR "/home/dnasdw/3dstool/dep/src/openssl/linux_x86_32/lib/engines"
-#define OPENSSLDIR "/home/dnasdw/3dstool/dep/src/openssl/linux_x86_32/ssl"
+#define ENGINESDIR "/tmp/3dstool_openssl/linux_x86_32/lib/engines"
+#define OPENSSLDIR "/tmp/3dstool_openssl/linux_x86_32/ssl"
 #endif
 #endif
 
