@@ -119,8 +119,8 @@ extern "C" {
 
 #if !(defined(VMS) || defined(__VMS)) /* VMS uses logical names instead */
 #if defined(HEADER_CRYPTLIB_H) && !defined(OPENSSLDIR)
-#define ENGINESDIR "F:\\Projects\\GitHub\\3dstool\\dep\\src\\openssl\\windows_x86_32/lib/engines"
-#define OPENSSLDIR "F:\\Projects\\GitHub\\3dstool\\dep\\src\\openssl\\windows_x86_32\\ssl"
+#define ENGINESDIR "F:\\tmp_3dstool_openssl\\windows_x86_32/lib/engines"
+#define OPENSSLDIR "F:\\tmp_3dstool_openssl\\windows_x86_32\\ssl"
 #endif
 #endif
 
