@@ -12,8 +12,8 @@ IF NOT DEFINED GENERATOR (
   ECHO Can not find VC2008 or VC2010 or VC2012 or VC2013 installed!
   GOTO ERROR
 )
-SET rootdir=%~dp0
 SET cwdir=%CD%
+SET rootdir=%~dp0
 SET target=windows_x86_32
 SET prefix=%rootdir%%target%
 SET /P version=<"%rootdir%version.txt"
@@ -23,7 +23,7 @@ XCOPY "%rootdir%..\%version%" "%rootdir%%version%" /S /Y
 RD /S /Q "%rootdir%project"
 MD "%rootdir%project"
 CD /D "%rootdir%project"
-cmake -C "%rootdir%CMakeLists.txt" -DBUILD_CURL_EXE=OFF -DBUILD_CURL_TESTS=OFF -DCURL_STATICLIB=ON -DCMAKE_INSTALL_PREFIX="%prefix%" -G %GENERATOR% "%rootdir%%version%"
+cmake -C "%rootdir%CMakeLists.txt" -DBUILD_CURL_EXE=OFF -DBUILD_TESTING=OFF -DCURL_STATICLIB=ON -DCURL_ZLIB=OFF -DCMAKE_INSTALL_PREFIX="%prefix%" -G %GENERATOR% "%rootdir%%version%"
 cmake "%rootdir%%version%"
 cmake --build . --target install --config Release --clean-first
 MD "%rootdir%..\..\include\%target%"
