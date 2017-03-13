@@ -2,6 +2,11 @@
 #include "space.h"
 #include <openssl/sha.h>
 
+bool RemapIgnoreLevelCompare(const CRomFs::SCommonFileEntry* lhs, const CRomFs::SCommonFileEntry* rhs)
+{
+	return lhs->RemapIgnoreLevel < rhs->RemapIgnoreLevel;
+}
+
 const u32 CRomFs::s_uSignature = CONVERT_ENDIAN('IVFC');
 const int CRomFs::s_nBlockSizePower = 0xC;
 const int CRomFs::s_nBlockSize = 1 << s_nBlockSizePower;
@@ -769,7 +774,7 @@ void CRomFs::remap()
 				vRemapIgnore.push_back(&currentFileEntry);
 			}
 		}
-		stable_sort(vRemapIgnore.begin(), vRemapIgnore.end(), [](const SCommonFileEntry* lhs, const SCommonFileEntry* rhs)->bool { return lhs->RemapIgnoreLevel < rhs->RemapIgnoreLevel; });
+		stable_sort(vRemapIgnore.begin(), vRemapIgnore.end(), RemapIgnoreLevelCompare);
 		for (vector<SCommonFileEntry*>::iterator it = vRemapIgnore.begin(); it != vRemapIgnore.end(); ++it)
 		{
 			SCommonFileEntry& currentFileEntry = **it;
