@@ -3,13 +3,13 @@
 
 #include "utility.h"
 
-#include MSC_PUSH_PACKED
+#include SDW_MSC_PUSH_PACKED
 struct CompFooter
 {
 	u32 bufferTopAndBottom;
 	u32 originalBottom;
-} GNUC_PACKED;
-#include MSC_POP_PACKED
+} SDW_GNUC_PACKED;
+#include SDW_MSC_POP_PACKED
 
 class CBackwardLz77
 {

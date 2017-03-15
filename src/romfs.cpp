@@ -7,7 +7,7 @@ bool RemapIgnoreLevelCompare(const CRomFs::SCommonFileEntry* lhs, const CRomFs::
 	return lhs->RemapIgnoreLevel < rhs->RemapIgnoreLevel;
 }
 
-const u32 CRomFs::s_uSignature = CONVERT_ENDIAN('IVFC');
+const u32 CRomFs::s_uSignature = SDW_CONVERT_ENDIAN32('IVFC');
 const int CRomFs::s_nBlockSizePower = 0xC;
 const int CRomFs::s_nBlockSize = 1 << s_nBlockSizePower;
 const int CRomFs::s_nSHA256BlockSize = 0x20;
@@ -43,7 +43,7 @@ void CRomFs::SetVerbose(bool a_bVerbose)
 
 void CRomFs::SetRomFsDirName(const char* a_pRomFsDirName)
 {
-	m_sRomFsDirName = FSAToUnicode(a_pRomFsDirName);
+	m_sRomFsDirName = AToU(a_pRomFsDirName);
 }
 
 void CRomFs::SetRomFsFileName(const char* a_pRomFsFileName)
@@ -54,16 +54,16 @@ void CRomFs::SetRomFsFileName(const char* a_pRomFsFileName)
 bool CRomFs::ExtractFile()
 {
 	bool bResult = true;
-	m_fpRomFs = FFopen(m_pFileName, "rb");
+	m_fpRomFs = Fopen(m_pFileName, "rb");
 	if (m_fpRomFs == nullptr)
 	{
 		return false;
 	}
 	fread(&m_RomFsHeader, sizeof(m_RomFsHeader), 1, m_fpRomFs);
-	m_nLevel3Offset = FAlign(FAlign(m_RomFsHeader.Size, s_nSHA256BlockSize) + m_RomFsHeader.Level0Size, s_nBlockSize);
-	FFseek(m_fpRomFs, m_nLevel3Offset, SEEK_SET);
+	m_nLevel3Offset = Align(Align(m_RomFsHeader.Size, s_nSHA256BlockSize) + m_RomFsHeader.Level0Size, s_nBlockSize);
+	Fseek(m_fpRomFs, m_nLevel3Offset, SEEK_SET);
 	fread(&m_RomFsMetaInfo, sizeof(m_RomFsMetaInfo), 1, m_fpRomFs);
-	pushExtractStackElement(true, 0, STR("/"));
+	pushExtractStackElement(true, 0, USTR("/"));
 	while (!m_sExtractStack.empty())
 	{
 		SExtractStackElement& current = m_sExtractStack.top();
@@ -88,7 +88,7 @@ bool CRomFs::CreateFile()
 	bool bResult = true;
 	setupCreate();
 	buildIgnoreList();
-	pushDirEntry(STR(""), 0);
+	pushDirEntry(USTR(""), 0);
 	pushCreateStackElement(0);
 	while (!m_sCreateStack.empty())
 	{
@@ -104,13 +104,13 @@ bool CRomFs::CreateFile()
 	remap();
 	createHeader();
 	initLevelBuffer();
-	n64 nFileSize = FAlign(m_LevelBuffer[2].FilePos + m_RomFsHeader.Level2.Size, s_nBlockSize);
-	m_fpRomFs = FFopen(m_pFileName, "wb");
+	n64 nFileSize = Align(m_LevelBuffer[2].FilePos + m_RomFsHeader.Level2.Size, s_nBlockSize);
+	m_fpRomFs = Fopen(m_pFileName, "wb");
 	if (m_fpRomFs == nullptr)
 	{
 		return false;
 	}
-	FSeek(m_fpRomFs, nFileSize);
+	Seek(m_fpRomFs, nFileSize);
 	if (!updateLevelBuffer())
 	{
 		bResult = false;
@@ -121,7 +121,7 @@ bool CRomFs::CreateFile()
 
 bool CRomFs::IsRomFsFile(const char* a_pFileName)
 {
-	FILE* fp = FFopen(a_pFileName, "rb");
+	FILE* fp = Fopen(a_pFileName, "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -132,7 +132,7 @@ bool CRomFs::IsRomFsFile(const char* a_pFileName)
 	return romFsHeader.Signature == s_uSignature;
 }
 
-void CRomFs::pushExtractStackElement(bool a_bIsDir, n32 a_nEntryOffset, const String& a_sPrefix)
+void CRomFs::pushExtractStackElement(bool a_bIsDir, n32 a_nEntryOffset, const UString& a_sPrefix)
 {
 	if (a_nEntryOffset != s_nInvalidOffset)
 	{
@@ -151,11 +151,11 @@ bool CRomFs::extractDirEntry()
 	if (current.ExtractState == kExtractStateBegin)
 	{
 		readEntry(current);
-		String sPrefix = current.Prefix;
-		String sDirName = m_sRomFsDirName + sPrefix;
+		UString sPrefix = current.Prefix;
+		UString sDirName = m_sRomFsDirName + sPrefix;
 		if (current.Entry.Dir.NameSize != 0)
 		{
-			sPrefix += current.EntryName + STR("/");
+			sPrefix += current.EntryName + USTR("/");
 			sDirName += current.EntryName;
 		}
 		else
@@ -164,9 +164,9 @@ bool CRomFs::extractDirEntry()
 		}
 		if (m_bVerbose)
 		{
-			FPrintf(STR("save: %s\n"), sDirName.c_str());
+			UPrintf(USTR("save: %s\n"), sDirName.c_str());
 		}
-		if (!FMakeDir(sDirName.c_str()))
+		if (!UMakeDir(sDirName.c_str()))
 		{
 			m_sExtractStack.pop();
 			return false;
@@ -176,10 +176,10 @@ bool CRomFs::extractDirEntry()
 	}
 	else if (current.ExtractState == kExtractStateChildDir)
 	{
-		String sPrefix = current.Prefix;
+		UString sPrefix = current.Prefix;
 		if (current.Entry.Dir.NameSize != 0)
 		{
-			sPrefix += current.EntryName + STR("/");
+			sPrefix += current.EntryName + USTR("/");
 		}
 		pushExtractStackElement(true, current.Entry.Dir.ChildDirOffset, sPrefix);
 		current.ExtractState = kExtractStateSiblingDir;
@@ -203,8 +203,8 @@ bool CRomFs::extractFileEntry()
 	if (current.ExtractState == kExtractStateBegin)
 	{
 		readEntry(current);
-		String sPath = m_sRomFsDirName + current.Prefix + current.EntryName;
-		FILE* fp = FFopenUnicode(sPath.c_str(), STR("wb"));
+		UString sPath = m_sRomFsDirName + current.Prefix + current.EntryName;
+		FILE* fp = UFopen(sPath.c_str(), USTR("wb"));
 		if (fp == nullptr)
 		{
 			bResult = false;
@@ -213,9 +213,9 @@ bool CRomFs::extractFileEntry()
 		{
 			if (m_bVerbose)
 			{
-				FPrintf(STR("save: %s\n"), sPath.c_str());
+				UPrintf(USTR("save: %s\n"), sPath.c_str());
 			}
-			FCopyFile(fp, m_fpRomFs, m_nLevel3Offset + m_RomFsMetaInfo.DataOffset + current.Entry.File.FileOffset, current.Entry.File.FileSize);
+			CopyFile(fp, m_fpRomFs, m_nLevel3Offset + m_RomFsMetaInfo.DataOffset + current.Entry.File.FileOffset, current.Entry.File.FileSize);
 			fclose(fp);
 		}
 		pushExtractStackElement(false, current.Entry.File.SiblingFileOffset, current.Prefix);
@@ -232,22 +232,22 @@ void CRomFs::readEntry(SExtractStackElement& a_Element)
 {
 	if (a_Element.IsDir)
 	{
-		FFseek(m_fpRomFs, m_nLevel3Offset + m_RomFsMetaInfo.Section[kSectionTypeDir].Offset + a_Element.EntryOffset, SEEK_SET);
+		Fseek(m_fpRomFs, m_nLevel3Offset + m_RomFsMetaInfo.Section[kSectionTypeDir].Offset + a_Element.EntryOffset, SEEK_SET);
 		fread(&a_Element.Entry.Dir, sizeof(a_Element.Entry.Dir), 1, m_fpRomFs);
 		Char16_t* pEntryName = new Char16_t[a_Element.Entry.Dir.NameSize / 2 + 1];
 		fread(pEntryName, 2, a_Element.Entry.Dir.NameSize / 2, m_fpRomFs);
 		pEntryName[a_Element.Entry.Dir.NameSize / 2] = 0;
-		a_Element.EntryName = FSU16ToUnicode(pEntryName);
+		a_Element.EntryName = U16ToU(pEntryName);
 		delete[] pEntryName;
 	}
 	else
 	{
-		FFseek(m_fpRomFs, m_nLevel3Offset + m_RomFsMetaInfo.Section[kSectionTypeFile].Offset + a_Element.EntryOffset, SEEK_SET);
+		Fseek(m_fpRomFs, m_nLevel3Offset + m_RomFsMetaInfo.Section[kSectionTypeFile].Offset + a_Element.EntryOffset, SEEK_SET);
 		fread(&a_Element.Entry.File, sizeof(a_Element.Entry.File), 1, m_fpRomFs);
 		Char16_t* pEntryName = new Char16_t[a_Element.Entry.File.NameSize / 2 + 1];
 		fread(pEntryName, 2, a_Element.Entry.File.NameSize / 2, m_fpRomFs);
 		pEntryName[a_Element.Entry.File.NameSize / 2] = 0;
-		a_Element.EntryName = FSU16ToUnicode(pEntryName);
+		a_Element.EntryName = U16ToU(pEntryName);
 		delete[] pEntryName;
 	}
 }
@@ -263,39 +263,39 @@ void CRomFs::setupCreate()
 	m_RomFsHeader.Size = sizeof(m_RomFsHeader);
 	memset(&m_RomFsMetaInfo, 0, sizeof(m_RomFsMetaInfo));
 	m_RomFsMetaInfo.Size = sizeof(m_RomFsMetaInfo);
-	m_RomFsMetaInfo.Section[kSectionTypeDirHash].Offset = static_cast<u32>(FAlign(m_RomFsMetaInfo.Size, s_nEntryNameAlignment));
+	m_RomFsMetaInfo.Section[kSectionTypeDirHash].Offset = static_cast<u32>(Align(m_RomFsMetaInfo.Size, s_nEntryNameAlignment));
 }
 
 void CRomFs::buildIgnoreList()
 {
 	m_vIgnoreList.clear();
 	m_vRemapIgnoreList.clear();
-	String sIgnorePath = FGetModuleDir() + STR("/ignore_3dstool.txt");
-	FILE* fp = FFopenUnicode(sIgnorePath.c_str(), STR("rb"));
+	UString sIgnorePath = UGetModuleDirName() + USTR("/ignore_3dstool.txt");
+	FILE* fp = UFopen(sIgnorePath.c_str(), USTR("rb"));
 	if (fp != nullptr)
 	{
-		FFseek(fp, 0, SEEK_END);
-		u32 uSize = static_cast<u32>(FFtell(fp));
-		FFseek(fp, 0, SEEK_SET);
+		Fseek(fp, 0, SEEK_END);
+		u32 uSize = static_cast<u32>(Ftell(fp));
+		Fseek(fp, 0, SEEK_SET);
 		char* pTxt = new char[uSize + 1];
 		fread(pTxt, 1, uSize, fp);
 		fclose(fp);
 		pTxt[uSize] = '\0';
 		string sTxt(pTxt);
 		delete[] pTxt;
-		vector<string> vTxt = FSSplitOf<string>(sTxt, "\r\n");
-		vector<Regex>* pIgnoreList = &m_vIgnoreList;
+		vector<string> vTxt = SplitOf<string>(sTxt, "\r\n");
+		vector<URegex>* pIgnoreList = &m_vIgnoreList;
 		for (vector<string>::const_iterator it = vTxt.begin(); it != vTxt.end(); ++it)
 		{
-			sTxt = FSTrim(*it);
+			sTxt = Trim(*it);
 			if (!sTxt.empty())
 			{
-				if (FSStartsWith<string>(sTxt, "//"))
+				if (StartWith(sTxt, "//"))
 				{
-					vector<string> vIngoreTag = FSSplit<string>(sTxt.c_str() + strlen("//"), ":");
-					if (vIngoreTag.size() == 1 && FSEndsWith<string>(sTxt, ":"))
+					vector<string> vIngoreTag = Split<string>(sTxt.c_str() + strlen("//"), ":");
+					if (vIngoreTag.size() == 1 && EndWith(sTxt, ":"))
 					{
-						vIngoreTag[0] = FSTrim(vIngoreTag[0]);
+						vIngoreTag[0] = Trim(vIngoreTag[0]);
 						if (vIngoreTag[0] == "ignore")
 						{
 							pIgnoreList = &m_vIgnoreList;
@@ -310,7 +310,7 @@ void CRomFs::buildIgnoreList()
 				{
 					try
 					{
-						Regex black(FSAToUnicode(sTxt), regex_constants::ECMAScript | regex_constants::icase);
+						URegex black(AToU(sTxt), regex_constants::ECMAScript | regex_constants::icase);
 						pIgnoreList->push_back(black);
 					}
 					catch (regex_error& e)
@@ -323,7 +323,7 @@ void CRomFs::buildIgnoreList()
 	}
 }
 
-void CRomFs::pushDirEntry(const String& a_sEntryName, n32 a_nParentDirOffset)
+void CRomFs::pushDirEntry(const UString& a_sEntryName, n32 a_nParentDirOffset)
 {
 	m_vCreateDir.push_back(SEntry());
 	SEntry& currentEntry = m_vCreateDir.back();
@@ -333,41 +333,41 @@ void CRomFs::pushDirEntry(const String& a_sEntryName, n32 a_nParentDirOffset)
 	}
 	else
 	{
-		currentEntry.Path = m_vCreateDir[a_nParentDirOffset].Path + STR("/") + a_sEntryName;
+		currentEntry.Path = m_vCreateDir[a_nParentDirOffset].Path + USTR("/") + a_sEntryName;
 	}
-	currentEntry.EntryName = FSUnicodeToU16(a_sEntryName);
+	currentEntry.EntryName = UToU16(a_sEntryName);
 	currentEntry.Entry.Dir.ParentDirOffset = a_nParentDirOffset;
 	currentEntry.Entry.Dir.SiblingDirOffset = s_nInvalidOffset;
 	currentEntry.Entry.Dir.ChildDirOffset = s_nInvalidOffset;
 	currentEntry.Entry.Dir.ChildFileOffset = s_nInvalidOffset;
 	currentEntry.Entry.Dir.PrevDirOffset = s_nInvalidOffset;
 	currentEntry.Entry.Dir.NameSize = static_cast<n32>(currentEntry.EntryName.size() * 2);
-	currentEntry.EntryNameSize = static_cast<int>(FAlign(currentEntry.Entry.Dir.NameSize, s_nEntryNameAlignment));
+	currentEntry.EntryNameSize = static_cast<int>(Align(currentEntry.Entry.Dir.NameSize, s_nEntryNameAlignment));
 	if (m_vCreateDir[a_nParentDirOffset].Entry.Dir.ChildDirOffset != s_nInvalidOffset && m_vCreateDir.size() - 1 != m_vCreateDir[a_nParentDirOffset].Entry.Dir.ChildDirOffset)
 	{
 		m_vCreateDir[m_vCreateDir.size() - 2].Entry.Dir.SiblingDirOffset = static_cast<n32>(m_vCreateDir.size() - 1);
 	}
 }
 
-bool CRomFs::pushFileEntry(const String& a_sEntryName, n32 a_nParentDirOffset)
+bool CRomFs::pushFileEntry(const UString& a_sEntryName, n32 a_nParentDirOffset)
 {
 	bool bResult = true;
 	m_vCreateFile.push_back(SEntry());
 	SEntry& currentEntry = m_vCreateFile.back();
-	currentEntry.Path = m_vCreateDir[a_nParentDirOffset].Path + STR("/") + a_sEntryName;
-	currentEntry.EntryName = FSUnicodeToU16(a_sEntryName);
-	currentEntry.EntryOffset = static_cast<n32>(FAlign(m_RomFsMetaInfo.Section[kSectionTypeFile].Size, s_nEntryNameAlignment));
+	currentEntry.Path = m_vCreateDir[a_nParentDirOffset].Path + USTR("/") + a_sEntryName;
+	currentEntry.EntryName = UToU16(a_sEntryName);
+	currentEntry.EntryOffset = static_cast<n32>(Align(m_RomFsMetaInfo.Section[kSectionTypeFile].Size, s_nEntryNameAlignment));
 	currentEntry.Entry.File.ParentDirOffset = a_nParentDirOffset;
 	currentEntry.Entry.File.SiblingFileOffset = s_nInvalidOffset;
-	currentEntry.Entry.File.FileOffset = FAlign(m_RomFsHeader.Level3.Size, s_nFileSizeAlignment);
-	if (!FGetFileSize(currentEntry.Path.c_str(), currentEntry.Entry.File.FileSize))
+	currentEntry.Entry.File.FileOffset = Align(m_RomFsHeader.Level3.Size, s_nFileSizeAlignment);
+	if (!UGetFileSize(currentEntry.Path.c_str(), currentEntry.Entry.File.FileSize))
 	{
 		bResult = false;
-		FPrintf(STR("ERROR: %s stat error\n\n"), currentEntry.Path.c_str());
+		UPrintf(USTR("ERROR: %s stat error\n\n"), currentEntry.Path.c_str());
 	}
 	currentEntry.Entry.File.PrevFileOffset = s_nInvalidOffset;
 	currentEntry.Entry.File.NameSize = static_cast<n32>(currentEntry.EntryName.size() * 2);
-	currentEntry.EntryNameSize = static_cast<int>(FAlign(currentEntry.Entry.File.NameSize, s_nEntryNameAlignment));
+	currentEntry.EntryNameSize = static_cast<int>(Align(currentEntry.Entry.File.NameSize, s_nEntryNameAlignment));
 	if (m_vCreateDir[a_nParentDirOffset].Entry.Dir.ChildFileOffset != s_nInvalidOffset && m_vCreateFile.size() - 1 != m_vCreateDir[a_nParentDirOffset].Entry.Dir.ChildFileOffset)
 	{
 		m_vCreateFile[m_vCreateFile.size() - 2].Entry.File.SiblingFileOffset = static_cast<n32>(m_vCreateFile.size() - 1);
@@ -391,7 +391,7 @@ bool CRomFs::createEntryList()
 	SCreateStackElement& current = m_sCreateStack.top();
 	if (current.ChildIndex == -1)
 	{
-#if _3DSTOOL_COMPILER == COMPILER_MSC
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
 		WIN32_FIND_DATAW ffd;
 		HANDLE hFind = INVALID_HANDLE_VALUE;
 		wstring sPattern = m_vCreateDir[current.EntryOffset].Path + L"/*";
@@ -400,7 +400,7 @@ bool CRomFs::createEntryList()
 		{
 			do
 			{
-				if (matchInIgnoreList(m_vCreateDir[current.EntryOffset].Path.substr(m_sRomFsDirName.size()) + STR("/") + ffd.cFileName))
+				if (matchInIgnoreList(m_vCreateDir[current.EntryOffset].Path.substr(m_sRomFsDirName.size()) + USTR("/") + ffd.cFileName))
 				{
 					continue;
 				}
@@ -435,7 +435,7 @@ bool CRomFs::createEntryList()
 			dirent* pDirent = nullptr;
 			while ((pDirent = readdir(pDir)) != nullptr)
 			{
-				if (matchInIgnoreList(m_vCreateDir[current.EntryOffset].Path.substr(m_sRomFsDirName.size()) + STR("/") + pDirent->d_name))
+				if (matchInIgnoreList(m_vCreateDir[current.EntryOffset].Path.substr(m_sRomFsDirName.size()) + USTR("/") + pDirent->d_name))
 				{
 					continue;
 				}
@@ -486,10 +486,10 @@ bool CRomFs::createEntryList()
 	return bResult;
 }
 
-bool CRomFs::matchInIgnoreList(const String& a_sPath) const
+bool CRomFs::matchInIgnoreList(const UString& a_sPath) const
 {
 	bool bMatch = false;
-	for (vector<Regex>::const_iterator it = m_vIgnoreList.begin(); it != m_vIgnoreList.end(); ++it)
+	for (vector<URegex>::const_iterator it = m_vIgnoreList.begin(); it != m_vIgnoreList.end(); ++it)
 	{
 		if (regex_search(a_sPath, *it))
 		{
@@ -500,11 +500,11 @@ bool CRomFs::matchInIgnoreList(const String& a_sPath) const
 	return bMatch;
 }
 
-u32 CRomFs::getRemapIgnoreLevel(const String& a_sPath) const
+u32 CRomFs::getRemapIgnoreLevel(const UString& a_sPath) const
 {
 	for (u32 i = 0; i < static_cast<u32>(m_vRemapIgnoreList.size()); i++)
 	{
-		const Regex& rgx = m_vRemapIgnoreList[i];
+		const URegex& rgx = m_vRemapIgnoreList[i];
 		if (regex_search(a_sPath, rgx))
 		{
 			return i;
@@ -536,7 +536,7 @@ void CRomFs::removeEmptyDirEntry()
 	for (int i = 0; i < static_cast<int>(m_vCreateDir.size()); i++)
 	{
 		SEntry& currentEntry = m_vCreateDir[i];
-		currentEntry.EntryOffset = static_cast<n32>(FAlign(m_RomFsMetaInfo.Section[kSectionTypeDir].Size, s_nEntryNameAlignment));
+		currentEntry.EntryOffset = static_cast<n32>(Align(m_RomFsMetaInfo.Section[kSectionTypeDir].Size, s_nEntryNameAlignment));
 		m_RomFsMetaInfo.Section[kSectionTypeDir].Size = currentEntry.EntryOffset + sizeof(currentEntry.Entry.Dir) + currentEntry.EntryNameSize;
 	}
 }
@@ -680,11 +680,11 @@ void CRomFs::redirectOffset(n32& a_nOffset, bool a_bIsDir)
 void CRomFs::createMetaInfo()
 {
 	m_RomFsMetaInfo.Section[kSectionTypeDirHash].Size = static_cast<u32>(m_vDirBucket.size() * 4);
-	m_RomFsMetaInfo.Section[kSectionTypeDir].Offset = static_cast<u32>(FAlign(m_RomFsMetaInfo.Section[kSectionTypeDirHash].Offset + m_RomFsMetaInfo.Section[kSectionTypeDirHash].Size, s_nEntryNameAlignment));
-	m_RomFsMetaInfo.Section[kSectionTypeFileHash].Offset = static_cast<u32>(FAlign(m_RomFsMetaInfo.Section[kSectionTypeDir].Offset + m_RomFsMetaInfo.Section[kSectionTypeDir].Size, s_nEntryNameAlignment));
+	m_RomFsMetaInfo.Section[kSectionTypeDir].Offset = static_cast<u32>(Align(m_RomFsMetaInfo.Section[kSectionTypeDirHash].Offset + m_RomFsMetaInfo.Section[kSectionTypeDirHash].Size, s_nEntryNameAlignment));
+	m_RomFsMetaInfo.Section[kSectionTypeFileHash].Offset = static_cast<u32>(Align(m_RomFsMetaInfo.Section[kSectionTypeDir].Offset + m_RomFsMetaInfo.Section[kSectionTypeDir].Size, s_nEntryNameAlignment));
 	m_RomFsMetaInfo.Section[kSectionTypeFileHash].Size = static_cast<u32>(m_vFileBucket.size() * 4);
-	m_RomFsMetaInfo.Section[kSectionTypeFile].Offset = static_cast<u32>(FAlign(m_RomFsMetaInfo.Section[kSectionTypeFileHash].Offset + m_RomFsMetaInfo.Section[kSectionTypeFileHash].Size, s_nEntryNameAlignment));
-	m_RomFsMetaInfo.DataOffset = static_cast<u32>(FAlign(m_RomFsMetaInfo.Section[kSectionTypeFile].Offset + m_RomFsMetaInfo.Section[kSectionTypeFile].Size, s_nFileSizeAlignment));
+	m_RomFsMetaInfo.Section[kSectionTypeFile].Offset = static_cast<u32>(Align(m_RomFsMetaInfo.Section[kSectionTypeFileHash].Offset + m_RomFsMetaInfo.Section[kSectionTypeFileHash].Size, s_nEntryNameAlignment));
+	m_RomFsMetaInfo.DataOffset = static_cast<u32>(Align(m_RomFsMetaInfo.Section[kSectionTypeFile].Offset + m_RomFsMetaInfo.Section[kSectionTypeFile].Size, s_nFileSizeAlignment));
 }
 
 void CRomFs::remap()
@@ -707,7 +707,7 @@ void CRomFs::remap()
 		CSpace space;
 		if (m_nLevel3Offset + m_RomFsMetaInfo.DataOffset > romFs.m_nLevel3Offset + romFs.m_RomFsMetaInfo.DataOffset)
 		{
-			for (map<String, SCommonFileEntry>::iterator itRomFs = romFs.m_mTravelInfo.begin(); itRomFs != romFs.m_mTravelInfo.end(); ++itRomFs)
+			for (map<UString, SCommonFileEntry>::iterator itRomFs = romFs.m_mTravelInfo.begin(); itRomFs != romFs.m_mTravelInfo.end(); ++itRomFs)
 			{
 				SCommonFileEntry& currentRomFsFileEntry = itRomFs->second;
 				n64 nDelta = currentRomFsFileEntry.FileOffset - (m_nLevel3Offset + m_RomFsMetaInfo.DataOffset);
@@ -728,28 +728,28 @@ void CRomFs::remap()
 		}
 		m_RomFsHeader.Level3.Size = 0;
 		vector<SCommonFileEntry*> vRemapIgnore;
-		for (map<String, SCommonFileEntry>::iterator itRomFs = romFs.m_mTravelInfo.begin(); itRomFs != romFs.m_mTravelInfo.end(); ++itRomFs)
+		for (map<UString, SCommonFileEntry>::iterator itRomFs = romFs.m_mTravelInfo.begin(); itRomFs != romFs.m_mTravelInfo.end(); ++itRomFs)
 		{
 			SCommonFileEntry& currentRomFsFileEntry = itRomFs->second;
-			map<String, SCommonFileEntry>::iterator it = m_mTravelInfo.find(itRomFs->first);
+			map<UString, SCommonFileEntry>::iterator it = m_mTravelInfo.find(itRomFs->first);
 			if (it == m_mTravelInfo.end())
 			{
-				space.AddSpace(currentRomFsFileEntry.FileOffset, FAlign(currentRomFsFileEntry.FileSize, s_nFileSizeAlignment));
+				space.AddSpace(currentRomFsFileEntry.FileOffset, Align(currentRomFsFileEntry.FileSize, s_nFileSizeAlignment));
 				currentRomFsFileEntry.FileSize = 0;
 			}
 			else
 			{
 				SCommonFileEntry& currentFileEntry = it->second;
-				if (FAlign(currentFileEntry.FileSize, s_nFileSizeAlignment) > FAlign(currentRomFsFileEntry.FileSize, s_nFileSizeAlignment) || currentFileEntry.RemapIgnoreLevel != UINT32_MAX)
+				if (Align(currentFileEntry.FileSize, s_nFileSizeAlignment) > Align(currentRomFsFileEntry.FileSize, s_nFileSizeAlignment) || currentFileEntry.RemapIgnoreLevel != UINT32_MAX)
 				{
-					space.AddSpace(currentRomFsFileEntry.FileOffset, FAlign(currentRomFsFileEntry.FileSize, s_nFileSizeAlignment));
+					space.AddSpace(currentRomFsFileEntry.FileOffset, Align(currentRomFsFileEntry.FileSize, s_nFileSizeAlignment));
 					currentRomFsFileEntry.FileSize = 0;
 					vRemapIgnore.push_back(&currentFileEntry);
 				}
 				else
 				{
 					currentFileEntry.FileOffset = currentRomFsFileEntry.FileOffset - m_nLevel3Offset - m_RomFsMetaInfo.DataOffset;
-					space.AddSpace(FAlign(currentRomFsFileEntry.FileOffset + currentFileEntry.FileSize, s_nFileSizeAlignment), FAlign(currentRomFsFileEntry.FileSize, s_nFileSizeAlignment) - FAlign(currentFileEntry.FileSize, s_nFileSizeAlignment));
+					space.AddSpace(Align(currentRomFsFileEntry.FileOffset + currentFileEntry.FileSize, s_nFileSizeAlignment), Align(currentRomFsFileEntry.FileSize, s_nFileSizeAlignment) - Align(currentFileEntry.FileSize, s_nFileSizeAlignment));
 					if (currentFileEntry.FileOffset + currentFileEntry.FileSize > m_RomFsHeader.Level3.Size)
 					{
 						m_RomFsHeader.Level3.Size = currentFileEntry.FileOffset + currentFileEntry.FileSize;
@@ -763,12 +763,12 @@ void CRomFs::remap()
 		}
 		else
 		{
-			space.SubSpace(FAlign(m_nLevel3Offset + m_RomFsMetaInfo.DataOffset + m_RomFsHeader.Level3.Size, s_nFileSizeAlignment), FAlign(romFs.m_nLevel3Offset + romFs.m_RomFsHeader.Level3.Size, s_nFileSizeAlignment) - FAlign(m_nLevel3Offset + m_RomFsMetaInfo.DataOffset + m_RomFsHeader.Level3.Size, s_nFileSizeAlignment));
+			space.SubSpace(Align(m_nLevel3Offset + m_RomFsMetaInfo.DataOffset + m_RomFsHeader.Level3.Size, s_nFileSizeAlignment), Align(romFs.m_nLevel3Offset + romFs.m_RomFsHeader.Level3.Size, s_nFileSizeAlignment) - Align(m_nLevel3Offset + m_RomFsMetaInfo.DataOffset + m_RomFsHeader.Level3.Size, s_nFileSizeAlignment));
 		}
-		for (map<String, SCommonFileEntry>::iterator it = m_mTravelInfo.begin(); it != m_mTravelInfo.end(); ++it)
+		for (map<UString, SCommonFileEntry>::iterator it = m_mTravelInfo.begin(); it != m_mTravelInfo.end(); ++it)
 		{
 			SCommonFileEntry& currentFileEntry = it->second;
-			map<String, SCommonFileEntry>::const_iterator itRomFs = romFs.m_mTravelInfo.find(it->first);
+			map<UString, SCommonFileEntry>::const_iterator itRomFs = romFs.m_mTravelInfo.find(it->first);
 			if (itRomFs == romFs.m_mTravelInfo.end())
 			{
 				vRemapIgnore.push_back(&currentFileEntry);
@@ -778,16 +778,16 @@ void CRomFs::remap()
 		for (vector<SCommonFileEntry*>::iterator it = vRemapIgnore.begin(); it != vRemapIgnore.end(); ++it)
 		{
 			SCommonFileEntry& currentFileEntry = **it;
-			n64 nOffset = space.GetSpace(FAlign(currentFileEntry.FileSize, s_nFileSizeAlignment));
+			n64 nOffset = space.GetSpace(Align(currentFileEntry.FileSize, s_nFileSizeAlignment));
 			if (nOffset < 0)
 			{
-				currentFileEntry.FileOffset = FAlign(m_RomFsHeader.Level3.Size, s_nFileSizeAlignment);
+				currentFileEntry.FileOffset = Align(m_RomFsHeader.Level3.Size, s_nFileSizeAlignment);
 				m_RomFsHeader.Level3.Size = currentFileEntry.FileOffset + currentFileEntry.FileSize;
 			}
 			else
 			{
 				currentFileEntry.FileOffset = nOffset - m_nLevel3Offset - m_RomFsMetaInfo.DataOffset;
-				space.SubSpace(nOffset, FAlign(currentFileEntry.FileSize, s_nFileSizeAlignment));
+				space.SubSpace(nOffset, Align(currentFileEntry.FileSize, s_nFileSizeAlignment));
 			}
 		}
 		for (vector<SEntry>::iterator it = m_vCreateFile.begin(); it != m_vCreateFile.end(); ++it)
@@ -801,16 +801,16 @@ void CRomFs::remap()
 
 bool CRomFs::travelFile()
 {
-	m_fpRomFs = FFopen(m_pFileName, "rb");
+	m_fpRomFs = Fopen(m_pFileName, "rb");
 	if (m_fpRomFs == nullptr)
 	{
 		return false;
 	}
 	fread(&m_RomFsHeader, sizeof(m_RomFsHeader), 1, m_fpRomFs);
-	m_nLevel3Offset = FAlign(FAlign(m_RomFsHeader.Size, s_nSHA256BlockSize) + m_RomFsHeader.Level0Size, s_nBlockSize);
-	FFseek(m_fpRomFs, m_nLevel3Offset, SEEK_SET);
+	m_nLevel3Offset = Align(Align(m_RomFsHeader.Size, s_nSHA256BlockSize) + m_RomFsHeader.Level0Size, s_nBlockSize);
+	Fseek(m_fpRomFs, m_nLevel3Offset, SEEK_SET);
 	fread(&m_RomFsMetaInfo, sizeof(m_RomFsMetaInfo), 1, m_fpRomFs);
-	pushExtractStackElement(true, 0, STR("/"));
+	pushExtractStackElement(true, 0, USTR("/"));
 	while (!m_sExtractStack.empty())
 	{
 		SExtractStackElement& current = m_sExtractStack.top();
@@ -833,11 +833,11 @@ void CRomFs::travelDirEntry()
 	if (current.ExtractState == kExtractStateBegin)
 	{
 		readEntry(current);
-		String sPrefix = current.Prefix;
-		String sDirName = m_sRomFsDirName + sPrefix;
+		UString sPrefix = current.Prefix;
+		UString sDirName = m_sRomFsDirName + sPrefix;
 		if (current.Entry.Dir.NameSize != 0)
 		{
-			sPrefix += current.EntryName + STR("/");
+			sPrefix += current.EntryName + USTR("/");
 			sDirName += current.EntryName;
 		}
 		else
@@ -849,10 +849,10 @@ void CRomFs::travelDirEntry()
 	}
 	else if (current.ExtractState == kExtractStateChildDir)
 	{
-		String sPrefix = current.Prefix;
+		UString sPrefix = current.Prefix;
 		if (current.Entry.Dir.NameSize != 0)
 		{
-			sPrefix += current.EntryName + STR("/");
+			sPrefix += current.EntryName + USTR("/");
 		}
 		pushExtractStackElement(true, current.Entry.Dir.ChildDirOffset, sPrefix);
 		current.ExtractState = kExtractStateSiblingDir;
@@ -874,7 +874,7 @@ void CRomFs::travelFileEntry()
 	if (current.ExtractState == kExtractStateBegin)
 	{
 		readEntry(current);
-		String sPath = m_sRomFsDirName + current.Prefix + current.EntryName;
+		UString sPath = m_sRomFsDirName + current.Prefix + current.EntryName;
 		current.Entry.File.FileOffset += m_nLevel3Offset + m_RomFsMetaInfo.DataOffset;
 		m_mTravelInfo[sPath] = current.Entry.File;
 		pushExtractStackElement(false, current.Entry.File.SiblingFileOffset, current.Prefix);
@@ -889,11 +889,11 @@ void CRomFs::travelFileEntry()
 void CRomFs::createHeader()
 {
 	m_RomFsHeader.Level3.Size += m_RomFsMetaInfo.DataOffset;
-	m_RomFsHeader.Level2.Size = FAlign(m_RomFsHeader.Level3.Size, s_nBlockSize) / s_nBlockSize * s_nSHA256BlockSize;
-	m_RomFsHeader.Level1.Size = FAlign(m_RomFsHeader.Level2.Size, s_nBlockSize) / s_nBlockSize * s_nSHA256BlockSize;
-	m_RomFsHeader.Level0Size = static_cast<u32>(FAlign(m_RomFsHeader.Level1.Size, s_nBlockSize) / s_nBlockSize * s_nSHA256BlockSize);
-	m_RomFsHeader.Level2.LogicOffset = FAlign(m_RomFsHeader.Level1.Size, s_nBlockSize);
-	m_RomFsHeader.Level3.LogicOffset = FAlign(m_RomFsHeader.Level2.LogicOffset + m_RomFsHeader.Level2.Size, s_nBlockSize);
+	m_RomFsHeader.Level2.Size = Align(m_RomFsHeader.Level3.Size, s_nBlockSize) / s_nBlockSize * s_nSHA256BlockSize;
+	m_RomFsHeader.Level1.Size = Align(m_RomFsHeader.Level2.Size, s_nBlockSize) / s_nBlockSize * s_nSHA256BlockSize;
+	m_RomFsHeader.Level0Size = static_cast<u32>(Align(m_RomFsHeader.Level1.Size, s_nBlockSize) / s_nBlockSize * s_nSHA256BlockSize);
+	m_RomFsHeader.Level2.LogicOffset = Align(m_RomFsHeader.Level1.Size, s_nBlockSize);
+	m_RomFsHeader.Level3.LogicOffset = Align(m_RomFsHeader.Level2.LogicOffset + m_RomFsHeader.Level2.Size, s_nBlockSize);
 }
 
 void CRomFs::initLevelBuffer()
@@ -902,16 +902,16 @@ void CRomFs::initLevelBuffer()
 	m_LevelBuffer[0].Data.resize(s_nBlockSize, 0);
 	m_LevelBuffer[0].DataPos = 0;
 	m_LevelBuffer[0].FilePos = nFileSize;
-	m_nLevel3Offset = FAlign(FAlign(sizeof(m_RomFsHeader), s_nSHA256BlockSize) + m_RomFsHeader.Level0Size, s_nBlockSize);
+	m_nLevel3Offset = Align(Align(sizeof(m_RomFsHeader), s_nSHA256BlockSize) + m_RomFsHeader.Level0Size, s_nBlockSize);
 	nFileSize = m_nLevel3Offset;
 	m_LevelBuffer[3].Data.resize(s_nBlockSize, 0);
 	m_LevelBuffer[3].DataPos = 0;
 	m_LevelBuffer[3].FilePos = nFileSize;
-	nFileSize += FAlign(m_RomFsHeader.Level3.Size, s_nBlockSize);
+	nFileSize += Align(m_RomFsHeader.Level3.Size, s_nBlockSize);
 	m_LevelBuffer[1].Data.resize(s_nBlockSize, 0);
 	m_LevelBuffer[1].DataPos = 0;
 	m_LevelBuffer[1].FilePos = nFileSize;
-	nFileSize += FAlign(m_RomFsHeader.Level1.Size, s_nBlockSize);
+	nFileSize += Align(m_RomFsHeader.Level1.Size, s_nBlockSize);
 	m_LevelBuffer[2].Data.resize(s_nBlockSize, 0);
 	m_LevelBuffer[2].DataPos = 0;
 	m_LevelBuffer[2].FilePos = nFileSize;
@@ -998,7 +998,7 @@ void CRomFs::writeBuffer(int a_nLevel, const void* a_pSrc, n64 a_nSize)
 			{
 				writeBuffer(a_nLevel - 1, SHA256(&*m_LevelBuffer[a_nLevel].Data.begin(), s_nBlockSize, nullptr), s_nSHA256BlockSize);
 			}
-			FFseek(m_fpRomFs, m_LevelBuffer[a_nLevel].FilePos, SEEK_SET);
+			Fseek(m_fpRomFs, m_LevelBuffer[a_nLevel].FilePos, SEEK_SET);
 			fwrite(&*m_LevelBuffer[a_nLevel].Data.begin(), 1, s_nBlockSize, m_fpRomFs);
 			memset(&*m_LevelBuffer[a_nLevel].Data.begin(), 0, s_nBlockSize);
 			m_LevelBuffer[a_nLevel].DataPos = 0;
@@ -1008,16 +1008,16 @@ void CRomFs::writeBuffer(int a_nLevel, const void* a_pSrc, n64 a_nSize)
 	} while (a_nSize > 0);
 }
 
-bool CRomFs::writeBufferFromFile(int a_nLevel, const String& a_sPath, n64 a_nSize)
+bool CRomFs::writeBufferFromFile(int a_nLevel, const UString& a_sPath, n64 a_nSize)
 {
-	FILE* fp = FFopenUnicode(a_sPath.c_str(), STR("rb"));
+	FILE* fp = UFopen(a_sPath.c_str(), USTR("rb"));
 	if (fp == nullptr)
 	{
 		return false;
 	}
 	if (m_bVerbose)
 	{
-		FPrintf(STR("load: %s\n"), a_sPath.c_str());
+		UPrintf(USTR("load: %s\n"), a_sPath.c_str());
 	}
 	const n64 nBufferSize = 0x100000;
 	static u8 buffer[nBufferSize];
@@ -1034,6 +1034,6 @@ bool CRomFs::writeBufferFromFile(int a_nLevel, const String& a_sPath, n64 a_nSiz
 
 void CRomFs::alignBuffer(int a_nLevel, int a_nAlignment)
 {
-	m_LevelBuffer[a_nLevel].DataPos = static_cast<int>(FAlign(m_LevelBuffer[a_nLevel].DataPos, a_nAlignment));
+	m_LevelBuffer[a_nLevel].DataPos = static_cast<int>(Align(m_LevelBuffer[a_nLevel].DataPos, a_nAlignment));
 	writeBuffer(a_nLevel, nullptr, 0);
 }

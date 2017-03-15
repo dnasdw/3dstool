@@ -1,250 +1,91 @@
 #include "utility.h"
-#include <openssl/aes.h>
 
-#if _3DSTOOL_COMPILER != COMPILER_MSC
-string g_sLocaleName = "";
-#endif
-
-void FSetLocale()
+n64 Align(n64 a_nData, n64 a_nAlignment)
 {
-	string sLocale = setlocale(LC_ALL, "");
-#if _3DSTOOL_COMPILER != COMPILER_MSC
-	vector<string> vLocale = FSSplit<string>(sLocale, ".");
-	if (!vLocale.empty())
+	return (a_nData + a_nAlignment - 1) / a_nAlignment * a_nAlignment;
+}
+
+bool UMakeDir(const UString::value_type* a_pDirName)
+{
+	if (UMkdir(a_pDirName) != 0)
 	{
-		g_sLocaleName = vLocale.back();
+		if (errno != EEXIST)
+		{
+			return false;
+		}
 	}
-#endif
+	return true;
 }
 
-n32 FSToN32(const string& a_sString)
+bool UGetFileSize(const UString::value_type* a_pFileName, n64& a_nFileSize)
 {
-	return static_cast<n32>(strtol(a_sString.c_str(), nullptr, 10));
-}
-
-#if _3DSTOOL_COMPILER == COMPILER_MSC
-#if _3DSTOOL_COMPILER_VERSION < 1600
-string FSWToU8(const wstring& a_sString)
-{
-	int nLength = WideCharToMultiByte(CP_UTF8, 0, a_sString.c_str(), -1, nullptr, 0, nullptr, nullptr);
-	char* pTemp = new char[nLength];
-	WideCharToMultiByte(CP_UTF8, 0, a_sString.c_str(), -1, pTemp, nLength, nullptr, nullptr);
-	string sString = pTemp;
-	delete[] pTemp;
-	return sString;
-}
-
-string FSU16ToU8(const U16String& a_sString)
-{
-	return FSWToU8(a_sString);
-}
-
-wstring FSU8ToW(const string& a_sString)
-{
-	int nLength = MultiByteToWideChar(CP_UTF8, 0, a_sString.c_str(), -1, nullptr, 0);
-	wchar_t* pTemp = new wchar_t[nLength];
-	MultiByteToWideChar(CP_UTF8, 0, a_sString.c_str(), -1, pTemp, nLength);
-	wstring sString = pTemp;
-	delete[] pTemp;
-	return sString;
-}
-
-wstring FSAToW(const string& a_sString)
-{
-	int nLength = MultiByteToWideChar(CP_ACP, 0, a_sString.c_str(), -1, nullptr, 0);
-	wchar_t* pTemp = new wchar_t[nLength];
-	MultiByteToWideChar(CP_ACP, 0, a_sString.c_str(), -1, pTemp, nLength);
-	wstring sString = pTemp;
-	delete[] pTemp;
-	return sString;
-}
-
-wstring FSU16ToW(const U16String& a_sString)
-{
-	return a_sString;
-}
-
-U16String FSU8ToU16(const string& a_sString)
-{
-	return FSU8ToW(a_sString);
-}
-
-U16String FSWToU16(const wstring& a_sString)
-{
-	return a_sString;
-}
-#else
-string FSWToU8(const wstring& a_sString)
-{
-	static wstring_convert<codecvt_utf8<wchar_t>> c_cvt_u8;
-	return c_cvt_u8.to_bytes(a_sString);
-}
-
-string FSU16ToU8(const U16String& a_sString)
-{
-	static wstring_convert<codecvt_utf8_utf16<Char16_t>, Char16_t> c_cvt_u8_u16;
-	return c_cvt_u8_u16.to_bytes(a_sString);
-}
-
-wstring FSU8ToW(const string& a_sString)
-{
-	static wstring_convert<codecvt_utf8<wchar_t>> c_cvt_u8;
-	return c_cvt_u8.from_bytes(a_sString);
-}
-
-wstring FSAToW(const string& a_sString)
-{
-	static wstring_convert<codecvt<wchar_t, char, mbstate_t>> c_cvt_a(new codecvt<wchar_t, char, mbstate_t>(""));
-	return c_cvt_a.from_bytes(a_sString);
-}
-
-wstring FSU16ToW(const U16String& a_sString)
-{
-	return FSU8ToW(FSU16ToU8(a_sString));
-}
-
-U16String FSU8ToU16(const string& a_sString)
-{
-	static wstring_convert<codecvt_utf8_utf16<Char16_t>, Char16_t> c_cvt_u8_u16;
-	return c_cvt_u8_u16.from_bytes(a_sString);
-}
-
-U16String FSWToU16(const wstring& a_sString)
-{
-	return FSU8ToU16(FSWToU8(a_sString));
-}
-#endif
-#else
-string FSWToU8(const wstring& a_sString)
-{
-	return FSTToT<wstring, string>(a_sString, "WCHAR_T", "UTF-8");
-}
-
-string FSU16ToU8(const U16String& a_sString)
-{
-	return FSTToT<U16String, string>(a_sString, "UTF-16LE", "UTF-8");
-}
-
-wstring FSU8ToW(const string& a_sString)
-{
-	return FSTToT<string, wstring>(a_sString, "UTF-8", "WCHAR_T");
-}
-
-wstring FSAToW(const string& a_sString)
-{
-	return FSTToT<string, wstring>(a_sString, g_sLocaleName, "WCHAR_T");
-}
-
-wstring FSU16ToW(const U16String& a_sString)
-{
-	return FSTToT<U16String, wstring>(a_sString, "UTF-16LE", "WCHAR_T");
-}
-
-U16String FSU8ToU16(const string& a_sString)
-{
-	return FSTToT<string, U16String>(a_sString, "UTF-8", "UTF-16LE");
-}
-
-U16String FSWToU16(const wstring& a_sString)
-{
-	return FSTToT<wstring, U16String>(a_sString, "WCHAR_T", "UTF-16LE");
-}
-#endif
-
-static const n32 s_nFormatBufferSize = 4096;
-
-string FFormatV(const char* a_szFormat, va_list a_vaList)
-{
-	static char c_szBuffer[s_nFormatBufferSize] = {};
-	vsnprintf(c_szBuffer, s_nFormatBufferSize, a_szFormat, a_vaList);
-	return c_szBuffer;
-}
-
-wstring FFormatV(const wchar_t* a_szFormat, va_list a_vaList)
-{
-	static wchar_t c_szBuffer[s_nFormatBufferSize] = {};
-	vswprintf(c_szBuffer, s_nFormatBufferSize, a_szFormat, a_vaList);
-	return c_szBuffer;
-}
-
-string FFormat(const char* a_szFormat, ...)
-{
-	va_list vaList;
-	va_start(vaList, a_szFormat);
-	string sFormatted = FFormatV(a_szFormat, vaList);
-	va_end(vaList);
-	return sFormatted;
-}
-
-wstring FFormat(const wchar_t* a_szFormat, ...)
-{
-	va_list vaList;
-	va_start(vaList, a_szFormat);
-	wstring sFormatted = FFormatV(a_szFormat, vaList);
-	va_end(vaList);
-	return sFormatted;
-}
-
-const String& FGetModuleFile()
-{
-	const int nMaxPath = 4096;
-	static String sFile;
-	sFile.clear();
-	sFile.resize(nMaxPath, STR('\0'));
-	size_t uSize = 0;
-#if _3DSTOOL_COMPILER == COMPILER_MSC
-	uSize = GetModuleFileNameW(nullptr, &*sFile.begin(), nMaxPath);
-#elif defined(__APPLE__)
-	char path[nMaxPath] = {};
-	u32 uPathSize = static_cast<u32>(sizeof(path));
-	if (_NSGetExecutablePath(path, &uPathSize) != 0)
+	Stat st;
+	if (UStat(a_pFileName, &st) != 0)
 	{
-		printf("ERROR: _NSGetExecutablePath error\n\n");
-		sFile.erase();
+		a_nFileSize = 0;
+		return false;
 	}
-	else if (realpath(path, &sFile.front()) == nullptr)
+	a_nFileSize = st.st_size;
+	return true;
+}
+
+FILE* Fopen(const char* a_pFileName, const char* a_pMode)
+{
+	FILE* fp = fopen(a_pFileName, a_pMode);
+	if (fp == nullptr)
 	{
-		sFile.erase();
+		printf("ERROR: open file %s failed\n\n", a_pFileName);
 	}
-	uSize = strlen(sFile.c_str());
-#else
-	ssize_t nCount = readlink("/proc/self/exe", &sFile.front(), nMaxPath);
-	if (nCount == -1)
+	return fp;
+}
+
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
+FILE* FopenW(const wchar_t* a_pFileName, const wchar_t* a_pMode)
+{
+	FILE* fp = _wfopen(a_pFileName, a_pMode);
+	if (fp == nullptr)
 	{
-		printf("ERROR: readlink /proc/self/exe error\n\n");
-		sFile.erase();
+		wprintf(L"ERROR: open file %ls failed\n\n", a_pFileName);
+	}
+	return fp;
+}
+#endif
+
+bool Seek(FILE* a_fpFile, n64 a_nOffset)
+{
+	if (fflush(a_fpFile) != 0)
+	{
+		return false;
+	}
+	int nFd = Fileno(a_fpFile);
+	if (nFd == -1)
+	{
+		return false;
+	}
+	Fseek(a_fpFile, 0, SEEK_END);
+	n64 nFileSize = Ftell(a_fpFile);
+	if (nFileSize < a_nOffset)
+	{
+		n64 nOffset = Lseek(nFd, a_nOffset - 1, SEEK_SET);
+		if (nOffset == -1)
+		{
+			return false;
+		}
+		fputc(0, a_fpFile);
+		fflush(a_fpFile);
 	}
 	else
 	{
-		sFile[nCount] = '\0';
+		Fseek(a_fpFile, a_nOffset, SEEK_SET);
 	}
-	uSize = strlen(sFile.c_str());
-#endif
-	sFile.erase(uSize);
-	replace(sFile.begin(), sFile.end(), STR('\\'), STR('/'));
-	return sFile;
+	return true;
 }
 
-const String& FGetModuleDir()
-{
-	static String sDir = FGetModuleFile();
-	String::size_type uPos = sDir.rfind(STR('/'));
-	if (uPos != String::npos)
-	{
-		sDir.erase(uPos);
-	}
-	else
-	{
-		sDir.erase();
-	}
-	return sDir;
-}
-
-void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize)
+void CopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize)
 {
 	const n64 nBufferSize = 0x100000;
 	u8* pBuffer = new u8[nBufferSize];
-	FFseek(a_fpSrc, a_nSrcOffset, SEEK_SET);
+	Fseek(a_fpSrc, a_nSrcOffset, SEEK_SET);
 	while (a_nSize > 0)
 	{
 		n64 nSize = a_nSize > nBufferSize ? nBufferSize : a_nSize;
@@ -255,74 +96,7 @@ void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize)
 	delete[] pBuffer;
 }
 
-void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nSrcOffset, n64 a_nSize)
-{
-	u8 uKey[16] = {};
-	a_Key.GetBytes(uKey, 16);
-	u8 uCounter[16] = {};
-	a_Counter.GetBytes(uCounter, 16);
-	AES_KEY key;
-	AES_set_encrypt_key(uKey, 128, &key);
-	u8 uEcountBuf[16] = {};
-	u32 uNum = 0;
-	const n64 nBufferSize = 0x100000;
-	u8* pInBuffer = new u8[nBufferSize];
-	u8* pOutBuffer = new u8[nBufferSize];
-	FFseek(a_fpSrc, a_nSrcOffset, SEEK_SET);
-	while (a_nSize > 0)
-	{
-		n64 nSize = a_nSize > nBufferSize ? nBufferSize : a_nSize;
-		fread(pInBuffer, 1, static_cast<size_t>(nSize), a_fpSrc);
-		AES_ctr128_encrypt(pInBuffer, pOutBuffer, static_cast<size_t>(nSize), &key, uCounter, uEcountBuf, &uNum);
-		fwrite(pOutBuffer, 1, static_cast<size_t>(nSize), a_fpDest);
-		a_nSize -= nSize;
-	}
-	delete[] pOutBuffer;
-	delete[] pInBuffer;
-}
-
-bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize)
-{
-	FILE* fpXor = FFopen(a_pXorFileName, "rb");
-	if (fpXor == nullptr)
-	{
-		return false;
-	}
-	FFseek(fpXor, 0, SEEK_END);
-	n64 nXorSize = FFtell(fpXor);
-	if (nXorSize < a_nSize)
-	{
-		fclose(fpXor);
-		printf("ERROR: xor file %s size less than data size\n\n", a_pXorFileName);
-		return false;
-	}
-	FFseek(fpXor, 0, SEEK_SET);
-	const n64 nBufferSize = 0x100000;
-	u8* pDataBuffer = new u8[nBufferSize];
-	u8* pXorBuffer = new u8[nBufferSize];
-	FFseek(a_fpSrc, a_nOffset, SEEK_SET);
-	while (a_nSize > 0)
-	{
-		n64 nSize = a_nSize > nBufferSize ? nBufferSize : a_nSize;
-		fread(pDataBuffer, 1, static_cast<size_t>(nSize), a_fpSrc);
-		fread(pXorBuffer, 1, static_cast<size_t>(nSize), fpXor);
-		u64* pDataBuffer64 = reinterpret_cast<u64*>(pDataBuffer);
-		u64* pXorBuffer64 = reinterpret_cast<u64*>(pXorBuffer);
-		n64 nXorCount = FAlign(nSize, 8) / 8;
-		for (n64 i = 0; i < nXorCount; i++)
-		{
-			*pDataBuffer64++ ^= *pXorBuffer64++;
-		}
-		fwrite(pDataBuffer, 1, static_cast<size_t>(nSize), a_fpDest);
-		a_nSize -= nSize;
-	}
-	delete[] pXorBuffer;
-	delete[] pDataBuffer;
-	fclose(fpXor);
-	return true;
-}
-
-void FPadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData)
+void PadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData)
 {
 	const n64 nBufferSize = 0x100000;
 	u8* pBuffer = new u8[nBufferSize];
@@ -336,296 +110,199 @@ void FPadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData)
 	delete[] pBuffer;
 }
 
-bool FEncryptAesCtrFile(const char* a_pDataFileName, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset)
+const UString& UGetModuleFileName()
 {
-	FILE* fpData = FFopen(a_pDataFileName, "rb+");
-	if (fpData == nullptr)
+	const u32 uMaxPath = 4096;
+	static UString sFileName;
+	sFileName.clear();
+	sFileName.resize(uMaxPath, USTR('\0'));
+	u32 uSize = 0;
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
+	uSize = GetModuleFileNameW(nullptr, &*sFileName.begin(), uMaxPath);
+#elif SDW_PLATFORM == SDW_PLATFORM_MACOS
+	char szPath[uMaxPath] = {};
+	u32 uPathSize = uMaxPath;
+	if (_NSGetExecutablePath(szPath, &uPathSize) != 0)
 	{
-		return false;
+		printf("ERROR: _NSGetExecutablePath error\n\n");
+		sFileName.clear();
 	}
-	FFseek(fpData, 0, SEEK_END);
-	n64 nDataSize = FFtell(fpData);
-	if (nDataSize < a_nDataOffset)
+	else if (realpath(szPath, &*sFileName.begin()) == nullptr)
 	{
-		fclose(fpData);
-		printf("ERROR: data file %s size less than data offset\n\n", a_pDataFileName);
-		return false;
+		printf("ERROR: realpath error\n\n");
+		sFileName.clear();
 	}
-	if (a_bDataFileAll)
+	uSize = strlen(sFileName.c_str());
+#elif SDW_PLATFORM == SDW_PLATFORM_LINUX
+	ssize_t nCount = readlink("/proc/self/exe", &*sFileName.begin(), uMaxPath);
+	if (nCount == -1)
 	{
-		a_nDataSize = nDataSize - a_nDataOffset;
-	}
-	if (nDataSize < a_nDataOffset + a_nDataSize)
-	{
-		fclose(fpData);
-		printf("ERROR: data file %s size less than data offset + data size\n\n", a_pDataFileName);
-		return false;
-	}
-	u8 uKey[16] = {};
-	a_Key.GetBytes(uKey, 16);
-	CBigNum counter = a_Counter;
-	counter += static_cast<int>(a_nXorOffset / 0x10);
-	a_nXorOffset %= 0x10;
-	n64 nXorOffset = a_nXorOffset;
-	u8 uCounter[16] = {};
-	counter.GetBytes(uCounter, 16);
-	AES_KEY key;
-	AES_set_encrypt_key(uKey, 128, &key);
-	u8 uEcountBuf[16] = {};
-	u32 uNum = 0;
-	n64 nIndex = 0;
-	const n64 nBufferSize = 0x100000;
-	u8* pInBuffer = new u8[nBufferSize];
-	u8* pOutBuffer = new u8[nBufferSize];
-	while (a_nDataSize > 0)
-	{
-		n64 nSize = nXorOffset + a_nDataSize > nBufferSize ? nBufferSize : nXorOffset + a_nDataSize;
-		FFseek(fpData, a_nDataOffset + nIndex * nBufferSize - (a_nXorOffset - nXorOffset), SEEK_SET);
-		fread(pInBuffer + nXorOffset, 1, static_cast<size_t>(nSize - nXorOffset), fpData);
-		AES_ctr128_encrypt(pInBuffer, pOutBuffer, static_cast<size_t>(nSize), &key, uCounter, uEcountBuf, &uNum);
-		FFseek(fpData, a_nDataOffset + nIndex * nBufferSize - (a_nXorOffset - nXorOffset), SEEK_SET);
-		fwrite(pOutBuffer + nXorOffset, 1, static_cast<size_t>(nSize - nXorOffset), fpData);
-		a_nDataSize -= nSize - nXorOffset;
-		nXorOffset = 0;
-		nIndex++;
-	}
-	delete[] pOutBuffer;
-	delete[] pInBuffer;
-	fclose(fpData);
-	return true;
-}
-
-bool FEncryptXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset)
-{
-	FILE* fpData = FFopen(a_pDataFileName, "rb+");
-	if (fpData == nullptr)
-	{
-		return false;
-	}
-	FFseek(fpData, 0, SEEK_END);
-	n64 nDataSize = FFtell(fpData);
-	if (nDataSize < a_nDataOffset)
-	{
-		fclose(fpData);
-		printf("ERROR: data file %s size less than data offset\n\n", a_pDataFileName);
-		return false;
-	}
-	if (a_bDataFileAll)
-	{
-		a_nDataSize = nDataSize - a_nDataOffset;
-	}
-	if (nDataSize < a_nDataOffset + a_nDataSize)
-	{
-		fclose(fpData);
-		printf("ERROR: data file %s size less than data offset + data size\n\n", a_pDataFileName);
-		return false;
-	}
-	FILE* fpXor = FFopen(a_pXorFileName, "rb");
-	if (fpXor == nullptr)
-	{
-		fclose(fpData);
-		return false;
-	}
-	FFseek(fpXor, 0, SEEK_END);
-	n64 nXorSize = FFtell(fpXor);
-	if (nXorSize - a_nXorOffset < a_nDataSize)
-	{
-		fclose(fpXor);
-		fclose(fpData);
-		printf("ERROR: xor file %s size less than data size\n\n", a_pXorFileName);
-		return false;
-	}
-	FFseek(fpXor, a_nXorOffset, SEEK_SET);
-	n64 nIndex = 0;
-	const n64 nBufferSize = 0x100000;
-	u8* pDataBuffer = new u8[nBufferSize];
-	u8* pXorBuffer = new u8[nBufferSize];
-	while (a_nDataSize > 0)
-	{
-		n64 nSize = a_nDataSize > nBufferSize ? nBufferSize : a_nDataSize;
-		FFseek(fpData, a_nDataOffset + nIndex * nBufferSize, SEEK_SET);
-		fread(pDataBuffer, 1, static_cast<size_t>(nSize), fpData);
-		fread(pXorBuffer, 1, static_cast<size_t>(nSize), fpXor);
-		u64* pDataBuffer64 = reinterpret_cast<u64*>(pDataBuffer);
-		u64* pXorBuffer64 = reinterpret_cast<u64*>(pXorBuffer);
-		n64 nXorCount = FAlign(nSize, 8) / 8;
-		for (n64 i = 0; i < nXorCount; i++)
-		{
-			*pDataBuffer64++ ^= *pXorBuffer64++;
-		}
-		FFseek(fpData, a_nDataOffset + nIndex * nBufferSize, SEEK_SET);
-		fwrite(pDataBuffer, 1, static_cast<size_t>(nSize), fpData);
-		a_nDataSize -= nSize;
-		nIndex++;
-	}
-	delete[] pXorBuffer;
-	delete[] pDataBuffer;
-	fclose(fpXor);
-	fclose(fpData);
-	return true;
-}
-
-void FEncryptAesCtrData(void* a_pData, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataSize, n64 a_nXorOffset)
-{
-	u8 uKey[16] = {};
-	a_Key.GetBytes(uKey, 16);
-	CBigNum counter = a_Counter;
-	counter += static_cast<int>(a_nXorOffset / 0x10);
-	a_nXorOffset %= 0x10;
-	u8 uCounter[16] = {};
-	counter.GetBytes(uCounter, 16);
-	AES_KEY key;
-	AES_set_encrypt_key(uKey, 128, &key);
-	u8 uEcountBuf[16] = {};
-	u32 uNum = 0;
-	if (a_nDataSize > 0)
-	{
-		if (a_nXorOffset == 0)
-		{
-			AES_ctr128_encrypt(reinterpret_cast<u8*>(a_pData), reinterpret_cast<u8*>(a_pData), static_cast<size_t>(a_nDataSize), &key, uCounter, uEcountBuf, &uNum);
-		}
-		else
-		{
-			const n64 nBufferSize = 0x10;
-			u8 uBuffer[nBufferSize] = {};
-			n64 nSize = a_nXorOffset + a_nDataSize > nBufferSize ? nBufferSize : a_nXorOffset + a_nDataSize;
-			memcpy(uBuffer + a_nXorOffset, a_pData, static_cast<size_t>(nSize - a_nXorOffset));
-			AES_ctr128_encrypt(uBuffer, uBuffer, static_cast<size_t>(nSize), &key, uCounter, uEcountBuf, &uNum);
-			memcpy(a_pData, uBuffer + a_nXorOffset, static_cast<size_t>(nSize - a_nXorOffset));
-			a_nDataSize -= nSize - a_nXorOffset;
-			if (a_nDataSize > 0)
-			{
-				AES_ctr128_encrypt(reinterpret_cast<u8*>(a_pData) + (nSize - a_nXorOffset), reinterpret_cast<u8*>(a_pData) + (nSize - a_nXorOffset), static_cast<size_t>(a_nDataSize), &key, uCounter, uEcountBuf, &uNum);
-			}
-		}
-	}
-}
-
-bool FEncryptXorData(void* a_pData, const char* a_pXorFileName, n64 a_nDataSize, n64 a_nXorOffset)
-{
-	FILE* fpXor = FFopen(a_pXorFileName, "rb");
-	if (fpXor == nullptr)
-	{
-		return false;
-	}
-	FFseek(fpXor, 0, SEEK_END);
-	n64 nXorSize = FFtell(fpXor);
-	if (nXorSize - a_nXorOffset < a_nDataSize)
-	{
-		fclose(fpXor);
-		printf("ERROR: xor file %s size less than data size\n\n", a_pXorFileName);
-		return false;
-	}
-	FFseek(fpXor, a_nXorOffset, SEEK_SET);
-	n64 nIndex = 0;
-	const n64 nBufferSize = 0x100000;
-	u8* pXorBuffer = new u8[nBufferSize];
-	while (a_nDataSize > 0)
-	{
-		n64 nSize = a_nDataSize > nBufferSize ? nBufferSize : a_nDataSize;
-		fread(pXorBuffer, 1, static_cast<size_t>(nSize), fpXor);
-		u64* pDataBuffer64 = reinterpret_cast<u64*>(static_cast<u8*>(a_pData) + nIndex * nBufferSize);
-		u64* pXorBuffer64 = reinterpret_cast<u64*>(pXorBuffer);
-		n64 nXorCount = nSize / 8;
-		for (n64 i = 0; i < nXorCount; i++)
-		{
-			*pDataBuffer64++ ^= *pXorBuffer64++;
-		}
-		int nRemain = nSize % 8;
-		if (nRemain != 0)
-		{
-			u8* pDataBuffer8 = reinterpret_cast<u8*>(pDataBuffer64);
-			u8* pXorBuffer8 = reinterpret_cast<u8*>(pXorBuffer64);
-			for (n64 i = 0; i < nRemain; i++)
-			{
-				*pDataBuffer8++ ^= *pXorBuffer8++;
-			}
-		}
-		a_nDataSize -= nSize;
-		nIndex++;
-	}
-	delete[] pXorBuffer;
-	fclose(fpXor);
-	return true;
-}
-
-bool FGetFileSize(const String::value_type* a_pFileName, n64& a_nFileSize)
-{
-	SStat st;
-	if (FStat(a_pFileName, &st) != 0)
-	{
-		a_nFileSize = 0;
-		return false;
-	}
-	a_nFileSize = st.st_size;
-	return true;
-}
-
-bool FMakeDir(const String::value_type* a_pDirName)
-{
-	if (FMkdir(a_pDirName) != 0)
-	{
-		if (errno != EEXIST)
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-FILE* FFopenA(const char* a_pFileName, const char* a_pMode)
-{
-	FILE* fp = fopen(a_pFileName, a_pMode);
-	if (fp == nullptr)
-	{
-		printf("ERROR: open file %s failed\n\n", a_pFileName);
-	}
-	return fp;
-}
-
-#if _3DSTOOL_COMPILER == COMPILER_MSC
-FILE* FFopenW(const wchar_t* a_pFileName, const wchar_t* a_pMode)
-{
-	FILE* fp = _wfopen(a_pFileName, a_pMode);
-	if (fp == nullptr)
-	{
-		wprintf(L"ERROR: open file %s failed\n\n", a_pFileName);
-	}
-	return fp;
-}
-#endif
-
-bool FSeek(FILE* a_fpFile, n64 a_nOffset)
-{
-	if (fflush(a_fpFile) != 0)
-	{
-		return false;
-	}
-	int nFd = FFileno(a_fpFile);
-	if (nFd == -1)
-	{
-		return false;
-	}
-	FFseek(a_fpFile, 0, SEEK_END);
-	n64 nFileSize = FFtell(a_fpFile);
-	if (nFileSize < a_nOffset)
-	{
-		n64 nOffset = FLseek(nFd, a_nOffset - 1, SEEK_SET);
-		if (nOffset == -1)
-		{
-			return false;
-		}
-		fputc(0, a_fpFile);
-		fflush(a_fpFile);
+		printf("ERROR: readlink /proc/self/exe error\n\n");
+		sFileName.clear();
 	}
 	else
 	{
-		FFseek(a_fpFile, a_nOffset, SEEK_SET);
+		sFileName[nCount] = '\0';
 	}
-	return true;
+	uSize = strlen(sFileName.c_str());
+#endif
+	sFileName.erase(uSize);
+	sFileName = Replace(sFileName, USTR('\\'), USTR('/'));
+	return sFileName;
 }
 
-n64 FAlign(n64 a_nOffset, n64 a_nAlignment)
+const UString& UGetModuleDirName()
 {
-	return (a_nOffset + a_nAlignment - 1) / a_nAlignment * a_nAlignment;
+	static UString sDirName = UGetModuleFileName();
+	UString::size_type uPos = sDirName.rfind(USTR('/'));
+	if (uPos != UString::npos)
+	{
+		sDirName.erase(uPos);
+	}
+	else
+	{
+		sDirName.clear();
+	}
+	return sDirName;
+}
+
+void SetLocale()
+{
+#if SDW_PLATFORM == SDW_PLATFORM_MACOS
+	setlocale(LC_ALL, "en_US.UTF-8");
+#else
+	setlocale(LC_ALL, "");
+#endif
+}
+
+n32 SToN32(const string& a_sString, int a_nRadix /* = 10 */)
+{
+	return static_cast<n32>(strtol(a_sString.c_str(), nullptr, a_nRadix));
+}
+
+#if SDW_COMPILER == SDW_COMPILER_MSC && SDW_COMPILER_VERSION < 1600
+string WToU8(const wstring& a_sString)
+{
+	int nLength = WideCharToMultiByte(CP_UTF8, 0, a_sString.c_str(), -1, nullptr, 0, nullptr, nullptr);
+	char* pTemp = new char[nLength];
+	WideCharToMultiByte(CP_UTF8, 0, a_sString.c_str(), -1, pTemp, nLength, nullptr, nullptr);
+	string sString = pTemp;
+	delete[] pTemp;
+	return sString;
+}
+
+string U16ToU8(const U16String& a_sString)
+{
+	return WToU8(a_sString);
+}
+
+wstring U8ToW(const string& a_sString)
+{
+	int nLength = MultiByteToWideChar(CP_UTF8, 0, a_sString.c_str(), -1, nullptr, 0);
+	wchar_t* pTemp = new wchar_t[nLength];
+	MultiByteToWideChar(CP_UTF8, 0, a_sString.c_str(), -1, pTemp, nLength);
+	wstring sString = pTemp;
+	delete[] pTemp;
+	return sString;
+}
+
+wstring U16ToW(const U16String& a_sString)
+{
+	return a_sString;
+}
+
+U16String U8ToU16(const string& a_sString)
+{
+	return U8ToW(a_sString);
+}
+
+U16String WToU16(const wstring& a_sString)
+{
+	return a_sString;
+}
+#else
+string WToU8(const wstring& a_sString)
+{
+	static wstring_convert<codecvt_utf8<wchar_t>> c_cvt_u8;
+	return c_cvt_u8.to_bytes(a_sString);
+}
+
+string U16ToU8(const U16String& a_sString)
+{
+	static wstring_convert<codecvt_utf8_utf16<Char16_t>, Char16_t> c_cvt_u8_u16;
+	return c_cvt_u8_u16.to_bytes(a_sString);
+}
+
+wstring U8ToW(const string& a_sString)
+{
+	static wstring_convert<codecvt_utf8<wchar_t>> c_cvt_u8;
+	return c_cvt_u8.from_bytes(a_sString);
+}
+
+wstring U16ToW(const U16String& a_sString)
+{
+	return U8ToW(U16ToU8(a_sString));
+}
+
+U16String U8ToU16(const string& a_sString)
+{
+	static wstring_convert<codecvt_utf8_utf16<Char16_t>, Char16_t> c_cvt_u8_u16;
+	return c_cvt_u8_u16.from_bytes(a_sString);
+}
+
+U16String WToU16(const wstring& a_sString)
+{
+	return U8ToU16(WToU8(a_sString));
+}
+#endif
+
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
+wstring AToW(const string& a_sString)
+{
+	int nLength = MultiByteToWideChar(CP_ACP, 0, a_sString.c_str(), -1, nullptr, 0);
+	wchar_t* pTemp = new wchar_t[nLength];
+	MultiByteToWideChar(CP_ACP, 0, a_sString.c_str(), -1, pTemp, nLength);
+	wstring sString = pTemp;
+	delete[] pTemp;
+	return sString;
+}
+#else
+wstring AToW(const string& a_sString)
+{
+	return U8ToW(a_sString);
+}
+#endif
+
+static const int s_nFormatBufferSize = 4096;
+
+string FormatV(const char* a_szFormat, va_list a_vaList)
+{
+	static char c_szBuffer[s_nFormatBufferSize] = {};
+	vsnprintf(c_szBuffer, s_nFormatBufferSize, a_szFormat, a_vaList);
+	return c_szBuffer;
+}
+
+wstring FormatV(const wchar_t* a_szFormat, va_list a_vaList)
+{
+	static wchar_t c_szBuffer[s_nFormatBufferSize] = {};
+	vswprintf(c_szBuffer, s_nFormatBufferSize, a_szFormat, a_vaList);
+	return c_szBuffer;
+}
+
+string Format(const char* a_szFormat, ...)
+{
+	va_list vaList;
+	va_start(vaList, a_szFormat);
+	string sFormatted = FormatV(a_szFormat, vaList);
+	va_end(vaList);
+	return sFormatted;
+}
+
+wstring Format(const wchar_t* a_szFormat, ...)
+{
+	va_list vaList;
+	va_start(vaList, a_szFormat);
+	wstring sFormatted = FormatV(a_szFormat, vaList);
+	va_end(vaList);
+	return sFormatted;
 }

@@ -4,7 +4,7 @@
 #include "utility.h"
 #include "3dstool.h"
 
-#include MSC_PUSH_PACKED
+#include SDW_MSC_PUSH_PACKED
 struct NcchCommonHeaderStruct
 {
 	u32 Signature;
@@ -35,14 +35,14 @@ struct NcchCommonHeaderStruct
 	u8 Reserved5[4];
 	u8 ExeFsSuperBlockHash[32];
 	u8 RomFsSuperBlockHash[32];
-} GNUC_PACKED;
+} SDW_GNUC_PACKED;
 
 struct SNcchHeader
 {
 	u8 RSASignature[256];
 	NcchCommonHeaderStruct Ncch;
-} GNUC_PACKED;
-#include MSC_POP_PACKED
+} SDW_GNUC_PACKED;
+#include SDW_MSC_POP_PACKED
 
 class CNcch
 {

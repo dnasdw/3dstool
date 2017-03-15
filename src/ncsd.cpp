@@ -1,6 +1,6 @@
 #include "ncsd.h"
 
-const u32 CNcsd::s_uSignature = CONVERT_ENDIAN('NCSD');
+const u32 CNcsd::s_uSignature = SDW_CONVERT_ENDIAN32('NCSD');
 const n64 CNcsd::s_nOffsetFirstNcch = 0x4000;
 const int CNcsd::s_nBlockSize = 0x1000;
 
@@ -73,7 +73,7 @@ n64* CNcsd::GetOffsetAndSize()
 bool CNcsd::ExtractFile()
 {
 	bool bResult = true;
-	m_fpNcsd = FFopen(m_pFileName, "rb");
+	m_fpNcsd = Fopen(m_pFileName, "rb");
 	if (m_fpNcsd == nullptr)
 	{
 		return false;
@@ -98,7 +98,7 @@ bool CNcsd::ExtractFile()
 bool CNcsd::CreateFile()
 {
 	bool bResult = true;
-	m_fpNcsd = FFopen(m_pFileName, "wb");
+	m_fpNcsd = Fopen(m_pFileName, "wb");
 	if (m_fpNcsd == nullptr)
 	{
 		return false;
@@ -117,7 +117,7 @@ bool CNcsd::CreateFile()
 			bResult = false;
 		}
 	}
-	n64 nFileSize = FFtell(m_fpNcsd);
+	n64 nFileSize = Ftell(m_fpNcsd);
 	*reinterpret_cast<n64*>(m_CardInfo.Reserved1 + 248) = nFileSize;
 	if (m_bNotPad && m_NcsdHeader.Ncsd.Flags[MEDIA_TYPE_INDEX] == CARD2)
 	{
@@ -142,9 +142,9 @@ bool CNcsd::CreateFile()
 				break;
 			}
 		}
-		FPadFile(m_fpNcsd, m_NcsdHeader.Ncsd.MediaSize * m_nMediaUnitSize - nFileSize, 0xFF);
+		::PadFile(m_fpNcsd, m_NcsdHeader.Ncsd.MediaSize * m_nMediaUnitSize - nFileSize, 0xFF);
 	}
-	FFseek(m_fpNcsd, 0, SEEK_SET);
+	Fseek(m_fpNcsd, 0, SEEK_SET);
 	fwrite(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
 	fwrite(&m_CardInfo, sizeof(m_CardInfo), 1, m_fpNcsd);
 	fclose(m_fpNcsd);
@@ -153,7 +153,7 @@ bool CNcsd::CreateFile()
 
 bool CNcsd::TrimFile()
 {
-	m_fpNcsd = FFopen(m_pFileName, "rb+");
+	m_fpNcsd = Fopen(m_pFileName, "rb+");
 	if (m_fpNcsd == nullptr)
 	{
 		return false;
@@ -177,17 +177,17 @@ bool CNcsd::TrimFile()
 	calculateValidSize();
 	*reinterpret_cast<n64*>(m_CardInfo.Reserved1 + 248) = m_nValidSize;
 	m_NcsdHeader.Ncsd.MediaSize = static_cast<u32>(m_nValidSize / m_nMediaUnitSize);
-	FFseek(m_fpNcsd, 0, SEEK_SET);
+	Fseek(m_fpNcsd, 0, SEEK_SET);
 	fwrite(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
 	fwrite(&m_CardInfo, sizeof(m_CardInfo), 1, m_fpNcsd);
-	FChsize(FFileno(m_fpNcsd), m_nValidSize);
+	Chsize(Fileno(m_fpNcsd), m_nValidSize);
 	fclose(m_fpNcsd);
 	return true;
 }
 
 bool CNcsd::PadFile()
 {
-	m_fpNcsd = FFopen(m_pFileName, "rb+");
+	m_fpNcsd = Fopen(m_pFileName, "rb+");
 	if (m_fpNcsd == nullptr)
 	{
 		return false;
@@ -214,12 +214,12 @@ bool CNcsd::PadFile()
 			break;
 		}
 	}
-	FFseek(m_fpNcsd, m_nValidSize, SEEK_SET);
-	FPadFile(m_fpNcsd, m_NcsdHeader.Ncsd.MediaSize * m_nMediaUnitSize - m_nValidSize, 0xFF);
-	FFseek(m_fpNcsd, 0, SEEK_SET);
+	Fseek(m_fpNcsd, m_nValidSize, SEEK_SET);
+	::PadFile(m_fpNcsd, m_NcsdHeader.Ncsd.MediaSize * m_nMediaUnitSize - m_nValidSize, 0xFF);
+	Fseek(m_fpNcsd, 0, SEEK_SET);
 	fwrite(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
 	fwrite(&m_CardInfo, sizeof(m_CardInfo), 1, m_fpNcsd);
-	FChsize(FFileno(m_fpNcsd), m_NcsdHeader.Ncsd.MediaSize * m_nMediaUnitSize);
+	Chsize(Fileno(m_fpNcsd), m_NcsdHeader.Ncsd.MediaSize * m_nMediaUnitSize);
 	fclose(m_fpNcsd);
 	return true;
 }
@@ -228,8 +228,8 @@ void CNcsd::Analyze()
 {
 	if (m_fpNcsd != nullptr)
 	{
-		n64 nFilePos = FFtell(m_fpNcsd);
-		FFseek(m_fpNcsd, 0, SEEK_SET);
+		n64 nFilePos = Ftell(m_fpNcsd);
+		Fseek(m_fpNcsd, 0, SEEK_SET);
 		fread(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
 		calculateMediaUnitSize();
 		for (int i = 0; i < 8; i++)
@@ -251,13 +251,13 @@ void CNcsd::Analyze()
 				m_nOffsetAndSize[i * 2] = m_nOffsetAndSize[(i - 1) * 2] + m_nOffsetAndSize[(i - 1) * 2 + 1];
 			}
 		}
-		FFseek(m_fpNcsd, nFilePos, SEEK_SET);
+		Fseek(m_fpNcsd, nFilePos, SEEK_SET);
 	}
 }
 
 bool CNcsd::IsNcsdFile(const char* a_pFileName)
 {
-	FILE* fp = FFopen(a_pFileName, "rb");
+	FILE* fp = Fopen(a_pFileName, "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -307,7 +307,7 @@ bool CNcsd::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, con
 	{
 		if (a_nOffset != 0 || a_nSize != 0)
 		{
-			FILE* fp = FFopen(a_pFileName, "wb");
+			FILE* fp = Fopen(a_pFileName, "wb");
 			if (fp == nullptr)
 			{
 				bResult = false;
@@ -323,7 +323,7 @@ bool CNcsd::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, con
 					a_nOffset *= m_nMediaUnitSize;
 					a_nSize *= m_nMediaUnitSize;
 				}
-				FCopyFile(fp, m_fpNcsd, a_nOffset, a_nSize);
+				CopyFile(fp, m_fpNcsd, a_nOffset, a_nSize);
 				fclose(fp);
 			}
 		}
@@ -355,13 +355,13 @@ bool CNcsd::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, con
 
 bool CNcsd::createHeader()
 {
-	FILE* fp = FFopen(m_pHeaderFileName, "rb");
+	FILE* fp = Fopen(m_pHeaderFileName, "rb");
 	if (fp == nullptr)
 	{
 		return false;
 	}
-	FFseek(fp, 0, SEEK_END);
-	n64 nFileSize = FFtell(fp);
+	Fseek(fp, 0, SEEK_END);
+	n64 nFileSize = Ftell(fp);
 	if (nFileSize < sizeof(m_NcsdHeader) + sizeof(m_CardInfo))
 	{
 		fclose(fp);
@@ -372,13 +372,13 @@ bool CNcsd::createHeader()
 	{
 		printf("load: %s\n", m_pHeaderFileName);
 	}
-	FFseek(fp, 0, SEEK_SET);
+	Fseek(fp, 0, SEEK_SET);
 	fread(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, fp);
 	fread(&m_CardInfo, sizeof(m_CardInfo), 1, fp);
 	fclose(fp);
 	fwrite(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
 	fwrite(&m_CardInfo, sizeof(m_CardInfo), 1, m_fpNcsd);
-	FPadFile(m_fpNcsd, s_nOffsetFirstNcch - FFtell(m_fpNcsd), 0xFF);
+	::PadFile(m_fpNcsd, s_nOffsetFirstNcch - Ftell(m_fpNcsd), 0xFF);
 	return true;
 }
 
@@ -386,7 +386,7 @@ bool CNcsd::createNcch(int a_nIndex)
 {
 	if (m_pNcchFileName[a_nIndex] != nullptr)
 	{
-		FILE* fp = FFopen(m_pNcchFileName[a_nIndex], "rb");
+		FILE* fp = Fopen(m_pNcchFileName[a_nIndex], "rb");
 		if (fp == nullptr)
 		{
 			clearNcch(a_nIndex);
@@ -396,8 +396,8 @@ bool CNcsd::createNcch(int a_nIndex)
 		{
 			printf("load: %s\n", m_pNcchFileName[a_nIndex]);
 		}
-		FFseek(fp, 0, SEEK_END);
-		n64 nFileSize = FFtell(fp);
+		Fseek(fp, 0, SEEK_END);
+		n64 nFileSize = Ftell(fp);
 		if (a_nIndex == 0)
 		{
 			if (nFileSize < sizeof(SNcchHeader))
@@ -406,15 +406,15 @@ bool CNcsd::createNcch(int a_nIndex)
 				clearNcch(a_nIndex);
 				return false;
 			}
-			FFseek(fp, sizeof(SNcchHeader) - sizeof(NcchCommonHeaderStruct), SEEK_SET);
+			Fseek(fp, sizeof(SNcchHeader) - sizeof(NcchCommonHeaderStruct), SEEK_SET);
 			fread(&m_CardInfo.NcchHeader, 1, sizeof(m_CardInfo.NcchHeader), fp);
 		}
-		FFseek(fp, 0, SEEK_SET);
-		m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2] = static_cast<u32>(FFtell(m_fpNcsd) / m_nMediaUnitSize);
-		m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2 + 1] = static_cast<u32>(FAlign(nFileSize, m_bAlignToBlockSize ? s_nBlockSize : m_nMediaUnitSize) / m_nMediaUnitSize);
-		FCopyFile(m_fpNcsd, fp, 0, nFileSize);
+		Fseek(fp, 0, SEEK_SET);
+		m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2] = static_cast<u32>(Ftell(m_fpNcsd) / m_nMediaUnitSize);
+		m_NcsdHeader.Ncsd.ParitionOffsetAndSize[a_nIndex * 2 + 1] = static_cast<u32>(Align(nFileSize, m_bAlignToBlockSize ? s_nBlockSize : m_nMediaUnitSize) / m_nMediaUnitSize);
+		CopyFile(m_fpNcsd, fp, 0, nFileSize);
 		fclose(fp);
-		FPadFile(m_fpNcsd, FAlign(FFtell(m_fpNcsd), m_bAlignToBlockSize ? s_nBlockSize : m_nMediaUnitSize) - FFtell(m_fpNcsd), 0);
+		::PadFile(m_fpNcsd, Align(Ftell(m_fpNcsd), m_bAlignToBlockSize ? s_nBlockSize : m_nMediaUnitSize) - Ftell(m_fpNcsd), 0);
 	}
 	else
 	{

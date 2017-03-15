@@ -1,36 +1,64 @@
 #ifndef UTILITY_H_
 #define UTILITY_H_
 
-#define COMPILER_MSC  1
-#define COMPILER_GNUC 2
+#define SDW_COMPILER_MSC   1
+#define SDW_COMPILER_GNUC  2
+#define SDW_COMPILER_CLANG 3
 
 #if defined(_MSC_VER)
-#define _3DSTOOL_COMPILER COMPILER_MSC
-#define _3DSTOOL_COMPILER_VERSION _MSC_VER
+#define SDW_COMPILER SDW_COMPILER_MSC
+#define SDW_COMPILER_VERSION _MSC_VER
+#elif defined(__clang__)
+#define SDW_COMPILER SDW_COMPILER_CLANG
+#define SDW_COMPILER_VERSION (__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__)
+#elif defined(__GNUC__)
+#define SDW_COMPILER SDW_COMPILER_GNUC
+#define SDW_COMPILER_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 #else
-#define _3DSTOOL_COMPILER COMPILER_GNUC
-#define _3DSTOOL_COMPILER_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+#error "compiler no support"
 #endif
 
-#if _3DSTOOL_COMPILER == COMPILER_MSC
+#define SDW_PLATFORM_WINDOWS 1
+#define SDW_PLATFORM_LINUX   2
+#define SDW_PLATFORM_MACOS   3
+
+#if defined(_WIN32)
+#define SDW_PLATFORM SDW_PLATFORM_WINDOWS
+#elif defined(__APPLE__)
+#define SDW_PLATFORM SDW_PLATFORM_MACOS
+#elif defined(__linux__)
+#define SDW_PLATFORM SDW_PLATFORM_LINUX
+#else
+#error "platform no support"
+#endif
+
+#if SDW_COMPILER == SDW_COMPILER_MSC
+#define SDW_MSC_PUSH_PACKED <pshpack1.h>
+#define SDW_MSC_POP_PACKED <poppack.h>
+#define SDW_GNUC_PACKED
+#else
+#define SDW_MSC_PUSH_PACKED <cstdlib>
+#define SDW_MSC_POP_PACKED <cstdlib>
+#define SDW_GNUC_PACKED __attribute__((packed))
+#endif
+
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <direct.h>
 #include <io.h>
-#if _3DSTOOL_COMPILER_VERSION >= 1600
-#include <codecvt>
-#endif
 #else
-#if defined(__APPLE__)
+#if SDW_PLATFORM == SDW_PLATFORM_MACOS
 #include <mach-o/dyld.h>
 #endif
 #include <dirent.h>
-#include <iconv.h>
 #include <unistd.h>
 #endif
-#include <errno.h>
-#if _3DSTOOL_COMPILER != COMPILER_MSC || (_3DSTOOL_COMPILER == COMPILER_MSC && _3DSTOOL_COMPILER_VERSION >= 1800)
-#include <inttypes.h>
+#include <sys/stat.h>
+
+#include <cerrno>
+#if SDW_COMPILER != SDW_COMPILER_MSC || (SDW_COMPILER == SDW_COMPILER_MSC && SDW_COMPILER_VERSION >= 1800)
+#include <cinttypes>
 #else
 #ifndef _PFX_8
 #define _PFX_8 "hh"
@@ -69,10 +97,10 @@
 #define PRIX64 _PFX_64 "X"
 #endif
 #endif
-#include <locale.h>
-#include <stdarg.h>
-#if _3DSTOOL_COMPILER != COMPILER_MSC || (_3DSTOOL_COMPILER == COMPILER_MSC && _3DSTOOL_COMPILER_VERSION >= 1600)
-#include <stdint.h>
+#include <clocale>
+#include <cstdarg>
+#if SDW_COMPILER != SDW_COMPILER_MSC || (SDW_COMPILER == SDW_COMPILER_MSC && SDW_COMPILER_VERSION >= 1600)
+#include <cstdint>
 #else
 typedef signed char        int8_t;
 typedef short              int16_t;
@@ -86,12 +114,14 @@ typedef unsigned long long uint64_t;
 #define UINT32_MAX       0xffffffffui32
 #endif
 #endif
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <algorithm>
 #include <bitset>
+#if SDW_COMPILER != SDW_COMPILER_MSC || (SDW_COMPILER == SDW_COMPILER_MSC && SDW_COMPILER_VERSION >= 1600)
+#include <codecvt>
+#endif
 #include <list>
 #include <map>
 #include <regex>
@@ -99,10 +129,9 @@ typedef unsigned long long uint64_t;
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "bignum.h"
 
 using namespace std;
-#if _3DSTOOL_COMPILER == COMPILER_MSC && _3DSTOOL_COMPILER_VERSION < 1600
+#if SDW_COMPILER == SDW_COMPILER_MSC && SDW_COMPILER_VERSION < 1600
 using namespace std::tr1;
 #endif
 
@@ -115,167 +144,129 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
-#if _3DSTOOL_COMPILER == COMPILER_MSC
-#if _3DSTOOL_COMPILER_VERSION < 1600
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
+#if SDW_COMPILER == SDW_COMPILER_MSC
+#if SDW_COMPILER_VERSION < 1600
 #define nullptr NULL
 #endif
-#if _3DSTOOL_COMPILER_VERSION < 1600
+#if SDW_COMPILER_VERSION < 1600
 typedef wchar_t Char16_t;
 typedef wstring U16String;
-#elif _3DSTOOL_COMPILER_VERSION >= 1900
+#elif SDW_COMPILER_VERSION >= 1900
 typedef u16 Char16_t;
 typedef basic_string<Char16_t> U16String;
 #else
 typedef char16_t Char16_t;
 typedef u16string U16String;
 #endif
-typedef wstring String;
-typedef wregex Regex;
-typedef struct _stat64 SStat;
-#define STR(x) L##x
-#define FStat _wstat64
-#define FMkdir _wmkdir
-#define FFopen FFopenA
-#define FFopenUnicode FFopenW
-#define FFseek _fseeki64
-#define FFtell _ftelli64
-#define FFileno _fileno
-#define FLseek _lseeki64
-#define FChsize _chsize_s
-#define FPrintf wprintf
-#define MSC_PUSH_PACKED <pshpack1.h>
-#define MSC_POP_PACKED <poppack.h>
-#define GNUC_PACKED
+#else
+typedef wchar_t Char16_t;
+typedef wstring U16String;
+#endif
+typedef wstring UString;
+typedef wregex URegex;
+typedef struct _stat64 Stat;
+#define USTR(x) L##x
+#define UPrintf wprintf
+#define UStat _wstat64
 #else
 typedef char16_t Char16_t;
 typedef u16string U16String;
-typedef string String;
-typedef regex Regex;
-typedef struct stat SStat;
-#define STR(x) x
-#define FStat stat
-#define FMkdir(x) mkdir((x), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
-#define FFopen FFopenA
-#define FFopenUnicode FFopenA
-#define FFseek fseeko
-#define FFtell ftello
-#define FFileno fileno
-#define FLseek lseek
-#define FChsize ftruncate
-#define FPrintf printf
-#define MSC_PUSH_PACKED <stdlib.h>
-#define MSC_POP_PACKED <stdlib.h>
-#define GNUC_PACKED __attribute__((packed))
+typedef string UString;
+typedef regex URegex;
+typedef struct stat Stat;
+#define USTR(x) x
+#define UPrintf printf
+#define UStat stat
 #endif
 
-#define CONVERT_ENDIAN(n) (((n) >> 24 & 0xFF) | ((n) >> 8 & 0xFF00) | (((n) & 0xFF00) << 8) | (((n) & 0xFF) << 24))
+n64 Align(n64 a_nData, n64 a_nAlignment);
 
-#define DNA_ARRAY_COUNT(a) (sizeof(a) / sizeof(a[0]))
+#define SDW_ARRAY_COUNT(a) (sizeof(a) / sizeof(a[0]))
 
-void FSetLocale();
+#define SDW_CONVERT_ENDIAN32(n) (((n) >> 24 & 0xFF) | ((n) >> 8 & 0xFF00) | (((n) & 0xFF00) << 8) | (((n) & 0xFF) << 24))
 
-n32 FSToN32(const string& a_sString);
-
-#if _3DSTOOL_COMPILER != COMPILER_MSC
-template<typename TSrc, typename TDest>
-TDest FSTToT(const TSrc& a_sString, const string& a_sSrcType, const string& a_sDestType)
-{
-	TDest sConverted;
-	iconv_t cvt = iconv_open(a_sDestType.c_str(), a_sSrcType.c_str());
-	if (cvt == reinterpret_cast<iconv_t>(-1))
-	{
-		return sConverted;
-	}
-	size_t nStringLeft = a_sString.size() * sizeof(typename TSrc::value_type);
-	static const n32 c_nBufferSize = 1024;
-	static const n32 c_nConvertBufferSize = c_nBufferSize - 4;
-	char buffer[c_nBufferSize];
-	do
-	{
-		typename TSrc::value_type* pString = const_cast<typename TSrc::value_type*>(a_sString.c_str());
-		char* pBuffer = buffer;
-		size_t nBufferLeft = c_nConvertBufferSize;
-		n32 nError = iconv(cvt, reinterpret_cast<char**>(&pString), &nStringLeft, &pBuffer, &nBufferLeft);
-		if (nError == 0 || (nError == static_cast<size_t>(-1) && errno == E2BIG))
-		{
-			*reinterpret_cast<typename TDest::value_type*>(buffer + c_nConvertBufferSize - nBufferLeft) = 0;
-			sConverted += reinterpret_cast<typename TDest::value_type*>(buffer);
-			if (nError == 0)
-			{
-				break;
-			}
-		}
-		else
-		{
-			break;
-		}
-	} while (true);
-	iconv_close(cvt);
-	return sConverted;
-}
-#endif
-
-string FSWToU8(const wstring& a_sString);
-string FSU16ToU8(const U16String& a_sString);
-wstring FSU8ToW(const string& a_sString);
-wstring FSAToW(const string& a_sString);
-wstring FSU16ToW(const U16String& a_sString);
-U16String FSU8ToU16(const string& a_sString);
-U16String FSWToU16(const wstring& a_sString);
-
-#if _3DSTOOL_COMPILER == COMPILER_MSC
-#define FSAToUnicode(x) FSAToW(x)
-#define FSU16ToUnicode(x) FSU16ToW(x)
-#define FSUnicodeToU16(x) FSWToU16(x)
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
+#define Mkdir _mkdir
+#define UMkdir _wmkdir
 #else
-#define FSAToUnicode(x) string(x)
-#define FSU16ToUnicode(x) FSU16ToU8(x)
-#define FSUnicodeToU16(x) FSU8ToU16(x)
+#define Mkdir(x) mkdir((x), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
+#define UMkdir Mkdir
 #endif
 
-string FFormatV(const char* a_szFormat, va_list a_vaList);
-wstring FFormatV(const wchar_t* a_szFormat, va_list a_vaList);
-string FFormat(const char* a_szFormat, ...);
-wstring FFormat(const wchar_t* a_szFormat, ...);
+bool UMakeDir(const UString::value_type* a_pDirName);
+
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
+#define Chsize _chsize_s
+#define Fileno _fileno
+#define UFopen FopenW
+#define Fseek _fseeki64
+#define Ftell _ftelli64
+#define Lseek _lseeki64
+#else
+#define Chsize ftruncate
+#define Fileno fileno
+#define UFopen Fopen
+#define Fseek fseeko
+#define Ftell ftello
+#define Lseek lseek
+#endif
+
+bool UGetFileSize(const UString::value_type* a_pFileName, n64& a_nFileSize);
+
+FILE* Fopen(const char* a_pFileName, const char* a_pMode);
+
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
+FILE* FopenW(const wchar_t* a_pFileName, const wchar_t* a_pMode);
+#endif
+
+bool Seek(FILE* a_fpFile, n64 a_nOffset);
+
+void CopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize);
+
+void PadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData);
+
+const UString& UGetModuleFileName();
+
+const UString& UGetModuleDirName();
+
+void SetLocale();
+
+n32 SToN32(const string& a_sString, int a_nRadix = 10);
+
+string WToU8(const wstring& a_sString);
+string U16ToU8(const U16String& a_sString);
+wstring U8ToW(const string& a_sString);
+wstring U16ToW(const U16String& a_sString);
+U16String U8ToU16(const string& a_sString);
+U16String WToU16(const wstring& a_sString);
+wstring AToW(const string& a_sString);
+
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
+#define U16ToU(x) U16ToW(x)
+#define UToU16(x) WToU16(x)
+#define AToU(x) AToW(x)
+#else
+#define U16ToU(x) U16ToU8(x)
+#define UToU16(x) U8ToU16(x)
+#define AToU(x) string(x)
+#endif
+
+string FormatV(const char* a_szFormat, va_list a_vaList);
+wstring FormatV(const wchar_t* a_szFormat, va_list a_vaList);
+string Format(const char* a_szFormat, ...);
+wstring Format(const wchar_t* a_szFormat, ...);
 
 template<typename T>
-bool FSStartsWith(const T& a_sString, const T& a_sPrefix, typename T::size_type a_uStart = 0)
+T Replace(const T& a_sString, typename T::value_type a_cSubChar, typename T::value_type a_cReplacement)
 {
-	if (a_uStart > a_sString.size())
-	{
-		return false;
-	}
-	return a_sString.compare(a_uStart, a_sPrefix.size(), a_sPrefix) == 0;
+	T sString = a_sString;
+	replace(sString.begin(), sString.end(), a_cSubChar, a_cReplacement);
+	return sString;
 }
 
 template<typename T>
-bool FSEndsWith(const T& a_sString, const T& a_sSuffix)
-{
-	if (a_sString.size() < a_sSuffix.size())
-	{
-		return false;
-	}
-	return a_sString.compare(a_sString.size() - a_sSuffix.size(), a_sSuffix.size(), a_sSuffix) == 0;
-}
-
-template<typename T>
-T FSTrim(const T& a_sString)
-{
-	typename T::size_type uSize = a_sString.size();
-	typename T::size_type uPos = 0;
-	while (uPos < uSize && a_sString[uPos] >= 0 && a_sString[uPos] <= static_cast<typename T::value_type>(' '))
-	{
-		uPos++;
-	}
-	while (uPos < uSize && a_sString[uSize - 1] >= 0 && a_sString[uSize - 1] <= static_cast<typename T::value_type>(' '))
-	{
-		uSize--;
-	}
-	return (uPos > 0 || uSize < a_sString.size()) ? a_sString.substr(uPos, uSize - uPos) : a_sString;
-}
-
-template<typename T>
-vector<T> FSSplit(const T& a_sString, const T& a_sSeparator)
+vector<T> Split(const T& a_sString, const T& a_sSeparator)
 {
 	vector<T> vString;
 	for (typename T::size_type uOffset = 0; uOffset < a_sString.size(); uOffset += a_sSeparator.size())
@@ -292,11 +283,30 @@ vector<T> FSSplit(const T& a_sString, const T& a_sSeparator)
 			break;
 		}
 	}
+	if (vString.empty())
+	{
+		vString.push_back(a_sString);
+	}
 	return vString;
 }
 
 template<typename T>
-vector<T> FSSplitOf(const T& a_sString, const T& a_sSeparatorSet)
+vector<T> Split(const T& a_sString, const typename T::value_type* a_pSeparator)
+{
+	if (a_pSeparator == nullptr)
+	{
+		vector<T> vString;
+		vString.push_back(a_sString);
+		return vString;
+	}
+	else
+	{
+		return Split(a_sString, T(a_pSeparator));
+	}
+}
+
+template<typename T>
+vector<T> SplitOf(const T& a_sString, const T& a_sSeparatorSet)
 {
 	vector<T> vString;
 	for (typename T::const_iterator it = a_sString.begin(); it != a_sString.end(); ++it)
@@ -313,41 +323,101 @@ vector<T> FSSplitOf(const T& a_sString, const T& a_sSeparatorSet)
 			break;
 		}
 	}
+	if (vString.empty())
+	{
+		vString.push_back(a_sString);
+	}
 	return vString;
 }
 
-const String& FGetModuleFile();
+template<typename T>
+vector<T> SplitOf(const T& a_sString, const typename T::value_type* a_pSeparatorSet)
+{
+	if (a_pSeparatorSet == nullptr)
+	{
+		vector<T> vString;
+		vString.push_back(a_sString);
+		return vString;
+	}
+	else
+	{
+		return SplitOf(a_sString, T(a_pSeparatorSet));
+	}
+}
 
-const String& FGetModuleDir();
+template<typename T>
+bool StartWith(const T& a_sString, const T& a_sPrefix, u32 a_uStart = 0)
+{
+	if (a_uStart > static_cast<u32>(a_sString.size()))
+	{
+		return false;
+	}
+	else
+	{
+		return a_sString.compare(a_uStart, a_sPrefix.size(), a_sPrefix) == 0;
+	}
+}
 
-void FCopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize);
+template<typename T>
+bool StartWith(const T& a_sString, const typename T::value_type* a_pPrefix, u32 a_uStart = 0)
+{
+	if (a_pPrefix == nullptr)
+	{
+		return false;
+	}
+	else
+	{
+		return StartWith(a_sString, T(a_pPrefix), a_uStart);
+	}
+}
 
-void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nSrcOffset, n64 a_nSize);
+template<typename T>
+bool EndWith(const T& a_sString, const T& a_sSuffix)
+{
+	if (a_sString.size() < a_sSuffix.size())
+	{
+		return false;
+	}
+	else
+	{
+		return a_sString.compare(a_sString.size() - a_sSuffix.size(), a_sSuffix.size(), a_sSuffix) == 0;
+	}
+}
 
-bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize);
+template<typename T>
+bool EndWith(const T& a_sString, const typename T::value_type* a_pSuffix)
+{
+	if (a_pSuffix == nullptr)
+	{
+		return false;
+	}
+	else
+	{
+		return EndWith(a_sString, T(a_pSuffix));
+	}
+}
 
-void FPadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData);
-
-bool FEncryptAesCtrFile(const char* a_pDataFileName, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset);
-
-bool FEncryptXorFile(const char* a_pDataFileName, const char* a_pXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset);
-
-void FEncryptAesCtrData(void* a_pData, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataSize, n64 a_nXorOffset);
-
-bool FEncryptXorData(void* a_pData, const char* a_pXorFileName, n64 a_nDataSize, n64 a_nXorOffset);
-
-bool FGetFileSize(const String::value_type* a_pFileName, n64& a_nFileSize);
-
-bool FMakeDir(const String::value_type* a_pDirName);
-
-FILE* FFopenA(const char* a_pFileName, const char* a_pMode);
-
-#if _3DSTOOL_COMPILER == COMPILER_MSC
-FILE* FFopenW(const wchar_t* a_pFileName, const wchar_t* a_pMode);
-#endif
-
-bool FSeek(FILE* a_fpFile, n64 a_nOffset);
-
-n64 FAlign(n64 a_nOffset, n64 a_nAlignment);
+template<typename T>
+T Trim(const T& a_sString)
+{
+	typename T::size_type uSize = a_sString.size();
+	typename T::size_type uPos = 0;
+	while (uPos < uSize && a_sString[uPos] >= 0 && a_sString[uPos] <= static_cast<typename T::value_type>(' '))
+	{
+		uPos++;
+	}
+	while (uPos < uSize && a_sString[uSize - 1] >= 0 && a_sString[uSize - 1] <= static_cast<typename T::value_type>(' '))
+	{
+		uSize--;
+	}
+	if (uPos > 0 || uSize < a_sString.size())
+	{
+		return a_sString.substr(uPos, uSize - uPos);
+	}
+	else
+	{
+		return a_sString;
+	}
+}
 
 #endif	// UTILITY_H_

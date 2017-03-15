@@ -13,9 +13,9 @@ CExeFs::CExeFs()
 	, m_fpExeFs(nullptr)
 {
 	memset(&m_ExeFsSuperBlock, 0, sizeof(m_ExeFsSuperBlock));
-	m_mPath["banner"] = STR("banner.bnr");
-	m_mPath["icon"] = STR("icon.icn");
-	m_mPath["logo"] = STR("logo.bcma.lz");
+	m_mPath["banner"] = USTR("banner.bnr");
+	m_mPath["icon"] = USTR("icon.icn");
+	m_mPath["logo"] = USTR("logo.bcma.lz");
 }
 
 CExeFs::~CExeFs()
@@ -39,7 +39,7 @@ void CExeFs::SetHeaderFileName(const char* a_pHeaderFileName)
 
 void CExeFs::SetExeFsDirName(const char* a_pExeFsDirName)
 {
-	m_sExeFsDirName = FSAToUnicode(a_pExeFsDirName);
+	m_sExeFsDirName = AToU(a_pExeFsDirName);
 }
 
 void CExeFs::SetUncompress(bool a_bUncompress)
@@ -55,13 +55,13 @@ void CExeFs::SetCompress(bool a_bCompress)
 bool CExeFs::ExtractFile()
 {
 	bool bResult = true;
-	m_fpExeFs = FFopen(m_pFileName, "rb");
+	m_fpExeFs = Fopen(m_pFileName, "rb");
 	if (m_fpExeFs == nullptr)
 	{
 		return false;
 	}
 	fread(&m_ExeFsSuperBlock, sizeof(m_ExeFsSuperBlock), 1, m_fpExeFs);
-	if (!FMakeDir(m_sExeFsDirName.c_str()))
+	if (!UMakeDir(m_sExeFsDirName.c_str()))
 	{
 		fclose(m_fpExeFs);
 		return false;
@@ -84,7 +84,7 @@ bool CExeFs::ExtractFile()
 bool CExeFs::CreateFile()
 {
 	bool bResult = true;
-	m_fpExeFs = FFopen(m_pFileName, "wb");
+	m_fpExeFs = Fopen(m_pFileName, "wb");
 	if (m_fpExeFs == nullptr)
 	{
 		return false;
@@ -102,7 +102,7 @@ bool CExeFs::CreateFile()
 			i--;
 		}
 	}
-	FFseek(m_fpExeFs, 0, SEEK_SET);
+	Fseek(m_fpExeFs, 0, SEEK_SET);
 	fwrite(&m_ExeFsSuperBlock, sizeof(m_ExeFsSuperBlock), 1, m_fpExeFs);
 	fclose(m_fpExeFs);
 	return bResult;
@@ -110,7 +110,7 @@ bool CExeFs::CreateFile()
 
 bool CExeFs::IsExeFsFile(const char* a_pFileName, n64 a_nOffset)
 {
-	FILE* fp = FFopen(a_pFileName, "rb");
+	FILE* fp = Fopen(a_pFileName, "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -132,7 +132,7 @@ bool CExeFs::extractHeader()
 	bool bResult = true;
 	if (m_pHeaderFileName != nullptr)
 	{
-		FILE* fp = FFopen(m_pHeaderFileName, "wb");
+		FILE* fp = Fopen(m_pHeaderFileName, "wb");
 		if (fp == nullptr)
 		{
 			bResult = false;
@@ -157,17 +157,17 @@ bool CExeFs::extractHeader()
 bool CExeFs::extractSection(int a_nIndex)
 {
 	bool bResult = true;
-	String sPath;
+	UString sPath;
 	string sName = reinterpret_cast<const char*>(m_ExeFsSuperBlock.m_Header[a_nIndex].name);
 	if (!sName.empty())
 	{
 		bool bTopSection = false;
-		unordered_map<string, String>::const_iterator it = m_mPath.find(sName);
+		unordered_map<string, UString>::const_iterator it = m_mPath.find(sName);
 		if (it == m_mPath.end())
 		{
 			if (a_nIndex == 0)
 			{
-				sPath = m_sExeFsDirName + STR("/code.bin");
+				sPath = m_sExeFsDirName + USTR("/code.bin");
 				bTopSection = true;
 			}
 			else
@@ -176,14 +176,14 @@ bool CExeFs::extractSection(int a_nIndex)
 				{
 					printf("INFO: unknown entry name %s\n", sName.c_str());
 				}
-				sPath = m_sExeFsDirName + STR("/") + FSAToUnicode(sName) + STR(".bin");
+				sPath = m_sExeFsDirName + USTR("/") + AToU(sName) + USTR(".bin");
 			}
 		}
 		else
 		{
-			sPath = m_sExeFsDirName + STR("/") + it->second;
+			sPath = m_sExeFsDirName + USTR("/") + it->second;
 		}
-		FILE* fp = FFopenUnicode(sPath.c_str(), STR("wb"));
+		FILE* fp = UFopen(sPath.c_str(), USTR("wb"));
 		if (fp == nullptr)
 		{
 			bResult = false;
@@ -192,12 +192,12 @@ bool CExeFs::extractSection(int a_nIndex)
 		{
 			if (m_bVerbose)
 			{
-				FPrintf(STR("save: %s\n"), sPath.c_str());
+				UPrintf(USTR("save: %s\n"), sPath.c_str());
 			}
 			if (bTopSection && m_bUncompress)
 			{
 				u32 uCompressedSize = m_ExeFsSuperBlock.m_Header[a_nIndex].size;
-				FFseek(m_fpExeFs, sizeof(m_ExeFsSuperBlock) + m_ExeFsSuperBlock.m_Header[a_nIndex].offset, SEEK_SET);
+				Fseek(m_fpExeFs, sizeof(m_ExeFsSuperBlock) + m_ExeFsSuperBlock.m_Header[a_nIndex].offset, SEEK_SET);
 				u8* pCompressed = new u8[uCompressedSize];
 				fread(pCompressed, 1, uCompressedSize, m_fpExeFs);
 				u32 uUncompressedSize = 0;
@@ -224,7 +224,7 @@ bool CExeFs::extractSection(int a_nIndex)
 			}
 			if (!bTopSection || !m_bUncompress || !bResult)
 			{
-				FCopyFile(fp, m_fpExeFs, sizeof(m_ExeFsSuperBlock) + m_ExeFsSuperBlock.m_Header[a_nIndex].offset, m_ExeFsSuperBlock.m_Header[a_nIndex].size);
+				CopyFile(fp, m_fpExeFs, sizeof(m_ExeFsSuperBlock) + m_ExeFsSuperBlock.m_Header[a_nIndex].offset, m_ExeFsSuperBlock.m_Header[a_nIndex].size);
 			}
 			fclose(fp);
 		}
@@ -234,13 +234,13 @@ bool CExeFs::extractSection(int a_nIndex)
 
 bool CExeFs::createHeader()
 {
-	FILE* fp = FFopen(m_pHeaderFileName, "rb");
+	FILE* fp = Fopen(m_pHeaderFileName, "rb");
 	if (fp == nullptr)
 	{
 		return false;
 	}
-	FFseek(fp, 0, SEEK_END);
-	n64 nFileSize = FFtell(fp);
+	Fseek(fp, 0, SEEK_END);
+	n64 nFileSize = Ftell(fp);
 	if (nFileSize < sizeof(m_ExeFsSuperBlock))
 	{
 		fclose(fp);
@@ -251,7 +251,7 @@ bool CExeFs::createHeader()
 	{
 		printf("load: %s\n", m_pHeaderFileName);
 	}
-	FFseek(fp, 0, SEEK_SET);
+	Fseek(fp, 0, SEEK_SET);
 	fread(&m_ExeFsSuperBlock, sizeof(m_ExeFsSuperBlock), 1, fp);
 	fclose(fp);
 	fwrite(&m_ExeFsSuperBlock, sizeof(m_ExeFsSuperBlock), 1, m_fpExeFs);
@@ -261,17 +261,17 @@ bool CExeFs::createHeader()
 bool CExeFs::createSection(int a_nIndex)
 {
 	bool bResult = true;
-	String sPath;
+	UString sPath;
 	string sName = reinterpret_cast<const char*>(m_ExeFsSuperBlock.m_Header[a_nIndex].name);
 	if (!sName.empty())
 	{
 		bool bTopSection = false;
-		unordered_map<string, String>::const_iterator it = m_mPath.find(sName);
+		unordered_map<string, UString>::const_iterator it = m_mPath.find(sName);
 		if (it == m_mPath.end())
 		{
 			if (a_nIndex == 0)
 			{
-				sPath = m_sExeFsDirName + STR("/code.bin");
+				sPath = m_sExeFsDirName + USTR("/code.bin");
 				bTopSection = true;
 			}
 			else
@@ -280,14 +280,14 @@ bool CExeFs::createSection(int a_nIndex)
 				{
 					printf("INFO: unknown entry name %s\n", sName.c_str());
 				}
-				sPath = m_sExeFsDirName + STR("/") + FSAToUnicode(sName) + STR(".bin");
+				sPath = m_sExeFsDirName + USTR("/") + AToU(sName) + USTR(".bin");
 			}
 		}
 		else
 		{
-			sPath = m_sExeFsDirName + STR("/") + it->second;
+			sPath = m_sExeFsDirName + USTR("/") + it->second;
 		}
-		FILE* fp = FFopenUnicode(sPath.c_str(), STR("rb"));
+		FILE* fp = UFopen(sPath.c_str(), USTR("rb"));
 		if (fp == nullptr)
 		{
 			clearSection(a_nIndex);
@@ -295,14 +295,14 @@ bool CExeFs::createSection(int a_nIndex)
 		}
 		else
 		{
-			m_ExeFsSuperBlock.m_Header[a_nIndex].offset = static_cast<u32>(FFtell(m_fpExeFs)) - sizeof(m_ExeFsSuperBlock);
+			m_ExeFsSuperBlock.m_Header[a_nIndex].offset = static_cast<u32>(Ftell(m_fpExeFs)) - sizeof(m_ExeFsSuperBlock);
 			if (m_bVerbose)
 			{
-				FPrintf(STR("load: %s\n"), sPath.c_str());
+				UPrintf(USTR("load: %s\n"), sPath.c_str());
 			}
-			FFseek(fp, 0, SEEK_END);
-			u32 uFileSize = static_cast<u32>(FFtell(fp));
-			FFseek(fp, 0, SEEK_SET);
+			Fseek(fp, 0, SEEK_END);
+			u32 uFileSize = static_cast<u32>(Ftell(fp));
+			Fseek(fp, 0, SEEK_SET);
 			u8* pData = new u8[uFileSize];
 			fread(pData, 1, uFileSize, fp);
 			fclose(fp);
@@ -327,7 +327,7 @@ bool CExeFs::createSection(int a_nIndex)
 				m_ExeFsSuperBlock.m_Header[a_nIndex].size = uFileSize;
 			}
 			delete[] pData;
-			FPadFile(m_fpExeFs, FAlign(FFtell(m_fpExeFs), s_nBlockSize) - FFtell(m_fpExeFs), 0);
+			PadFile(m_fpExeFs, Align(Ftell(m_fpExeFs), s_nBlockSize) - Ftell(m_fpExeFs), 0);
 		}
 	}
 	return bResult;

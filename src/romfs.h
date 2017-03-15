@@ -3,14 +3,14 @@
 
 #include "utility.h"
 
-#include MSC_PUSH_PACKED
+#include SDW_MSC_PUSH_PACKED
 struct SRomFsLevel
 {
 	n64 LogicOffset;
 	n64 Size;
 	u32 BlockSize;
 	u32 Reserved;
-} GNUC_PACKED;
+} SDW_GNUC_PACKED;
 
 struct SRomFsHeader
 {
@@ -22,21 +22,21 @@ struct SRomFsHeader
 	SRomFsLevel Level3;
 	u32 Size;
 	u32 Reserved;
-} GNUC_PACKED;
+} SDW_GNUC_PACKED;
 
 struct SRomFsMetaInfoSection
 {
 	u32 Offset;
 	u32 Size;
-} GNUC_PACKED;
+} SDW_GNUC_PACKED;
 
 struct SRomFsMetaInfo
 {
 	u32 Size;
 	SRomFsMetaInfoSection Section[4];
 	u32 DataOffset;
-} GNUC_PACKED;
-#include MSC_POP_PACKED
+} SDW_GNUC_PACKED;
+#include SDW_MSC_POP_PACKED
 
 class CRomFs
 {
@@ -87,13 +87,13 @@ public:
 		bool IsDir;
 		n32 EntryOffset;
 		UCommonEntry Entry;
-		String EntryName;
-		String Prefix;
+		UString EntryName;
+		UString Prefix;
 		EExtractState ExtractState;
 	};
 	struct SEntry
 	{
-		String Path;
+		UString Path;
 		U16String EntryName;
 		int EntryNameSize;
 		n32 EntryOffset;
@@ -134,18 +134,18 @@ public:
 	static const int s_nEntryNameAlignment;
 	static const n64 s_nFileSizeAlignment;
 private:
-	void pushExtractStackElement(bool a_bIsDir, n32 a_nEntryOffset, const String& a_sPrefix);
+	void pushExtractStackElement(bool a_bIsDir, n32 a_nEntryOffset, const UString& a_sPrefix);
 	bool extractDirEntry();
 	bool extractFileEntry();
 	void readEntry(SExtractStackElement& a_Element);
 	void setupCreate();
 	void buildIgnoreList();
-	void pushDirEntry(const String& a_sEntryName, n32 a_nParentDirOffset);
-	bool pushFileEntry(const String& a_sEntryName, n32 a_nParentDirOffset);
+	void pushDirEntry(const UString& a_sEntryName, n32 a_nParentDirOffset);
+	bool pushFileEntry(const UString& a_sEntryName, n32 a_nParentDirOffset);
 	void pushCreateStackElement(int a_nEntryOffset);
 	bool createEntryList();
-	bool matchInIgnoreList(const String& a_sPath) const;
-	u32 getRemapIgnoreLevel(const String& a_sPath) const;
+	bool matchInIgnoreList(const UString& a_sPath) const;
+	u32 getRemapIgnoreLevel(const UString& a_sPath) const;
 	void removeEmptyDirEntry();
 	void removeDirEntry(int a_nIndex);
 	void subDirOffset(n32& a_nOffset, int a_nIndex);
@@ -163,25 +163,25 @@ private:
 	void initLevelBuffer();
 	bool updateLevelBuffer();
 	void writeBuffer(int a_nLevel, const void* a_pSrc, n64 a_nSize);
-	bool writeBufferFromFile(int a_nLevel, const String& a_sPath, n64 a_nSize);
+	bool writeBufferFromFile(int a_nLevel, const UString& a_sPath, n64 a_nSize);
 	void alignBuffer(int a_nLevel, int a_nAlignment);
 	const char* m_pFileName;
 	bool m_bVerbose;
-	String m_sRomFsDirName;
+	UString m_sRomFsDirName;
 	const char* m_pRomFsFileName;
 	FILE* m_fpRomFs;
 	SRomFsHeader m_RomFsHeader;
 	n64 m_nLevel3Offset;
 	SRomFsMetaInfo m_RomFsMetaInfo;
 	stack<SExtractStackElement> m_sExtractStack;
-	vector<Regex> m_vIgnoreList;
-	vector<Regex> m_vRemapIgnoreList;
+	vector<URegex> m_vIgnoreList;
+	vector<URegex> m_vRemapIgnoreList;
 	vector<SEntry> m_vCreateDir;
 	vector<SEntry> m_vCreateFile;
 	stack<SCreateStackElement> m_sCreateStack;
 	vector<n32> m_vDirBucket;
 	vector<n32> m_vFileBucket;
-	map<String, SCommonFileEntry> m_mTravelInfo;
+	map<UString, SCommonFileEntry> m_mTravelInfo;
 	bool m_bRemapped;
 	SLevelBuffer m_LevelBuffer[4];
 };

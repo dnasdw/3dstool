@@ -3,7 +3,7 @@
 #include "ncsd.h"
 #include <openssl/sha.h>
 
-const u32 CPatch::s_uSignature = CONVERT_ENDIAN('3PS\0');
+const u32 CPatch::s_uSignature = SDW_CONVERT_ENDIAN32('3PS\0');
 const u8 CPatch::s_uCurrentVersionMajor = 1;
 const u8 CPatch::s_uCurrentVersionMinor = 0;
 const u8 CPatch::s_uCurrentVersionPatchLevel = 0;
@@ -59,24 +59,24 @@ void CPatch::SetPatchFileName(const char* a_pPatchFileName)
 
 bool CPatch::CreatePatchFile()
 {
-	m_fpOld = FFopen(m_pOldFileName, "rb");
+	m_fpOld = Fopen(m_pOldFileName, "rb");
 	if (m_fpOld == nullptr)
 	{
 		return false;
 	}
-	FFseek(m_fpOld, 0, SEEK_END);
-	n64 nFileSizeOld = FFtell(m_fpOld);
-	FFseek(m_fpOld, 0, SEEK_SET);
-	m_fpNew = FFopen(m_pNewFileName, "rb");
+	Fseek(m_fpOld, 0, SEEK_END);
+	n64 nFileSizeOld = Ftell(m_fpOld);
+	Fseek(m_fpOld, 0, SEEK_SET);
+	m_fpNew = Fopen(m_pNewFileName, "rb");
 	if (m_fpNew == nullptr)
 	{
 		fclose(m_fpOld);
 		return false;
 	}
-	FFseek(m_fpNew, 0, SEEK_END);
-	n64 nFileSizeNew = FFtell(m_fpNew);
-	FFseek(m_fpNew, 0, SEEK_SET);
-	m_fpPatch = FFopen(m_pPatchFileName, "wb");
+	Fseek(m_fpNew, 0, SEEK_END);
+	n64 nFileSizeNew = Ftell(m_fpNew);
+	Fseek(m_fpNew, 0, SEEK_SET);
+	m_fpPatch = Fopen(m_pPatchFileName, "wb");
 	if (m_fpPatch == nullptr)
 	{
 		fclose(m_fpNew);
@@ -130,10 +130,10 @@ bool CPatch::CreatePatchFile()
 		writeChangeSize(nFileSizeNew);
 	}
 	writeOver();
-	m_3dsPatchSystemHeader.ExtDataOffset = FFtell(m_fpPatch);
-	n64 nOffset = FFtell(m_fpPatch) + sizeof(n64);
+	m_3dsPatchSystemHeader.ExtDataOffset = Ftell(m_fpPatch);
+	n64 nOffset = Ftell(m_fpPatch) + sizeof(n64);
 	fwrite(&nOffset, sizeof(nOffset), 1, m_fpPatch);
-	FFseek(m_fpPatch, 0, SEEK_SET);
+	Fseek(m_fpPatch, 0, SEEK_SET);
 	fwrite(&m_3dsPatchSystemHeader, sizeof(m_3dsPatchSystemHeader), 1, m_fpPatch);
 	fclose(m_fpPatch);
 	return bResult;
@@ -141,21 +141,21 @@ bool CPatch::CreatePatchFile()
 
 bool CPatch::ApplyPatchFile()
 {
-	m_fpOld = FFopen(m_pFileName, "rb+");
+	m_fpOld = Fopen(m_pFileName, "rb+");
 	if (m_fpOld == nullptr)
 	{
 		return false;
 	}
-	m_fpPatch = FFopen(m_pPatchFileName, "rb");
+	m_fpPatch = Fopen(m_pPatchFileName, "rb");
 	if (m_fpPatch == nullptr)
 	{
 		fclose(m_fpOld);
 		return false;
 	}
-	FFseek(m_fpPatch, -8, SEEK_END);
+	Fseek(m_fpPatch, -8, SEEK_END);
 	n64 n3psOffset = 0;
 	fread(&n3psOffset, 8, 1, m_fpPatch);
-	FFseek(m_fpPatch, -n3psOffset, SEEK_END);
+	Fseek(m_fpPatch, -n3psOffset, SEEK_END);
 	fread(&m_3dsPatchSystemHeader, sizeof(m_3dsPatchSystemHeader), 1, m_fpPatch);
 	if (m_3dsPatchSystemHeader.Signature != s_uSignature)
 	{
@@ -192,7 +192,7 @@ bool CPatch::ApplyPatchFile()
 		fread(&nOffset, 8, 1, m_fpPatch);
 		fread(&nSize, 8, 1, m_fpPatch);
 		fread(uSHA256New, 1, 32, m_fpPatch);
-		FFseek(m_fpOld, nOffset, SEEK_SET);
+		Fseek(m_fpOld, nOffset, SEEK_SET);
 		u8* pData = new u8[static_cast<size_t>(nSize)];
 		fread(pData, 1, static_cast<size_t>(nSize), m_fpOld);
 		u8 uSHA256Old[32] = {};
@@ -211,8 +211,8 @@ bool CPatch::ApplyPatchFile()
 		fclose(m_fpOld);
 		return true;
 	}
-	FFseek(m_fpPatch, -n3psOffset, SEEK_END);
-	FFseek(m_fpPatch, sizeof(m_3dsPatchSystemHeader), SEEK_CUR);
+	Fseek(m_fpPatch, -n3psOffset, SEEK_END);
+	Fseek(m_fpPatch, sizeof(m_3dsPatchSystemHeader), SEEK_CUR);
 	do
 	{
 		fread(&uPatchCommand, 1, 1, m_fpPatch);
@@ -227,7 +227,7 @@ bool CPatch::ApplyPatchFile()
 		}
 		else if (uPatchCommand == kPatchCommandCheck)
 		{
-			FFseek(m_fpPatch, 48, SEEK_CUR);
+			Fseek(m_fpPatch, 48, SEEK_CUR);
 		}
 		else if (uPatchCommand == kPatchCommandMove)
 		{
@@ -299,7 +299,7 @@ bool CPatch::createNcsdPatchFile()
 	{
 		if (pOffsetAndSizeNew[i * 2 + 1] != 0)
 		{
-			FFseek(m_fpNew, pOffsetAndSizeNew[i * 2], SEEK_SET);
+			Fseek(m_fpNew, pOffsetAndSizeNew[i * 2], SEEK_SET);
 			CNcch ncch;
 			ncch.SetFileType(i == 0 ? C3dsTool::kFileTypeCxi : C3dsTool::kFileTypeCfa);
 			ncch.SetFilePtr(m_fpNew);
@@ -422,8 +422,8 @@ bool CPatch::createNcchPatchFile(C3dsTool::EFileType a_eFileType, n64 a_nOffsetO
 
 bool CPatch::createPatchFile(n64 a_nOffsetOld, n64 a_nSizeOld, n64 a_nOffsetNew, n64 a_nSizeNew)
 {
-	FFseek(m_fpOld, a_nOffsetOld, SEEK_SET);
-	FFseek(m_fpNew, a_nOffsetNew, SEEK_SET);
+	Fseek(m_fpOld, a_nOffsetOld, SEEK_SET);
+	Fseek(m_fpNew, a_nOffsetNew, SEEK_SET);
 	bool bSeekSet = true;
 	n64 nBaseOffset = 0;
 	n64 nSeekOffset = 0;
@@ -599,9 +599,9 @@ void CPatch::executeMove(n64 a_nFromOffset, n64 a_nToOffset, n64 a_nSize)
 			while (a_nSize > 0)
 			{
 				n64 nSize = a_nSize > nBufferSize ? nBufferSize : a_nSize;
-				FFseek(m_fpOld, a_nFromOffset + nIndex * nBufferSize, SEEK_SET);
+				Fseek(m_fpOld, a_nFromOffset + nIndex * nBufferSize, SEEK_SET);
 				fread(pBuffer, 1, static_cast<size_t>(nSize), m_fpOld);
-				FFseek(m_fpOld, a_nToOffset + nIndex * nBufferSize, SEEK_SET);
+				Fseek(m_fpOld, a_nToOffset + nIndex * nBufferSize, SEEK_SET);
 				fwrite(pBuffer, 1, static_cast<size_t>(nSize), m_fpOld);
 				a_nSize -= nSize;
 				nIndex++;
@@ -613,9 +613,9 @@ void CPatch::executeMove(n64 a_nFromOffset, n64 a_nToOffset, n64 a_nSize)
 			{
 				n64 nSize = a_nSize > nBufferSize ? nBufferSize : a_nSize;
 				a_nSize -= nSize;
-				FFseek(m_fpOld, a_nFromOffset + a_nSize, SEEK_SET);
+				Fseek(m_fpOld, a_nFromOffset + a_nSize, SEEK_SET);
 				fread(pBuffer, 1, static_cast<size_t>(nSize), m_fpOld);
-				FSeek(m_fpOld, a_nToOffset + a_nSize);
+				Seek(m_fpOld, a_nToOffset + a_nSize);
 				fwrite(pBuffer, 1, static_cast<size_t>(nSize), m_fpOld);
 			}
 		}
@@ -625,17 +625,17 @@ void CPatch::executeMove(n64 a_nFromOffset, n64 a_nToOffset, n64 a_nSize)
 
 void CPatch::executeSet(n64 a_nStartOffset, n64 a_nSize, u8 a_uData)
 {
-	FFseek(m_fpOld, a_nStartOffset, SEEK_SET);
-	FPadFile(m_fpOld, a_nSize, a_uData);
+	Fseek(m_fpOld, a_nStartOffset, SEEK_SET);
+	PadFile(m_fpOld, a_nSize, a_uData);
 }
 
 void CPatch::executeChangeSize(n64 a_nSize)
 {
-	FChsize(FFileno(m_fpOld), a_nSize);
+	Chsize(Fileno(m_fpOld), a_nSize);
 }
 
 void CPatch::executeSeekWrite(bool a_bSeekSet, n64 a_nOffset, size_t a_nSize, u8* a_pData)
 {
-	FFseek(m_fpOld, a_nOffset, a_bSeekSet ? SEEK_SET : SEEK_CUR);
+	Fseek(m_fpOld, a_nOffset, a_bSeekSet ? SEEK_SET : SEEK_CUR);
 	fwrite(a_pData, 1, a_nSize, m_fpOld);
 }

@@ -1,11 +1,12 @@
 #include "ncch.h"
+#include "3dscrypt.h"
 #include "exefs.h"
 #include "extendedheader.h"
 #include "romfs.h"
 #include <curl/curl.h>
 #include <openssl/sha.h>
 
-const u32 CNcch::s_uSignature = CONVERT_ENDIAN('NCCH');
+const u32 CNcch::s_uSignature = SDW_CONVERT_ENDIAN32('NCCH');
 const int CNcch::s_nBlockSize = 0x1000;
 const CBigNum CNcch::s_Slot0x18KeyX = "82E9C9BEBFB8BDB875ECC0A07D474374";
 const CBigNum CNcch::s_Slot0x1BKeyX = "45AD04953992C7C893724A9A7BCE6182";
@@ -168,7 +169,7 @@ n64* CNcch::GetOffsetAndSize()
 bool CNcch::ExtractFile()
 {
 	bool bResult = true;
-	m_fpNcch = FFopen(m_pFileName, "rb");
+	m_fpNcch = Fopen(m_pFileName, "rb");
 	if (m_fpNcch == nullptr)
 	{
 		return false;
@@ -198,10 +199,10 @@ bool CNcch::ExtractFile()
 	calculateCounter(kAesCtrTypeExeFs);
 	if (m_pExeFsXorFileName != nullptr && (m_pExeFsTopXorFileName != nullptr || m_bExeFsTopAutoKey) && m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] != 0)
 	{
-		FFseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
+		Fseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
 		ExeFsSuperBlock exeFsSuperBlock;
 		fread(&exeFsSuperBlock, sizeof(exeFsSuperBlock), 1, m_fpNcch);
-		FFseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
+		Fseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
 		u8* pExeFs = new u8[static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1])];
 		fread(pExeFs, 1, static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1]), m_fpNcch);
 		bool bEncryptResult = true;
@@ -233,7 +234,7 @@ bool CNcch::ExtractFile()
 		}
 		if (bEncryptResult)
 		{
-			FILE* fp = FFopen(m_pExeFsFileName, "wb");
+			FILE* fp = Fopen(m_pExeFsFileName, "wb");
 			if (fp == nullptr)
 			{
 				bResult = false;
@@ -286,7 +287,7 @@ bool CNcch::ExtractFile()
 bool CNcch::CreateFile()
 {
 	bool bResult = true;
-	m_fpNcch = FFopen(m_pFileName, "wb");
+	m_fpNcch = Fopen(m_pFileName, "wb");
 	if (m_fpNcch == nullptr)
 	{
 		return false;
@@ -324,7 +325,7 @@ bool CNcch::CreateFile()
 		bResult = false;
 	}
 	alignFileSize(m_bAlignToBlockSize ? s_nBlockSize : m_nMediaUnitSize);
-	FFseek(m_fpNcch, 0, SEEK_SET);
+	Fseek(m_fpNcch, 0, SEEK_SET);
 	fwrite(&m_NcchHeader, sizeof(m_NcchHeader), 1, m_fpNcch);
 	fclose(m_fpNcch);
 	return bResult;
@@ -333,7 +334,7 @@ bool CNcch::CreateFile()
 bool CNcch::EncryptFile()
 {
 	bool bResult = true;
-	m_fpNcch = FFopen(m_pFileName, "rb");
+	m_fpNcch = Fopen(m_pFileName, "rb");
 	if (m_fpNcch == nullptr)
 	{
 		return false;
@@ -376,14 +377,14 @@ bool CNcch::EncryptFile()
 		}
 		else if (m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] != 0)
 		{
-			m_fpNcch = FFopen(m_pFileName, "rb");
+			m_fpNcch = Fopen(m_pFileName, "rb");
 			if (m_fpNcch == nullptr)
 			{
 				bResult = false;
 			}
 			else
 			{
-				FFseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
+				Fseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
 				ExeFsSuperBlock exeFsSuperBlock;
 				fread(&exeFsSuperBlock, sizeof(exeFsSuperBlock), 1, m_fpNcch);
 				fclose(m_fpNcch);
@@ -442,8 +443,8 @@ void CNcch::Analyze()
 {
 	if (m_fpNcch != nullptr)
 	{
-		n64 nFilePos = FFtell(m_fpNcch);
-		FFseek(m_fpNcch, m_nOffset, SEEK_SET);
+		n64 nFilePos = Ftell(m_fpNcch);
+		Fseek(m_fpNcch, m_nOffset, SEEK_SET);
 		fread(&m_NcchHeader, sizeof(m_NcchHeader), 1, m_fpNcch);
 		calculateMediaUnitSize();
 		calculateOffsetSize();
@@ -469,13 +470,13 @@ void CNcch::Analyze()
 				m_nOffsetAndSize[i * 2] = m_nOffsetAndSize[(i - 1) * 2] + m_nOffsetAndSize[(i - 1) * 2 + 1];
 			}
 		}
-		FFseek(m_fpNcch, nFilePos, SEEK_SET);
+		Fseek(m_fpNcch, nFilePos, SEEK_SET);
 	}
 }
 
 bool CNcch::IsCxiFile(const char* a_pFileName)
 {
-	FILE* fp = FFopen(a_pFileName, "rb");
+	FILE* fp = Fopen(a_pFileName, "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -501,7 +502,7 @@ bool CNcch::IsCxiFile(const char* a_pFileName)
 
 bool CNcch::IsCfaFile(const char* a_pFileName)
 {
-	FILE* fp = FFopen(a_pFileName, "rb");
+	FILE* fp = Fopen(a_pFileName, "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -574,31 +575,31 @@ void CNcch::calculateKey()
 	string sKeyY;
 	for (int i = 0; i < 16; i++)
 	{
-		sKeyY += FFormat("%02X", m_NcchHeader.RSASignature[i]);
+		sKeyY += Format("%02X", m_NcchHeader.RSASignature[i]);
 	}
 	if ((m_NcchHeader.Ncch.Flags[Flag] & 0x20) != 0)
 	{
 		map<string, string> mExtKey;
-		String sExtKeyPath = FGetModuleDir() + STR("/ext_key.txt");
-		FILE* fp = FFopenUnicode(sExtKeyPath.c_str(), STR("rb"));
+		UString sExtKeyPath = UGetModuleDirName() + USTR("/ext_key.txt");
+		FILE* fp = UFopen(sExtKeyPath.c_str(), USTR("rb"));
 		if (fp != nullptr)
 		{
-			FFseek(fp, 0, SEEK_END);
-			u32 uSize = static_cast<u32>(FFtell(fp));
-			FFseek(fp, 0, SEEK_SET);
+			Fseek(fp, 0, SEEK_END);
+			u32 uSize = static_cast<u32>(Ftell(fp));
+			Fseek(fp, 0, SEEK_SET);
 			char* pTxt = new char[uSize + 1];
 			fread(pTxt, 1, uSize, fp);
 			fclose(fp);
 			pTxt[uSize] = '\0';
 			string sTxt(pTxt);
 			delete[] pTxt;
-			vector<string> vTxt = FSSplitOf<string>(sTxt, "\r\n");
+			vector<string> vTxt = SplitOf<string>(sTxt, "\r\n");
 			for (vector<string>::const_iterator it = vTxt.begin(); it != vTxt.end(); ++it)
 			{
-				sTxt = FSTrim(*it);
-				if (!sTxt.empty() && !FSStartsWith<string>(sTxt, "//"))
+				sTxt = Trim(*it);
+				if (!sTxt.empty() && !StartWith(sTxt, "//"))
 				{
-					vector<string> vExtKey = FSSplit<string>(sTxt, " ");
+					vector<string> vExtKey = Split(sTxt, " ");
 					if (vExtKey.size() == 2)
 					{
 						if (!mExtKey.insert(make_pair(vExtKey[0], vExtKey[1])).second)
@@ -617,7 +618,7 @@ void CNcch::calculateKey()
 		string sProgramId;
 		for (int i = 0; i < 8; i++)
 		{
-			sProgramId += FFormat("%02X", pProgramId[7 - i]);
+			sProgramId += Format("%02X", pProgramId[7 - i]);
 		}
 		map<string, string>::const_iterator it = mExtKey.find(sProgramId);
 		if (it != mExtKey.end())
@@ -630,7 +631,7 @@ void CNcch::calculateKey()
 			CURL* pCURL = curl_easy_init();
 			if (pCURL != nullptr)
 			{
-				curl_easy_setopt(pCURL, CURLOPT_URL, FFormat("https://kagiya-ctr.cdn.nintendo.net/title/0x%s/ext_key?country=JP", sProgramId.c_str()).c_str());
+				curl_easy_setopt(pCURL, CURLOPT_URL, Format("https://kagiya-ctr.cdn.nintendo.net/title/0x%s/ext_key?country=JP", sProgramId.c_str()).c_str());
 				curl_easy_setopt(pCURL, CURLOPT_SSL_VERIFYPEER, 0L);
 				curl_easy_setopt(pCURL, CURLOPT_SSL_VERIFYHOST, 0L);
 				curl_easy_setopt(pCURL, CURLOPT_WRITEFUNCTION, &CNcch::onDownload);
@@ -650,10 +651,10 @@ void CNcch::calculateKey()
 			m_sExtKey.clear();
 			for (int i = 0; i < static_cast<int>(sExtKey.size()); i++)
 			{
-				m_sExtKey += FFormat("%02X", static_cast<u8>(sExtKey[i]));
+				m_sExtKey += Format("%02X", static_cast<u8>(sExtKey[i]));
 			}
 			mExtKey.insert(make_pair(sProgramId, m_sExtKey));
-			fp = FFopenUnicode(sExtKeyPath.c_str(), STR("wb"));
+			fp = UFopen(sExtKeyPath.c_str(), USTR("wb"));
 			if (fp != nullptr)
 			{
 				for (map<string, string>::const_iterator it = mExtKey.begin(); it != mExtKey.end(); ++it)
@@ -671,7 +672,7 @@ void CNcch::calculateKey()
 		string sExtKeyWithProgramId = m_sExtKey;
 		for (int i = 0; i < 8; i++)
 		{
-			sExtKeyWithProgramId += FFormat("%02X", pProgramId[i]);
+			sExtKeyWithProgramId += Format("%02X", pProgramId[i]);
 		}
 		CBigNum bigNum = sExtKeyWithProgramId.c_str();
 		u8 uBytes[32] = {};
@@ -679,7 +680,7 @@ void CNcch::calculateKey()
 		u8 uSHA256[32] = {};
 		SHA256(uBytes, 24, uSHA256);
 		u8* pReserved0 = m_NcchHeader.Ncch.Reserved0;
-		for (int i = 0; i < static_cast<int>(DNA_ARRAY_COUNT(m_NcchHeader.Ncch.Reserved0)); i++)
+		for (int i = 0; i < static_cast<int>(SDW_ARRAY_COUNT(m_NcchHeader.Ncch.Reserved0)); i++)
 		{
 			if (pReserved0[i] != uSHA256[i])
 			{
@@ -694,7 +695,7 @@ void CNcch::calculateKey()
 		sKeyY.clear();
 		for (int i = 0; i < 16; i++)
 		{
-			sKeyY += FFormat("%02X", uSHA256[i]);
+			sKeyY += Format("%02X", uSHA256[i]);
 		}
 	}
 	CBigNum keyY = sKeyY.c_str();
@@ -710,7 +711,7 @@ void CNcch::calculateCounter(EAesCtrType a_eAesCtrType)
 		string sCounter;
 		for (int i = 0; i < 8; i++)
 		{
-			sCounter += FFormat("%02X", pPartitionId[7 - i]);
+			sCounter += Format("%02X", pPartitionId[7 - i]);
 		}
 		m_Counter = sCounter.c_str();
 		m_Counter = (m_Counter << 8 | a_eAesCtrType) << 56;
@@ -721,7 +722,7 @@ void CNcch::calculateCounter(EAesCtrType a_eAesCtrType)
 		string sCounter;
 		for (int i = 0; i < 8; i++)
 		{
-			sCounter += FFormat("%02X", pPartitionId[i]);
+			sCounter += Format("%02X", pPartitionId[i]);
 		}
 		n64 nSize = 0;
 		switch (a_eAesCtrType)
@@ -749,7 +750,7 @@ bool CNcch::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, boo
 	{
 		if (a_nSize != 0)
 		{
-			FILE* fp = FFopen(a_pFileName, "wb");
+			FILE* fp = Fopen(a_pFileName, "wb");
 			if (fp == nullptr)
 			{
 				bResult = false;
@@ -762,7 +763,7 @@ bool CNcch::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, boo
 				}
 				if (a_bPlainData || m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_pXorFileName == nullptr))
 				{
-					FCopyFile(fp, m_fpNcch, a_nOffset, a_nSize);
+					CopyFile(fp, m_fpNcch, a_nOffset, a_nSize);
 				}
 				else if (m_nEncryptMode == kEncryptModeAesCtr)
 				{
@@ -789,7 +790,7 @@ bool CNcch::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, boo
 
 bool CNcch::createHeader()
 {
-	FILE* fp = FFopen(m_pHeaderFileName, "rb");
+	FILE* fp = Fopen(m_pHeaderFileName, "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -798,15 +799,15 @@ bool CNcch::createHeader()
 	{
 		printf("load: %s\n", m_pHeaderFileName);
 	}
-	FFseek(fp, 0, SEEK_END);
-	n64 nFileSize = FFtell(fp);
+	Fseek(fp, 0, SEEK_END);
+	n64 nFileSize = Ftell(fp);
 	if (nFileSize < sizeof(m_NcchHeader))
 	{
 		fclose(fp);
 		printf("ERROR: ncch header is too short\n\n");
 		return false;
 	}
-	FFseek(fp, 0, SEEK_SET);
+	Fseek(fp, 0, SEEK_SET);
 	fread(&m_NcchHeader, sizeof(m_NcchHeader), 1, fp);
 	fclose(fp);
 	if (m_nEncryptMode == kEncryptModeAesCtr)
@@ -827,7 +828,7 @@ bool CNcch::createExtendedHeader()
 {
 	if (m_pExtendedHeaderFileName != nullptr)
 	{
-		FILE* fp = FFopen(m_pExtendedHeaderFileName, "rb");
+		FILE* fp = Fopen(m_pExtendedHeaderFileName, "rb");
 		if (fp == nullptr)
 		{
 			clearExtendedHeader();
@@ -837,8 +838,8 @@ bool CNcch::createExtendedHeader()
 		{
 			printf("load: %s\n", m_pExtendedHeaderFileName);
 		}
-		FFseek(fp, 0, SEEK_END);
-		n64 nFileSize = FFtell(fp);
+		Fseek(fp, 0, SEEK_END);
+		n64 nFileSize = Ftell(fp);
 		if (nFileSize < sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended))
 		{
 			fclose(fp);
@@ -847,7 +848,7 @@ bool CNcch::createExtendedHeader()
 			return false;
 		}
 		m_NcchHeader.Ncch.ExtendedHeaderSize = sizeof(NcchExtendedHeader);
-		FFseek(fp, 0, SEEK_SET);
+		Fseek(fp, 0, SEEK_SET);
 		u8* pBuffer = new u8[sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended)];
 		fread(pBuffer, 1, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended), fp);
 		if (!m_bNotUpdateExtendedHeaderHash)
@@ -857,7 +858,7 @@ bool CNcch::createExtendedHeader()
 		delete[] pBuffer;
 		if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_pExtendedHeaderXorFileName == nullptr))
 		{
-			FCopyFile(m_fpNcch, fp, 0, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended));
+			CopyFile(m_fpNcch, fp, 0, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended));
 		}
 		else if (m_nEncryptMode == kEncryptModeAesCtr)
 		{
@@ -883,7 +884,7 @@ bool CNcch::createLogoRegion()
 {
 	if (m_pLogoRegionFileName != nullptr)
 	{
-		FILE* fp = FFopen(m_pLogoRegionFileName, "rb");
+		FILE* fp = Fopen(m_pLogoRegionFileName, "rb");
 		if (fp == nullptr)
 		{
 			clearLogoRegion();
@@ -893,12 +894,12 @@ bool CNcch::createLogoRegion()
 		{
 			printf("load: %s\n", m_pLogoRegionFileName);
 		}
-		FFseek(fp, 0, SEEK_END);
-		n64 nFileSize = FFtell(fp);
-		n64 nLogoRegionSize = FAlign(nFileSize, m_nMediaUnitSize);
+		Fseek(fp, 0, SEEK_END);
+		n64 nFileSize = Ftell(fp);
+		n64 nLogoRegionSize = Align(nFileSize, m_nMediaUnitSize);
 		m_NcchHeader.Ncch.LogoRegionOffset = m_NcchHeader.Ncch.ContentSize;
 		m_NcchHeader.Ncch.LogoRegionSize = static_cast<u32>(nLogoRegionSize / m_nMediaUnitSize);
-		FFseek(fp, 0, SEEK_SET);
+		Fseek(fp, 0, SEEK_SET);
 		u8* pBuffer = new u8[static_cast<size_t>(nLogoRegionSize)];
 		memset(pBuffer, 0, static_cast<size_t>(nLogoRegionSize));
 		fread(pBuffer, 1, static_cast<size_t>(nFileSize), fp);
@@ -918,7 +919,7 @@ bool CNcch::createPlainRegion()
 {
 	if (m_pPlainRegionFileName != nullptr)
 	{
-		FILE* fp = FFopen(m_pPlainRegionFileName, "rb");
+		FILE* fp = Fopen(m_pPlainRegionFileName, "rb");
 		if (fp == nullptr)
 		{
 			clearPlainRegion();
@@ -928,11 +929,11 @@ bool CNcch::createPlainRegion()
 		{
 			printf("load: %s\n", m_pPlainRegionFileName);
 		}
-		FFseek(fp, 0, SEEK_END);
-		n64 nFileSize = FFtell(fp);
+		Fseek(fp, 0, SEEK_END);
+		n64 nFileSize = Ftell(fp);
 		m_NcchHeader.Ncch.PlainRegionOffset = m_NcchHeader.Ncch.ContentSize;
-		m_NcchHeader.Ncch.PlainRegionSize = static_cast<u32>(FAlign(nFileSize, m_nMediaUnitSize) / m_nMediaUnitSize);
-		FFseek(fp, 0, SEEK_SET);
+		m_NcchHeader.Ncch.PlainRegionSize = static_cast<u32>(Align(nFileSize, m_nMediaUnitSize) / m_nMediaUnitSize);
+		Fseek(fp, 0, SEEK_SET);
 		u8* pBuffer = new u8[static_cast<size_t>(nFileSize)];
 		fread(pBuffer, 1, static_cast<size_t>(nFileSize), fp);
 		fclose(fp);
@@ -950,7 +951,7 @@ bool CNcch::createExeFs()
 {
 	if (m_pExeFsFileName != nullptr)
 	{
-		FILE* fp = FFopen(m_pExeFsFileName, "rb");
+		FILE* fp = Fopen(m_pExeFsFileName, "rb");
 		if (fp == nullptr)
 		{
 			clearExeFs();
@@ -960,9 +961,9 @@ bool CNcch::createExeFs()
 		{
 			printf("load: %s\n", m_pExeFsFileName);
 		}
-		FFseek(fp, 0, SEEK_END);
-		n64 nFileSize = FFtell(fp);
-		n64 nSuperBlockSize = FAlign(sizeof(ExeFsSuperBlock), m_nMediaUnitSize);
+		Fseek(fp, 0, SEEK_END);
+		n64 nFileSize = Ftell(fp);
+		n64 nSuperBlockSize = Align(sizeof(ExeFsSuperBlock), m_nMediaUnitSize);
 		if (nFileSize < nSuperBlockSize)
 		{
 			fclose(fp);
@@ -971,12 +972,12 @@ bool CNcch::createExeFs()
 			return false;
 		}
 		m_NcchHeader.Ncch.ExeFsOffset = m_NcchHeader.Ncch.ContentSize;
-		m_NcchHeader.Ncch.ExeFsSize = static_cast<u32>(FAlign(nFileSize, m_nMediaUnitSize) / m_nMediaUnitSize);
+		m_NcchHeader.Ncch.ExeFsSize = static_cast<u32>(Align(nFileSize, m_nMediaUnitSize) / m_nMediaUnitSize);
 		if (!m_bNotUpdateExeFsHash)
 		{
 			m_NcchHeader.Ncch.ExeFsHashRegionSize = static_cast<u32>(nSuperBlockSize / m_nMediaUnitSize);
 		}
-		FFseek(fp, 0, SEEK_SET);
+		Fseek(fp, 0, SEEK_SET);
 		u8* pBuffer = new u8[static_cast<size_t>(nSuperBlockSize)];
 		fread(pBuffer, 1, static_cast<size_t>(nSuperBlockSize), fp);
 		if (!m_bNotUpdateExeFsHash)
@@ -986,7 +987,7 @@ bool CNcch::createExeFs()
 		calculateCounter(kAesCtrTypeExeFs);
 		if (m_pExeFsXorFileName != nullptr && (m_pExeFsTopXorFileName != nullptr || m_bExeFsTopAutoKey))
 		{
-			FFseek(fp, 0, SEEK_SET);
+			Fseek(fp, 0, SEEK_SET);
 			u8* pExeFs = new u8[static_cast<size_t>(nFileSize)];
 			fread(pExeFs, 1, static_cast<size_t>(nFileSize), fp);
 			ExeFsSuperBlock& exeFsSuperBlock = *reinterpret_cast<ExeFsSuperBlock*>(pBuffer);
@@ -1025,7 +1026,7 @@ bool CNcch::createExeFs()
 			{
 				delete[] pExeFs;
 				delete[] pBuffer;
-				FCopyFile(m_fpNcch, fp, 0, nFileSize);
+				CopyFile(m_fpNcch, fp, 0, nFileSize);
 				fclose(fp);
 				return false;
 			}
@@ -1036,7 +1037,7 @@ bool CNcch::createExeFs()
 			delete[] pBuffer;
 			if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_pExeFsXorFileName == nullptr))
 			{
-				FCopyFile(m_fpNcch, fp, 0, nFileSize);
+				CopyFile(m_fpNcch, fp, 0, nFileSize);
 			}
 			else if (m_nEncryptMode == kEncryptModeAesCtr)
 			{
@@ -1063,7 +1064,7 @@ bool CNcch::createRomFs()
 	if (m_pRomFsFileName != nullptr)
 	{
 		bool bEncrypted = !CRomFs::IsRomFsFile(m_pRomFsFileName);
-		FILE* fp = FFopen(m_pRomFsFileName, "rb");
+		FILE* fp = Fopen(m_pRomFsFileName, "rb");
 		if (fp == nullptr)
 		{
 			clearRomFs();
@@ -1078,11 +1079,11 @@ bool CNcch::createRomFs()
 		{
 			printf("load: %s\n", m_pRomFsFileName);
 		}
-		FFseek(fp, 0, SEEK_END);
-		n64 nFileSize = FFtell(fp);
+		Fseek(fp, 0, SEEK_END);
+		n64 nFileSize = Ftell(fp);
 		if (!m_bNotUpdateRomFsHash)
 		{
-			n64 nSuperBlockSize = FAlign(sizeof(SRomFsHeader), CRomFs::s_nSHA256BlockSize);
+			n64 nSuperBlockSize = Align(sizeof(SRomFsHeader), CRomFs::s_nSHA256BlockSize);
 			if (nFileSize < nSuperBlockSize)
 			{
 				fclose(fp);
@@ -1090,10 +1091,10 @@ bool CNcch::createRomFs()
 				printf("ERROR: romfs is too short\n\n");
 				return false;
 			}
-			FFseek(fp, 0, SEEK_SET);
+			Fseek(fp, 0, SEEK_SET);
 			SRomFsHeader romFsHeader;
 			fread(&romFsHeader, sizeof(romFsHeader), 1, fp);
-			nSuperBlockSize = FAlign(FAlign(sizeof(SRomFsHeader), CRomFs::s_nSHA256BlockSize) + romFsHeader.Level0Size, m_nMediaUnitSize);
+			nSuperBlockSize = Align(Align(sizeof(SRomFsHeader), CRomFs::s_nSHA256BlockSize) + romFsHeader.Level0Size, m_nMediaUnitSize);
 			if (nFileSize < nSuperBlockSize)
 			{
 				fclose(fp);
@@ -1102,18 +1103,18 @@ bool CNcch::createRomFs()
 				return false;
 			}
 			m_NcchHeader.Ncch.RomFsHashRegionSize = static_cast<u32>(nSuperBlockSize / m_nMediaUnitSize);
-			FFseek(fp, 0, SEEK_SET);
+			Fseek(fp, 0, SEEK_SET);
 			u8* pBuffer = new u8[static_cast<size_t>(nSuperBlockSize)];
 			fread(pBuffer, 1, static_cast<size_t>(nSuperBlockSize), fp);
 			SHA256(pBuffer, static_cast<size_t>(nSuperBlockSize), m_NcchHeader.Ncch.RomFsSuperBlockHash);
 			delete[] pBuffer;
 		}
 		m_NcchHeader.Ncch.RomFsOffset = m_NcchHeader.Ncch.ContentSize;
-		m_NcchHeader.Ncch.RomFsSize = static_cast<u32>(FAlign(nFileSize, m_nMediaUnitSize) / m_nMediaUnitSize);
+		m_NcchHeader.Ncch.RomFsSize = static_cast<u32>(Align(nFileSize, m_nMediaUnitSize) / m_nMediaUnitSize);
 		calculateCounter(kAesCtrTypeRomFs);
 		if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_pRomFsXorFileName == nullptr && !m_bRomFsAutoKey))
 		{
-			FCopyFile(m_fpNcch, fp, 0, nFileSize);
+			CopyFile(m_fpNcch, fp, 0, nFileSize);
 		}
 		else if (m_nEncryptMode == kEncryptModeAesCtr)
 		{
@@ -1178,9 +1179,9 @@ void CNcch::clearRomFs()
 
 void CNcch::alignFileSize(n64 a_nAlignment)
 {
-	FFseek(m_fpNcch, 0, SEEK_END);
-	n64 nFileSize = FAlign(FFtell(m_fpNcch), a_nAlignment);
-	FSeek(m_fpNcch, nFileSize);
+	Fseek(m_fpNcch, 0, SEEK_END);
+	n64 nFileSize = Align(Ftell(m_fpNcch), a_nAlignment);
+	Seek(m_fpNcch, nFileSize);
 	m_NcchHeader.Ncch.ContentSize = static_cast<u32>(nFileSize / m_nMediaUnitSize);
 }
 

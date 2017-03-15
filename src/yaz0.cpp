@@ -5,9 +5,9 @@ const int CYaz0::s_nCompressWorkSize = (4096 + 4096 + 256 + 256) * sizeof(n16);
 bool CYaz0::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSize, u32& a_uUncompressedSize)
 {
 	bool bResult = true;
-	if (a_uCompressedSize >= 16 && *reinterpret_cast<const u32*>(a_pCompressed) == CONVERT_ENDIAN('Yaz0'))
+	if (a_uCompressedSize >= 16 && *reinterpret_cast<const u32*>(a_pCompressed) == SDW_CONVERT_ENDIAN32('Yaz0'))
 	{
-		a_uUncompressedSize = CONVERT_ENDIAN(*reinterpret_cast<const u32*>(a_pCompressed + 4));
+		a_uUncompressedSize = SDW_CONVERT_ENDIAN32(*reinterpret_cast<const u32*>(a_pCompressed + 4));
 	}
 	else
 	{
@@ -24,9 +24,9 @@ u32 CYaz0::GetCompressBoundSize(u32 a_uUncompressedSize, n32 a_nCompressAlign)
 bool CYaz0::Uncompress(const u8* a_pCompressed, u32 a_uCompressedSize, u8* a_pUncompressed, u32& a_uUncompressedSize)
 {
 	bool bResult = true;
-	if (a_uCompressedSize >= 16 && *reinterpret_cast<const u32*>(a_pCompressed) == CONVERT_ENDIAN('Yaz0'))
+	if (a_uCompressedSize >= 16 && *reinterpret_cast<const u32*>(a_pCompressed) == SDW_CONVERT_ENDIAN32('Yaz0'))
 	{
-		u32 uUncompressedSize = CONVERT_ENDIAN(*reinterpret_cast<const u32*>(a_pCompressed + 4));
+		u32 uUncompressedSize = SDW_CONVERT_ENDIAN32(*reinterpret_cast<const u32*>(a_pCompressed + 4));
 		if (a_uUncompressedSize >= uUncompressedSize)
 		{
 			a_uUncompressedSize = uUncompressedSize;
@@ -124,9 +124,9 @@ bool CYaz0::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* a_p
 			bResult = false;
 			break;
 		}
-		*reinterpret_cast<u32*>(a_pCompressed) = CONVERT_ENDIAN('Yaz0');
-		*reinterpret_cast<u32*>(a_pCompressed + 4) = CONVERT_ENDIAN(a_uUncompressedSize);
-		*reinterpret_cast<u32*>(a_pCompressed + 8) = CONVERT_ENDIAN(a_nYaz0Align);
+		*reinterpret_cast<u32*>(a_pCompressed) = SDW_CONVERT_ENDIAN32('Yaz0');
+		*reinterpret_cast<u32*>(a_pCompressed + 4) = SDW_CONVERT_ENDIAN32(a_uUncompressedSize);
+		*reinterpret_cast<u32*>(a_pCompressed + 8) = SDW_CONVERT_ENDIAN32(a_nYaz0Align);
 		*reinterpret_cast<u32*>(a_pCompressed + 12) = 0;
 		SCompressInfo info;
 		initTable(&info, pWork);

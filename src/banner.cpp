@@ -1,7 +1,7 @@
 #include "banner.h"
 #include "lz77.h"
 
-const u32 CBanner::s_uSignature = CONVERT_ENDIAN('CBMD');
+const u32 CBanner::s_uSignature = SDW_CONVERT_ENDIAN32('CBMD');
 const int CBanner::s_nCbmdSizeAlignment = 0x20;
 const char* CBanner::s_pCbmdHeaderFileName = "banner.cbmd";
 const char* CBanner::s_pCbmdBodyFileName = "banner%d.bcmdl";
@@ -38,7 +38,7 @@ void CBanner::SetBannerDirName(const char* a_pBannerDirName)
 bool CBanner::ExtractFile()
 {
 	bool bResult = true;
-	m_fpBanner = FFopen(m_pFileName, "rb");
+	m_fpBanner = Fopen(m_pFileName, "rb");
 	if (m_fpBanner == nullptr)
 	{
 		return false;
@@ -52,7 +52,7 @@ bool CBanner::ExtractFile()
 	{
 		printf("INFO: cgfx 0 offset 0x%" PRIX32 " != 0x%" PRIX32 "\n\n", m_CbmdHeader.CgfxOffset[0], static_cast<u32>(sizeof(m_CbmdHeader)));
 	}
-	if (!FMakeDir(FSAToUnicode(m_pBannerDirName).c_str()))
+	if (!UMakeDir(AToU(m_pBannerDirName).c_str()))
 	{
 		fclose(m_fpBanner);
 		return false;
@@ -76,7 +76,7 @@ bool CBanner::ExtractFile()
 bool CBanner::CreateFile()
 {
 	bool bResult = true;
-	m_fpBanner = FFopen(m_pFileName, "wb");
+	m_fpBanner = Fopen(m_pFileName, "wb");
 	if (m_fpBanner == nullptr)
 	{
 		return false;
@@ -94,7 +94,7 @@ bool CBanner::CreateFile()
 	{
 		bResult = false;
 	}
-	FFseek(m_fpBanner, 0, SEEK_SET);
+	Fseek(m_fpBanner, 0, SEEK_SET);
 	fwrite(&m_CbmdHeader, sizeof(m_CbmdHeader), 1, m_fpBanner);
 	fclose(m_fpBanner);
 	return bResult;
@@ -102,7 +102,7 @@ bool CBanner::CreateFile()
 
 bool CBanner::IsBannerFile(const char* a_pFileName)
 {
-	FILE* fp = FFopen(a_pFileName, "rb");
+	FILE* fp = Fopen(a_pFileName, "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -118,7 +118,7 @@ bool CBanner::extractCbmdHeader()
 	string sPath = m_pBannerDirName;
 	sPath += "/";
 	sPath += s_pCbmdHeaderFileName;
-	FILE* fp = FFopen(sPath.c_str(), "wb");
+	FILE* fp = Fopen(sPath.c_str(), "wb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -135,17 +135,17 @@ bool CBanner::extractCbmdHeader()
 bool CBanner::extractCbmdBody()
 {
 	bool bResult = true;
-	FFseek(m_fpBanner, 0, SEEK_SET);
+	Fseek(m_fpBanner, 0, SEEK_SET);
 	u8* pCompressed = new u8[m_CbmdHeader.CwavOffset];
 	fread(pCompressed, 1, m_CbmdHeader.CwavOffset, m_fpBanner);
-	for (int i = 0; i < DNA_ARRAY_COUNT(m_CbmdHeader.CgfxOffset); i++)
+	for (int i = 0; i < SDW_ARRAY_COUNT(m_CbmdHeader.CgfxOffset); i++)
 	{
 		if (m_CbmdHeader.CgfxOffset[i] != 0)
 		{
 			string sPath = m_pBannerDirName;
 			sPath += "/";
-			sPath += FFormat(s_pCbmdBodyFileName, i);
-			FILE* fp = FFopen(sPath.c_str(), "wb");
+			sPath += Format(s_pCbmdBodyFileName, i);
+			FILE* fp = Fopen(sPath.c_str(), "wb");
 			if (fp == nullptr)
 			{
 				bResult = false;
@@ -193,7 +193,7 @@ bool CBanner::extractBcwav()
 	string sPath = m_pBannerDirName;
 	sPath += "/";
 	sPath += s_pBcwavFileName;
-	FILE* fp = FFopen(sPath.c_str(), "wb");
+	FILE* fp = Fopen(sPath.c_str(), "wb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -202,9 +202,9 @@ bool CBanner::extractBcwav()
 	{
 		printf("save: %s\n", sPath.c_str());
 	}
-	FFseek(m_fpBanner, 0, SEEK_END);
-	u32 uFileSize = static_cast<u32>(FFtell(m_fpBanner));
-	FCopyFile(fp, m_fpBanner, m_CbmdHeader.CwavOffset, uFileSize - m_CbmdHeader.CwavOffset);
+	Fseek(m_fpBanner, 0, SEEK_END);
+	u32 uFileSize = static_cast<u32>(Ftell(m_fpBanner));
+	CopyFile(fp, m_fpBanner, m_CbmdHeader.CwavOffset, uFileSize - m_CbmdHeader.CwavOffset);
 	fclose(fp);
 	return true;
 }
@@ -214,13 +214,13 @@ bool CBanner::createCbmdHeader()
 	string sPath = m_pBannerDirName;
 	sPath += "/";
 	sPath += s_pCbmdHeaderFileName;
-	FILE* fp = FFopen(sPath.c_str(), "rb");
+	FILE* fp = Fopen(sPath.c_str(), "rb");
 	if (fp == nullptr)
 	{
 		return false;
 	}
-	FFseek(fp, 0, SEEK_END);
-	n64 nFileSize = FFtell(fp);
+	Fseek(fp, 0, SEEK_END);
+	n64 nFileSize = Ftell(fp);
 	if (nFileSize < sizeof(m_CbmdHeader))
 	{
 		fclose(fp);
@@ -231,7 +231,7 @@ bool CBanner::createCbmdHeader()
 	{
 		printf("load: %s\n", sPath.c_str());
 	}
-	FFseek(fp, 0, SEEK_SET);
+	Fseek(fp, 0, SEEK_SET);
 	fread(&m_CbmdHeader, sizeof(m_CbmdHeader), 1, fp);
 	fclose(fp);
 	fwrite(&m_CbmdHeader, sizeof(m_CbmdHeader), 1, m_fpBanner);
@@ -241,12 +241,12 @@ bool CBanner::createCbmdHeader()
 bool CBanner::createCbmdBody()
 {
 	bool bResult = true;
-	for (int i = 0; i < DNA_ARRAY_COUNT(m_CbmdHeader.CgfxOffset); i++)
+	for (int i = 0; i < SDW_ARRAY_COUNT(m_CbmdHeader.CgfxOffset); i++)
 	{
 		m_CbmdHeader.CgfxOffset[i] = 0;
 		string sPath = m_pBannerDirName;
 		sPath += "/";
-		sPath += FFormat(s_pCbmdBodyFileName, i);
+		sPath += Format(s_pCbmdBodyFileName, i);
 		FILE* fp = fopen(sPath.c_str(), "rb");
 		if (fp != nullptr)
 		{
@@ -254,9 +254,9 @@ bool CBanner::createCbmdBody()
 			{
 				printf("load: %s\n", sPath.c_str());
 			}
-			FFseek(fp, 0, SEEK_END);
-			u32 uFileSize = static_cast<u32>(FFtell(fp));
-			FFseek(fp, 0, SEEK_SET);
+			Fseek(fp, 0, SEEK_END);
+			u32 uFileSize = static_cast<u32>(Ftell(fp));
+			Fseek(fp, 0, SEEK_SET);
 			u8* pData = new u8[uFileSize];
 			fread(pData, 1, uFileSize, fp);
 			fclose(fp);
@@ -265,7 +265,7 @@ bool CBanner::createCbmdBody()
 			bResult = CLz77::CompressLzEx(pData, uFileSize, pCompressed, uCompressedSize, 1);
 			if (bResult)
 			{
-				m_CbmdHeader.CgfxOffset[i] = static_cast<u32>(FFtell(m_fpBanner));
+				m_CbmdHeader.CgfxOffset[i] = static_cast<u32>(Ftell(m_fpBanner));
 				fwrite(pCompressed, 1, uCompressedSize, m_fpBanner);
 			}
 			else
@@ -282,8 +282,8 @@ bool CBanner::createCbmdBody()
 	}
 	if (bResult)
 	{
-		FPadFile(m_fpBanner, FAlign(FFtell(m_fpBanner), s_nCbmdSizeAlignment) - FFtell(m_fpBanner), 0);
-		m_CbmdHeader.CwavOffset = static_cast<u32>(FFtell(m_fpBanner));
+		PadFile(m_fpBanner, Align(Ftell(m_fpBanner), s_nCbmdSizeAlignment) - Ftell(m_fpBanner), 0);
+		m_CbmdHeader.CwavOffset = static_cast<u32>(Ftell(m_fpBanner));
 	}
 	return bResult;
 }
@@ -293,7 +293,7 @@ bool CBanner::createBcwav()
 	string sPath = m_pBannerDirName;
 	sPath += "/";
 	sPath += s_pBcwavFileName;
-	FILE* fp = FFopen(sPath.c_str(), "rb");
+	FILE* fp = Fopen(sPath.c_str(), "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -302,9 +302,9 @@ bool CBanner::createBcwav()
 	{
 		printf("load: %s\n", sPath.c_str());
 	}
-	FFseek(fp, 0, SEEK_END);
-	u32 uFileSize = static_cast<u32>(FFtell(fp));
-	FFseek(fp, 0, SEEK_SET);
+	Fseek(fp, 0, SEEK_END);
+	u32 uFileSize = static_cast<u32>(Ftell(fp));
+	Fseek(fp, 0, SEEK_SET);
 	u8* pData = new u8[uFileSize];
 	fread(pData, 1, uFileSize, fp);
 	fclose(fp);

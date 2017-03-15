@@ -2,6 +2,7 @@
 #define _3DSTOOL_H_
 
 #include "utility.h"
+#include "bignum.h"
 
 class C3dsTool
 {

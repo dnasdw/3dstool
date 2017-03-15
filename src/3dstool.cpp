@@ -1,4 +1,5 @@
 #include "3dstool.h"
+#include "3dscrypt.h"
 #include "backwardlz77.h"
 #include "banner.h"
 #include "exefs.h"
@@ -826,7 +827,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnNoArgument;
 		}
 		char* pCompressAlign = a_pArgv[++a_nIndex];
-		n32 nCompressAlign = FSToN32(pCompressAlign);
+		n32 nCompressAlign = SToN32(pCompressAlign);
 		if (nCompressAlign != 1 && nCompressAlign != 4 && nCompressAlign != 8 && nCompressAlign != 16 && nCompressAlign != 32)
 		{
 			m_pMessage = pCompressAlign;
@@ -890,7 +891,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnNoArgument;
 		}
 		char* pYaz0Align = a_pArgv[++a_nIndex];
-		n32 nYaz0Align = FSToN32(pYaz0Align);
+		n32 nYaz0Align = SToN32(pYaz0Align);
 		if (nYaz0Align != 0 && nYaz0Align != 128)
 		{
 			m_pMessage = pYaz0Align;
@@ -922,9 +923,9 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_pPatchFileName = a_pArgv[++a_nIndex];
 	}
-	else if (FSStartsWith<string>(a_pName, "partition"))
+	else if (StartWith<string>(a_pName, "partition"))
 	{
-		int nIndex = FSToN32(a_pName + strlen("partition"));
+		int nIndex = SToN32(a_pName + strlen("partition"));
 		if (nIndex < 0 || nIndex >= 8)
 		{
 			return kParseOptionReturnIllegalOption;
@@ -945,7 +946,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_nLastPartitionIndex = FSToN32(a_pArgv[++a_nIndex]);
+		m_nLastPartitionIndex = SToN32(a_pArgv[++a_nIndex]);
 		if (m_nLastPartitionIndex < 0 || m_nLastPartitionIndex >= 8)
 		{
 			return kParseOptionReturnIllegalOption;
@@ -1441,13 +1442,13 @@ bool C3dsTool::encryptFile()
 
 bool C3dsTool::uncompressFile()
 {
-	FILE* fp = FFopen(m_pFileName, "rb");
+	FILE* fp = Fopen(m_pFileName, "rb");
 	bool bResult = fp != nullptr;
 	if (bResult)
 	{
-		FFseek(fp, 0, SEEK_END);
-		u32 uCompressedSize = static_cast<u32>(FFtell(fp));
-		FFseek(fp, 0, SEEK_SET);
+		Fseek(fp, 0, SEEK_END);
+		u32 uCompressedSize = static_cast<u32>(Ftell(fp));
+		Fseek(fp, 0, SEEK_SET);
 		u8* pCompressed = new u8[uCompressedSize];
 		fread(pCompressed, 1, uCompressedSize, fp);
 		fclose(fp);
@@ -1501,7 +1502,7 @@ bool C3dsTool::uncompressFile()
 			}
 			if (bResult)
 			{
-				fp = FFopen(m_pCompressOutFileName, "wb");
+				fp = Fopen(m_pCompressOutFileName, "wb");
 				bResult = fp != nullptr;
 				if (bResult)
 				{
@@ -1526,13 +1527,13 @@ bool C3dsTool::uncompressFile()
 
 bool C3dsTool::compressFile()
 {
-	FILE* fp = FFopen(m_pFileName, "rb");
+	FILE* fp = Fopen(m_pFileName, "rb");
 	bool bReuslt = fp != nullptr;
 	if (bReuslt)
 	{
-		FFseek(fp, 0, SEEK_END);
-		u32 uUncompressedSize = static_cast<u32>(FFtell(fp));
-		FFseek(fp, 0, SEEK_SET);
+		Fseek(fp, 0, SEEK_END);
+		u32 uUncompressedSize = static_cast<u32>(Ftell(fp));
+		Fseek(fp, 0, SEEK_SET);
 		u8* pUncompressed = new u8[uUncompressedSize];
 		fread(pUncompressed, 1, uUncompressedSize, fp);
 		fclose(fp);
@@ -1588,7 +1589,7 @@ bool C3dsTool::compressFile()
 		}
 		if (bReuslt)
 		{
-			fp = FFopen(m_pCompressOutFileName, "wb");
+			fp = Fopen(m_pCompressOutFileName, "wb");
 			bReuslt = fp != nullptr;
 			if (bReuslt)
 			{
@@ -1761,7 +1762,7 @@ int C3dsTool::sample()
 
 int main(int argc, char* argv[])
 {
-	FSetLocale();
+	SetLocale();
 	C3dsTool tool;
 	if (tool.ParseOptions(argc, argv) != 0)
 	{

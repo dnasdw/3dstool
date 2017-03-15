@@ -3,15 +3,15 @@
 
 #include "utility.h"
 
-#include MSC_PUSH_PACKED
+#include SDW_MSC_PUSH_PACKED
 struct SCbmdHeader
 {
 	u32 Signature;
 	u32 CbmdOffset;
 	u32 CgfxOffset[31];
 	u32 CwavOffset;
-};
-#include MSC_POP_PACKED
+} SDW_GNUC_PACKED;
+#include SDW_MSC_POP_PACKED
 
 class CBanner
 {

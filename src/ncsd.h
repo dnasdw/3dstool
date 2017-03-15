@@ -4,7 +4,7 @@
 #include "utility.h"
 #include "ncch.h"
 
-#include MSC_PUSH_PACKED
+#include SDW_MSC_PUSH_PACKED
 struct NcsdCommonHeaderStruct
 {
 	u32 Signature;
@@ -19,13 +19,13 @@ struct NcsdCommonHeaderStruct
 	u8 Flags[8];
 	u64 PartitionId[8];
 	u8 Reserved[48];
-} GNUC_PACKED;
+} SDW_GNUC_PACKED;
 
 struct SNcsdHeader
 {
 	u8 RSASignature[256];
 	NcsdCommonHeaderStruct Ncsd;
-} GNUC_PACKED;
+} SDW_GNUC_PACKED;
 
 struct CardInfoHeaderStruct
 {
@@ -39,8 +39,8 @@ struct CardInfoHeaderStruct
 	u8 CardDeviceReserved1[512];
 	u8 TitleKey[16];
 	u8 CardDeviceReserved2[240];
-} GNUC_PACKED;
-#include MSC_POP_PACKED
+} SDW_GNUC_PACKED;
+#include SDW_MSC_POP_PACKED
 
 class CNcsd
 {

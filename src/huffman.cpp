@@ -14,7 +14,7 @@ bool CHuffman::GetUncompressedSize(const u8* a_pCompressed, u32 a_uCompressedSiz
 			{
 				a_uUncompressedSize = *reinterpret_cast<const u32*>(a_pCompressed + 4);
 			}
-			a_uUncompressedSize = static_cast<u32>(FAlign(a_uUncompressedSize, 4));
+			a_uUncompressedSize = static_cast<u32>(Align(a_uUncompressedSize, 4));
 		}
 		else
 		{
@@ -202,7 +202,7 @@ bool CHuffman::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* 
 		countData(info.Table, a_pUncompressed, a_uUncompressedSize, a_uBitSize);
 		u16 uRootNo = constructTree(info.Table, uDataNum);
 		makeHuffTree(&info, uRootNo);
-		info.TreeTop = static_cast<u8>(FAlign(info.TreeTop, 2));
+		info.TreeTop = static_cast<u8>(Align(info.TreeTop, 2));
 		info.Tree[0] = --info.TreeTop;
 		const u8* pSrc = a_pUncompressed;
 		u8* pDest = a_pCompressed + nHeaderSize;
@@ -291,7 +291,7 @@ bool CHuffman::compress(const u8* a_pUncompressed, u32 a_uUncompressedSize, u8* 
 		}
 		for (u32 i = nHeaderSize + (info.TreeTop + 1) * 2; i < static_cast<u32>(pDest - a_pCompressed); i += 4)
 		{
-			*reinterpret_cast<u32*>(a_pCompressed + i) = CONVERT_ENDIAN(*reinterpret_cast<u32*>(a_pCompressed + i));
+			*reinterpret_cast<u32*>(a_pCompressed + i) = SDW_CONVERT_ENDIAN32(*reinterpret_cast<u32*>(a_pCompressed + i));
 		}
 		while ((pDest - a_pCompressed) % a_nCompressAlign != 0)
 		{

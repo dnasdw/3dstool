@@ -205,7 +205,7 @@ bool CBackwardLz77::Compress(const u8* a_pUncompressed, u32 a_uUncompressedSize,
 		}
 		u32 uCompressedSize = a_uCompressedSize - uCompressSafe;
 		u32 uPadOffset = uOrigSafe + uCompressedSize;
-		u32 uCompFooterOffset = static_cast<u32>(FAlign(uPadOffset, 4));
+		u32 uCompFooterOffset = static_cast<u32>(Align(uPadOffset, 4));
 		a_uCompressedSize = uCompFooterOffset + sizeof(CompFooter);
 		u32 uTop = a_uCompressedSize - uOrigSafe;
 		u32 uBottom = a_uCompressedSize - uPadOffset;
