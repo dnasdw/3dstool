@@ -21,6 +21,7 @@
 #define SDW_PLATFORM_WINDOWS 1
 #define SDW_PLATFORM_LINUX   2
 #define SDW_PLATFORM_MACOS   3
+#define SDW_PLATFORM_CYGWIN  4
 
 #if defined(_WIN32)
 #define SDW_PLATFORM SDW_PLATFORM_WINDOWS
@@ -28,6 +29,8 @@
 #define SDW_PLATFORM SDW_PLATFORM_MACOS
 #elif defined(__linux__)
 #define SDW_PLATFORM SDW_PLATFORM_LINUX
+#elif defined(__CYGWIN__)
+#define SDW_PLATFORM SDW_PLATFORM_CYGWIN
 #else
 #error "platform no support"
 #endif
@@ -123,6 +126,7 @@ typedef unsigned long long uint64_t;
 #include <codecvt>
 #endif
 #include <list>
+#include <locale>
 #include <map>
 #include <regex>
 #include <stack>

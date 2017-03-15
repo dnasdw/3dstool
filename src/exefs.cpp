@@ -15,7 +15,7 @@ CExeFs::CExeFs()
 	memset(&m_ExeFsSuperBlock, 0, sizeof(m_ExeFsSuperBlock));
 	m_mPath["banner"] = USTR("banner.bnr");
 	m_mPath["icon"] = USTR("icon.icn");
-	m_mPath["logo"] = USTR("logo.bcma.lz");
+	m_mPath["logo"] = USTR("logo.darc.lz");
 }
 
 CExeFs::~CExeFs()
