@@ -180,6 +180,7 @@ typedef wstring UString;
 typedef wregex URegex;
 typedef struct _stat64 Stat;
 #define USTR(x) L##x
+#define PRIUS USTR("ls")
 #define UPrintf wprintf
 #define UStat _wstat64
 #else
@@ -189,6 +190,7 @@ typedef string UString;
 typedef regex URegex;
 typedef struct stat Stat;
 #define USTR(x) x
+#define PRIUS USTR("s")
 #define UPrintf printf
 #define UStat stat
 #endif

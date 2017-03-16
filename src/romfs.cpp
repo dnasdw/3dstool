@@ -164,7 +164,7 @@ bool CRomFs::extractDirEntry()
 		}
 		if (m_bVerbose)
 		{
-			UPrintf(USTR("save: %s\n"), sDirName.c_str());
+			UPrintf(USTR("save: %") PRIUS USTR("\n"), sDirName.c_str());
 		}
 		if (!UMakeDir(sDirName.c_str()))
 		{
@@ -213,7 +213,7 @@ bool CRomFs::extractFileEntry()
 		{
 			if (m_bVerbose)
 			{
-				UPrintf(USTR("save: %s\n"), sPath.c_str());
+				UPrintf(USTR("save: %") PRIUS USTR("\n"), sPath.c_str());
 			}
 			CopyFile(fp, m_fpRomFs, m_nLevel3Offset + m_RomFsMetaInfo.DataOffset + current.Entry.File.FileOffset, current.Entry.File.FileSize);
 			fclose(fp);
@@ -363,7 +363,7 @@ bool CRomFs::pushFileEntry(const UString& a_sEntryName, n32 a_nParentDirOffset)
 	if (!UGetFileSize(currentEntry.Path.c_str(), currentEntry.Entry.File.FileSize))
 	{
 		bResult = false;
-		UPrintf(USTR("ERROR: %s stat error\n\n"), currentEntry.Path.c_str());
+		UPrintf(USTR("ERROR: %") PRIUS USTR(" stat error\n\n"), currentEntry.Path.c_str());
 	}
 	currentEntry.Entry.File.PrevFileOffset = s_nInvalidOffset;
 	currentEntry.Entry.File.NameSize = static_cast<n32>(currentEntry.EntryName.size() * 2);
@@ -1017,7 +1017,7 @@ bool CRomFs::writeBufferFromFile(int a_nLevel, const UString& a_sPath, n64 a_nSi
 	}
 	if (m_bVerbose)
 	{
-		UPrintf(USTR("load: %s\n"), a_sPath.c_str());
+		UPrintf(USTR("load: %") PRIUS USTR("\n"), a_sPath.c_str());
 	}
 	const n64 nBufferSize = 0x100000;
 	static u8 buffer[nBufferSize];

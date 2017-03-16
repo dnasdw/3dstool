@@ -192,7 +192,7 @@ bool CExeFs::extractSection(int a_nIndex)
 		{
 			if (m_bVerbose)
 			{
-				UPrintf(USTR("save: %s\n"), sPath.c_str());
+				UPrintf(USTR("save: %") PRIUS USTR("\n"), sPath.c_str());
 			}
 			if (bTopSection && m_bUncompress)
 			{
@@ -298,7 +298,7 @@ bool CExeFs::createSection(int a_nIndex)
 			m_ExeFsSuperBlock.m_Header[a_nIndex].offset = static_cast<u32>(Ftell(m_fpExeFs)) - sizeof(m_ExeFsSuperBlock);
 			if (m_bVerbose)
 			{
-				UPrintf(USTR("load: %s\n"), sPath.c_str());
+				UPrintf(USTR("load: %") PRIUS USTR("\n"), sPath.c_str());
 			}
 			Fseek(fp, 0, SEEK_END);
 			u32 uFileSize = static_cast<u32>(Ftell(fp));
