@@ -54,11 +54,11 @@
 #if SDW_PLATFORM == SDW_PLATFORM_MACOS
 #include <mach-o/dyld.h>
 #endif
-#include <dirent.h>
-#include <unistd.h>
-#endif
 #if SDW_COMPILER == SDW_COMPILER_GNUC && SDW_COMPILER_VERSION < 50400
 #include <iconv.h>
+#endif
+#include <dirent.h>
+#include <unistd.h>
 #endif
 #include <sys/stat.h>
 
