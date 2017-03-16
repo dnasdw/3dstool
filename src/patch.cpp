@@ -259,16 +259,16 @@ bool CPatch::ApplyPatchFile()
 		{
 			bool bSeekSet = (uPatchCommand & 8) == 0;
 			n64 nOffset = 0;
-			size_t nSize = 0;
-			const size_t nBufferSize = 0x10000;
-			static u8 uBuffer[nBufferSize] = {};
-			size_t nOffsetByte = 1 << (uPatchCommand >> 1 & 3);
-			size_t nSizeByte = 1 << (uPatchCommand & 1);
-			fread(&nOffset, nOffsetByte, 1, m_fpPatch);
-			fread(&nSize, nSizeByte, 1, m_fpPatch);
-			nSize++;
-			fread(uBuffer, 1, nSize, m_fpPatch);
-			executeSeekWrite(bSeekSet, nOffset, nSize, uBuffer);
+			size_t uSize = 0;
+			const size_t uBufferSize = 0x10000;
+			static u8 uBuffer[uBufferSize] = {};
+			size_t uOffsetByte = static_cast<size_t>(SDW_BIT64(uPatchCommand >> 1 & 3));
+			size_t uSizeByte = static_cast<size_t>(SDW_BIT64(uPatchCommand & 1));
+			fread(&nOffset, uOffsetByte, 1, m_fpPatch);
+			fread(&uSize, uSizeByte, 1, m_fpPatch);
+			uSize++;
+			fread(uBuffer, 1, uSize, m_fpPatch);
+			executeSeekWrite(bSeekSet, nOffset, uSize, uBuffer);
 		}
 		else
 		{
@@ -427,51 +427,51 @@ bool CPatch::createPatchFile(n64 a_nOffsetOld, n64 a_nSizeOld, n64 a_nOffsetNew,
 	bool bSeekSet = true;
 	n64 nBaseOffset = 0;
 	n64 nSeekOffset = 0;
-	const size_t nBufferSize = 0x10000;
-	u8 uBuffer[nBufferSize] = {};
-	size_t nBufferPos = 0;
-	const size_t nFileBufferSize = 0x100000;
-	u8* pFileBufferOld = new u8[nFileBufferSize];
-	u8* pFileBufferNew = new u8[nFileBufferSize];
+	const size_t uBufferSize = 0x10000;
+	u8 uBuffer[uBufferSize] = {};
+	size_t uBufferPos = 0;
+	const size_t uFileBufferSize = 0x100000;
+	u8* pFileBufferOld = new u8[uFileBufferSize];
+	u8* pFileBufferNew = new u8[uFileBufferSize];
 	n64 nCommonSize = min(a_nSizeOld, a_nSizeNew);
 	for (n64 i = 0; i < nCommonSize; i++)
 	{
-		if (i % nFileBufferSize == 0)
+		if (i % uFileBufferSize == 0)
 		{
-			fread(pFileBufferOld, 1, static_cast<size_t>(nCommonSize - i > nFileBufferSize ? nFileBufferSize : nCommonSize - i), m_fpOld);
-			fread(pFileBufferNew, 1, static_cast<size_t>(nCommonSize - i > nFileBufferSize ? nFileBufferSize : nCommonSize - i), m_fpNew);
+			fread(pFileBufferOld, 1, static_cast<size_t>(nCommonSize - i > uFileBufferSize ? uFileBufferSize : nCommonSize - i), m_fpOld);
+			fread(pFileBufferNew, 1, static_cast<size_t>(nCommonSize - i > uFileBufferSize ? uFileBufferSize : nCommonSize - i), m_fpNew);
 		}
-		if (pFileBufferOld[i % nFileBufferSize] == pFileBufferNew[i % nFileBufferSize])
+		if (pFileBufferOld[i % uFileBufferSize] == pFileBufferNew[i % uFileBufferSize])
 		{
-			if (nBufferPos != 0)
+			if (uBufferPos != 0)
 			{
-				nSeekOffset = a_nOffsetNew + i - nBufferPos - nBaseOffset;
-				nBaseOffset += nSeekOffset + nBufferPos;
-				writeSeekWrite(bSeekSet, nSeekOffset, nBufferPos, uBuffer);
+				nSeekOffset = a_nOffsetNew + i - uBufferPos - nBaseOffset;
+				nBaseOffset += nSeekOffset + uBufferPos;
+				writeSeekWrite(bSeekSet, nSeekOffset, uBufferPos, uBuffer);
 				bSeekSet = false;
-				nBufferPos = 0;
+				uBufferPos = 0;
 			}
 		}
 		else
 		{
-			uBuffer[nBufferPos++] = pFileBufferNew[i % nFileBufferSize];
-			if (nBufferPos >= nBufferSize)
+			uBuffer[uBufferPos++] = pFileBufferNew[i % uFileBufferSize];
+			if (uBufferPos >= uBufferSize)
 			{
-				nSeekOffset = a_nOffsetNew + i + 1 - nBufferPos - nBaseOffset;
-				nBaseOffset += nSeekOffset + nBufferPos;
-				writeSeekWrite(bSeekSet, nSeekOffset, nBufferPos, uBuffer);
+				nSeekOffset = a_nOffsetNew + i + 1 - uBufferPos - nBaseOffset;
+				nBaseOffset += nSeekOffset + uBufferPos;
+				writeSeekWrite(bSeekSet, nSeekOffset, uBufferPos, uBuffer);
 				bSeekSet = false;
-				nBufferPos = 0;
+				uBufferPos = 0;
 			}
 		}
 	}
-	if (nBufferPos != 0)
+	if (uBufferPos != 0)
 	{
-		nSeekOffset = a_nOffsetNew + nCommonSize - nBufferPos - nBaseOffset;
-		nBaseOffset += nSeekOffset + nBufferPos;
-		writeSeekWrite(bSeekSet, nSeekOffset, nBufferPos, uBuffer);
+		nSeekOffset = a_nOffsetNew + nCommonSize - uBufferPos - nBaseOffset;
+		nBaseOffset += nSeekOffset + uBufferPos;
+		writeSeekWrite(bSeekSet, nSeekOffset, uBufferPos, uBuffer);
 		bSeekSet = false;
-		nBufferPos = 0;
+		uBufferPos = 0;
 	}
 	delete[] pFileBufferNew;
 	delete[] pFileBufferOld;
@@ -480,14 +480,14 @@ bool CPatch::createPatchFile(n64 a_nOffsetOld, n64 a_nSizeOld, n64 a_nOffsetNew,
 		n64 nRemainSize = a_nSizeNew - a_nSizeOld;
 		while (nRemainSize > 0)
 		{
-			nBufferPos = static_cast<size_t>(nRemainSize > nBufferSize ? nBufferSize : nRemainSize);
-			fread(uBuffer, 1, nBufferPos, m_fpNew);
+			uBufferPos = static_cast<size_t>(nRemainSize > uBufferSize ? uBufferSize : nRemainSize);
+			fread(uBuffer, 1, uBufferPos, m_fpNew);
 			nSeekOffset = a_nOffsetNew + a_nSizeNew - nRemainSize - nBaseOffset;
-			nBaseOffset += nSeekOffset + nBufferPos;
-			writeSeekWrite(bSeekSet, nSeekOffset, nBufferPos, uBuffer);
+			nBaseOffset += nSeekOffset + uBufferPos;
+			writeSeekWrite(bSeekSet, nSeekOffset, uBufferPos, uBuffer);
 			bSeekSet = false;
-			nRemainSize -= nBufferPos;
-			nBufferPos = 0;
+			nRemainSize -= uBufferPos;
+			uBufferPos = 0;
 		}
 	}
 	return true;
@@ -575,10 +575,10 @@ void CPatch::writePatch(u8 a_uPatchCommand, n64* a_pArg)
 	}
 	else if (a_uPatchCommand >= kPatchCommandSeekWrite && a_uPatchCommand <= kPatchCommandSeekWrite + 0xF)
 	{
-		size_t nOffsetByte = 1 << (a_uPatchCommand >> 1 & 3);
-		size_t nSizeByte = 1 << (a_uPatchCommand & 1);
-		fwrite(a_pArg, nOffsetByte, 1, m_fpPatch);
-		fwrite(a_pArg + 1, nSizeByte, 1, m_fpPatch);
+		size_t uOffsetByte = static_cast<size_t>(SDW_BIT64(a_uPatchCommand >> 1 & 3));
+		size_t uSizeByte = static_cast<size_t>(SDW_BIT64(a_uPatchCommand & 1));
+		fwrite(a_pArg, uOffsetByte, 1, m_fpPatch);
+		fwrite(a_pArg + 1, uSizeByte, 1, m_fpPatch);
 	}
 }
 

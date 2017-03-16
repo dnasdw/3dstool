@@ -117,7 +117,13 @@ typedef unsigned short     uint16_t;
 typedef unsigned int       uint32_t;
 typedef unsigned long long uint64_t;
 #ifndef UINT32_MAX
-#define UINT32_MAX       0xffffffffui32
+#define UINT32_MAX       0xffffffffU
+#endif
+#ifndef UINT32_C
+#define UINT32_C(x)  (x ## U)
+#endif
+#ifndef UINT64_C
+#define UINT64_C(x)  (x ## ULL)
 #endif
 #endif
 #include <cstdio>
@@ -190,6 +196,10 @@ typedef struct stat Stat;
 n64 Align(n64 a_nData, n64 a_nAlignment);
 
 #define SDW_ARRAY_COUNT(a) (sizeof(a) / sizeof(a[0]))
+
+#define SDW_BIT32(n) (UINT32_C(1) << (n))
+
+#define SDW_BIT64(n) (UINT64_C(1) << (n))
 
 #define SDW_CONVERT_ENDIAN32(n) (((n) >> 24 & 0xFF) | ((n) >> 8 & 0xFF00) | (((n) & 0xFF00) << 8) | (((n) & 0xFF) << 24))
 
