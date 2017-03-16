@@ -220,6 +220,36 @@ U16String WToU16(const wstring& a_sString)
 {
 	return a_sString;
 }
+#elif SDW_COMPILER == SDW_COMPILER_GNUC && SDW_COMPILER_VERSION < 50400
+string WToU8(const wstring& a_sString)
+{
+	return TSToS<wstring, string>(a_sString, "WCHAR_T", "UTF-8");
+}
+
+string U16ToU8(const U16String& a_sString)
+{
+	return TSToS<U16String, string>(a_sString, "UTF-16LE", "UTF-8");
+}
+
+wstring U8ToW(const string& a_sString)
+{
+	return TSToS<string, wstring>(a_sString, "UTF-8", "WCHAR_T");
+}
+
+wstring U16ToW(const U16String& a_sString)
+{
+	return TSToS<U16String, wstring>(a_sString, "UTF-16LE", "WCHAR_T");
+}
+
+U16String U8ToU16(const string& a_sString)
+{
+	return TSToS<string, U16String>(a_sString, "UTF-8", "UTF-16LE");
+}
+
+U16String WToU16(const wstring& a_sString)
+{
+	return TSToS<wstring, U16String>(a_sString, "WCHAR_T", "UTF-16LE");
+}
 #else
 string WToU8(const wstring& a_sString)
 {

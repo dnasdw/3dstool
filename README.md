@@ -27,18 +27,18 @@ An all-in-one tool for extracting/creating 3ds roms.
 
 ## Platforms
 
-- Cygwin
+- Windows
 - Linux
-- Mac OS X
-- Windows *XP+*
+- macOS
 
 ## Building
 
 ### Dependencies
 
 - cmake
+- libiconv
 - openssl-devel / libssl-dev
-- libiconv **(linux only)**
+- libcurl-devel
 
 ### Compiling
 
@@ -46,8 +46,7 @@ An all-in-one tool for extracting/creating 3ds roms.
 ~~~
 mkdir project
 cd project
-cmake ..
-cmake ..
+cmake -DUSE_DEP=OFF ..
 make
 ~~~
 
@@ -55,8 +54,7 @@ make
 ~~~
 mkdir project
 cd project
-cmake -DBUILD64=OFF ..
-cmake ..
+cmake -DBUILD64=OFF -DUSE_DEP=OFF ..
 make
 ~~~
 
