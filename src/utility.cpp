@@ -114,7 +114,10 @@ const UString& UGetModuleFileName()
 {
 	const u32 uMaxPath = 4096;
 	static UString sFileName;
-	sFileName.clear();
+	if (!sFileName.empty())
+	{
+		return sFileName;
+	}
 	sFileName.resize(uMaxPath, USTR('\0'));
 	u32 uSize = 0;
 #if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
@@ -153,7 +156,12 @@ const UString& UGetModuleFileName()
 
 const UString& UGetModuleDirName()
 {
-	static UString sDirName = UGetModuleFileName();
+	static UString sDirName;
+	if (!sDirName.empty())
+	{
+		return sDirName;
+	}
+	sDirName = UGetModuleFileName();
 	UString::size_type uPos = sDirName.rfind(USTR('/'));
 	if (uPos != UString::npos)
 	{

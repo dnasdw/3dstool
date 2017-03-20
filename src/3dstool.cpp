@@ -23,7 +23,7 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ "trim", 'r', "trim the cci file" },
 	{ "pad", 'p', "pad the cci file" },
 	{ "diff", 0, "create the patch file from the old file and the new file" },
-	{ "patch", 0, "apply the patch file to the target file"},
+	{ "patch", 0, "apply the patch file to the target file" },
 	{ "sample", 0, "show the samples" },
 	{ "help", 'h', "show this help" },
 	{ nullptr, 0, "\ncommon:" },
@@ -99,7 +99,7 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ "romfs-dir", 0, "the romfs dir for the romfs file" },
 	{ nullptr, 0, "\nbanner:" },
 	{ nullptr, 0, " extract/create:" },
-	{ "banner-dir", 0, "the banner dir for the banner file"},
+	{ "banner-dir", 0, "the banner dir for the banner file" },
 	{ nullptr, 0, nullptr }
 };
 
