@@ -54,7 +54,7 @@
 #if SDW_PLATFORM == SDW_PLATFORM_MACOS
 #include <mach-o/dyld.h>
 #endif
-#if SDW_COMPILER == SDW_COMPILER_GNUC && SDW_COMPILER_VERSION < 50400
+#if (SDW_COMPILER == SDW_COMPILER_GNUC && SDW_COMPILER_VERSION < 50400) || SDW_PLATFORM == SDW_PLATFORM_CYGWIN || defined(SDW_XCONVERT)
 #include <iconv.h>
 #endif
 #include <dirent.h>
@@ -233,10 +233,10 @@ bool UMakeDir(const UString::value_type* a_pDirName);
 
 bool UGetFileSize(const UString::value_type* a_pFileName, n64& a_nFileSize);
 
-FILE* Fopen(const char* a_pFileName, const char* a_pMode);
+FILE* Fopen(const char* a_pFileName, const char* a_pMode, bool a_bVerbose = true);
 
 #if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
-FILE* FopenW(const wchar_t* a_pFileName, const wchar_t* a_pMode);
+FILE* FopenW(const wchar_t* a_pFileName, const wchar_t* a_pMode, bool a_bVerbose = true);
 #endif
 
 bool Seek(FILE* a_fpFile, n64 a_nOffset);
@@ -253,7 +253,7 @@ void SetLocale();
 
 n32 SToN32(const string& a_sString, int a_nRadix = 10);
 
-#if SDW_COMPILER == SDW_COMPILER_GNUC && SDW_COMPILER_VERSION < 50400
+#if (SDW_COMPILER == SDW_COMPILER_GNUC && SDW_COMPILER_VERSION < 50400) || SDW_PLATFORM == SDW_PLATFORM_CYGWIN || (SDW_PLATFORM != SDW_PLATFORM_WINDOWS && defined(SDW_XCONVERT))
 template<typename TSrc, typename TDest>
 TDest TSToS(const TSrc& a_sString, const string& a_sSrcType, const string& a_sDestType)
 {
@@ -273,7 +273,11 @@ TDest TSToS(const TSrc& a_sString, const string& a_sSrcType, const string& a_sDe
 		char* pBuffer = szBuffer;
 		size_t uBufferLeft = c_nConvertBufferSize;
 		n32 nError = iconv(cd, reinterpret_cast<char**>(&pString), &uStringLeft, &pBuffer, &uBufferLeft);
+#if SDW_PLATFORM == SDW_PLATFORM_MACOS
+		if (nError >= 0 || (nError == static_cast<size_t>(-1) && errno == E2BIG))
+#else
 		if (nError == 0 || (nError == static_cast<size_t>(-1) && errno == E2BIG))
+#endif
 		{
 			*reinterpret_cast<typename TDest::value_type*>(szBuffer + c_nConvertBufferSize - uBufferLeft) = 0;
 			sConverted += reinterpret_cast<typename TDest::value_type*>(szBuffer);
