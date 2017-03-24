@@ -1,4 +1,3 @@
-AUTO_FILES(".." "src" "README\\.md")
 AUTO_FILES("." "src" "\\.(cpp|h)$")
 include_directories(${DEP_INCLUDE_DIR})
 link_directories(${DEP_LIBRARY_DIR})
