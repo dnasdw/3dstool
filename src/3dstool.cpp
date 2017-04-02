@@ -113,7 +113,6 @@ C3dsTool::C3dsTool()
 	, m_pXorFileName(nullptr)
 	, m_nCompressAlign(1)
 	, m_eCompressType(kCompressTypeNone)
-	, m_pCompressOutFileName(nullptr)
 	, m_nYaz0Align(0)
 	, m_bNotPad(false)
 	, m_nLastPartitionIndex(7)
@@ -395,9 +394,9 @@ int C3dsTool::CheckOptions()
 			printf("ERROR: no --compress-type option\n\n");
 			return 1;
 		}
-		if (m_pCompressOutFileName == nullptr)
+		if (m_sCompressOutFileName.empty())
 		{
-			m_pCompressOutFileName = m_pFileName;
+			m_sCompressOutFileName = m_pFileName;
 		}
 	}
 	if (m_eAction == kActionTrim || m_eAction == kActionPad)
@@ -869,7 +868,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_pCompressOutFileName = a_pArgv[++a_nIndex];
+		m_sCompressOutFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "yaz0-align") == 0)
 	{
@@ -1489,7 +1488,7 @@ bool C3dsTool::uncompressFile()
 			}
 			if (bResult)
 			{
-				fp = Fopen(m_pCompressOutFileName, "wb");
+				fp = Fopen(m_sCompressOutFileName.c_str(), "wb");
 				bResult = fp != nullptr;
 				if (bResult)
 				{
@@ -1576,7 +1575,7 @@ bool C3dsTool::compressFile()
 		}
 		if (bReuslt)
 		{
-			fp = Fopen(m_pCompressOutFileName, "wb");
+			fp = Fopen(m_sCompressOutFileName.c_str(), "wb");
 			bReuslt = fp != nullptr;
 			if (bReuslt)
 			{

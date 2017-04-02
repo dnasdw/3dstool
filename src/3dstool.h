@@ -89,7 +89,7 @@ private:
 	const char* m_pXorFileName;
 	n32 m_nCompressAlign;
 	ECompressType m_eCompressType;
-	const char* m_pCompressOutFileName;
+	string m_sCompressOutFileName;
 	n32 m_nYaz0Align;
 	string m_sOldFileName;
 	string m_sNewFileName;
