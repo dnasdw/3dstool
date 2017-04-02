@@ -10,7 +10,6 @@ const char* CBanner::s_pBcwavFileName = "banner.bcwav";
 CBanner::CBanner()
 	: m_pFileName(nullptr)
 	, m_bVerbose(false)
-	, m_pBannerDirName(nullptr)
 	, m_fpBanner(nullptr)
 {
 	memset(&m_CbmdHeader, 0, sizeof(m_CbmdHeader));
@@ -30,9 +29,9 @@ void CBanner::SetVerbose(bool a_bVerbose)
 	m_bVerbose = a_bVerbose;
 }
 
-void CBanner::SetBannerDirName(const char* a_pBannerDirName)
+void CBanner::SetBannerDirName(const string& a_sBannerDirName)
 {
-	m_pBannerDirName = a_pBannerDirName;
+	m_sBannerDirName = a_sBannerDirName;
 }
 
 bool CBanner::ExtractFile()
@@ -52,7 +51,7 @@ bool CBanner::ExtractFile()
 	{
 		printf("INFO: cgfx 0 offset 0x%" PRIX32 " != 0x%" PRIX32 "\n\n", m_CbmdHeader.CgfxOffset[0], static_cast<u32>(sizeof(m_CbmdHeader)));
 	}
-	if (!UMakeDir(AToU(m_pBannerDirName).c_str()))
+	if (!UMakeDir(AToU(m_sBannerDirName).c_str()))
 	{
 		fclose(m_fpBanner);
 		return false;
@@ -115,9 +114,7 @@ bool CBanner::IsBannerFile(const char* a_pFileName)
 
 bool CBanner::extractCbmdHeader()
 {
-	string sPath = m_pBannerDirName;
-	sPath += "/";
-	sPath += s_pCbmdHeaderFileName;
+	string sPath = m_sBannerDirName + "/" + s_pCbmdHeaderFileName;
 	FILE* fp = Fopen(sPath.c_str(), "wb");
 	if (fp == nullptr)
 	{
@@ -142,9 +139,7 @@ bool CBanner::extractCbmdBody()
 	{
 		if (m_CbmdHeader.CgfxOffset[i] != 0)
 		{
-			string sPath = m_pBannerDirName;
-			sPath += "/";
-			sPath += Format(s_pCbmdBodyFileName, i);
+			string sPath = m_sBannerDirName + "/" + Format(s_pCbmdBodyFileName, i);
 			FILE* fp = Fopen(sPath.c_str(), "wb");
 			if (fp == nullptr)
 			{
@@ -190,9 +185,7 @@ bool CBanner::extractCbmdBody()
 
 bool CBanner::extractBcwav()
 {
-	string sPath = m_pBannerDirName;
-	sPath += "/";
-	sPath += s_pBcwavFileName;
+	string sPath = m_sBannerDirName + "/" + s_pBcwavFileName;
 	FILE* fp = Fopen(sPath.c_str(), "wb");
 	if (fp == nullptr)
 	{
@@ -211,9 +204,7 @@ bool CBanner::extractBcwav()
 
 bool CBanner::createCbmdHeader()
 {
-	string sPath = m_pBannerDirName;
-	sPath += "/";
-	sPath += s_pCbmdHeaderFileName;
+	string sPath = m_sBannerDirName + "/" + s_pCbmdHeaderFileName;
 	FILE* fp = Fopen(sPath.c_str(), "rb");
 	if (fp == nullptr)
 	{
@@ -244,9 +235,7 @@ bool CBanner::createCbmdBody()
 	for (int i = 0; i < SDW_ARRAY_COUNT(m_CbmdHeader.CgfxOffset); i++)
 	{
 		m_CbmdHeader.CgfxOffset[i] = 0;
-		string sPath = m_pBannerDirName;
-		sPath += "/";
-		sPath += Format(s_pCbmdBodyFileName, i);
+		string sPath = m_sBannerDirName + "/" + Format(s_pCbmdBodyFileName, i);
 		FILE* fp = fopen(sPath.c_str(), "rb");
 		if (fp != nullptr)
 		{
@@ -290,9 +279,7 @@ bool CBanner::createCbmdBody()
 
 bool CBanner::createBcwav()
 {
-	string sPath = m_pBannerDirName;
-	sPath += "/";
-	sPath += s_pBcwavFileName;
+	string sPath = m_sBannerDirName + "/" + s_pBcwavFileName;
 	FILE* fp = Fopen(sPath.c_str(), "rb");
 	if (fp == nullptr)
 	{

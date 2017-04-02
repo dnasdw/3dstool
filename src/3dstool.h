@@ -113,7 +113,7 @@ private:
 	bool m_bRomFsAutoKey;
 	const char* m_pExeFsDirName;
 	const char* m_pRomFsDirName;
-	const char* m_pBannerDirName;
+	string m_sBannerDirName;
 	bool m_bCounterValid;
 	bool m_bUncompress;
 	bool m_bCompress;

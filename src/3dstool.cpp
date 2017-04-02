@@ -136,7 +136,6 @@ C3dsTool::C3dsTool()
 	, m_bRomFsAutoKey(false)
 	, m_pExeFsDirName(nullptr)
 	, m_pRomFsDirName(nullptr)
-	, m_pBannerDirName(nullptr)
 	, m_bCounterValid(false)
 	, m_bUncompress(false)
 	, m_bCompress(false)
@@ -284,7 +283,7 @@ int C3dsTool::CheckOptions()
 			}
 			break;
 		case kFileTypeBanner:
-			if (m_pBannerDirName == nullptr)
+			if (m_sBannerDirName.empty())
 			{
 				printf("ERROR: no --banner-dir option\n\n");
 				return 1;
@@ -353,7 +352,7 @@ int C3dsTool::CheckOptions()
 			}
 			else if (m_eFileType == kFileTypeBanner)
 			{
-				if (m_pBannerDirName == nullptr)
+				if (m_sBannerDirName.empty())
 				{
 					printf("ERROR: no --banner-dir option\n\n");
 					return 1;
@@ -1133,7 +1132,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_pBannerDirName = a_pArgv[++a_nIndex];
+		m_sBannerDirName = a_pArgv[++a_nIndex];
 	}
 	return kParseOptionReturnSuccess;
 }
@@ -1297,7 +1296,7 @@ bool C3dsTool::extractFile()
 			CBanner banner;
 			banner.SetFileName(m_pFileName);
 			banner.SetVerbose(m_bVerbose);
-			banner.SetBannerDirName(m_pBannerDirName);
+			banner.SetBannerDirName(m_sBannerDirName);
 			bResult = banner.ExtractFile();
 		}
 		break;
@@ -1392,7 +1391,7 @@ bool C3dsTool::createFile()
 			CBanner banner;
 			banner.SetFileName(m_pFileName);
 			banner.SetVerbose(m_bVerbose);
-			banner.SetBannerDirName(m_pBannerDirName);
+			banner.SetBannerDirName(m_sBannerDirName);
 			bResult = banner.CreateFile();
 		}
 		break;

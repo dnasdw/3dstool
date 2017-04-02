@@ -20,7 +20,7 @@ public:
 	~CBanner();
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
-	void SetBannerDirName(const char* a_pBannerDirName);
+	void SetBannerDirName(const string& a_sBannerDirName);
 	bool ExtractFile();
 	bool CreateFile();
 	static bool IsBannerFile(const char* a_pFileName);
@@ -38,7 +38,7 @@ private:
 	bool createBcwav();
 	const char* m_pFileName;
 	bool m_bVerbose;
-	const char* m_pBannerDirName;
+	string m_sBannerDirName;
 	FILE* m_fpBanner;
 	SCbmdHeader m_CbmdHeader;
 };
