@@ -50,7 +50,7 @@ void CPatch::SetNewFileName(const string& a_sNewFileName)
 
 void CPatch::SetPatchFileName(const string& a_sPatchFileName)
 {
-	m_sPatchFileName = a_sPatchFileName;
+	m_sPatchFileName = AToU(a_sPatchFileName);
 }
 
 bool CPatch::CreatePatchFile()
@@ -72,7 +72,7 @@ bool CPatch::CreatePatchFile()
 	Fseek(m_fpNew, 0, SEEK_END);
 	n64 nFileSizeNew = Ftell(m_fpNew);
 	Fseek(m_fpNew, 0, SEEK_SET);
-	m_fpPatch = Fopen(m_sPatchFileName.c_str(), "wb");
+	m_fpPatch = UFopen(m_sPatchFileName.c_str(), USTR("wb"));
 	if (m_fpPatch == nullptr)
 	{
 		fclose(m_fpNew);
@@ -142,7 +142,7 @@ bool CPatch::ApplyPatchFile()
 	{
 		return false;
 	}
-	m_fpPatch = Fopen(m_sPatchFileName.c_str(), "rb");
+	m_fpPatch = UFopen(m_sPatchFileName.c_str(), USTR("rb"));
 	if (m_fpPatch == nullptr)
 	{
 		fclose(m_fpOld);
@@ -157,7 +157,7 @@ bool CPatch::ApplyPatchFile()
 	{
 		fclose(m_fpPatch);
 		fclose(m_fpOld);
-		printf("ERROR: not support patch file %s\n\n", m_sPatchFileName.c_str());
+		UPrintf(USTR("ERROR: not support patch file %") PRIUS USTR("\n\n"), m_sPatchFileName.c_str());
 		return false;
 	}
 	calculateVersion();

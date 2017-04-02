@@ -60,7 +60,7 @@ private:
 	bool m_bVerbose;
 	string m_sOldFileName;
 	string m_sNewFileName;
-	string m_sPatchFileName;
+	UString m_sPatchFileName;
 	FILE* m_fpOld;
 	FILE* m_fpNew;
 	FILE* m_fpPatch;
