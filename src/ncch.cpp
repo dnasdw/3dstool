@@ -731,7 +731,7 @@ void CNcch::calculateCounter(EAesCtrType a_eAesCtrType)
 	}
 }
 
-bool CNcch::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const char* a_pType)
+bool CNcch::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const string& a_sType)
 {
 	bool bResult = true;
 	if (!a_sFileName.empty())
@@ -766,12 +766,12 @@ bool CNcch::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, b
 		}
 		else if (m_bVerbose)
 		{
-			printf("INFO: %s is not exists, %s will not be create\n", a_pType, a_sFileName.c_str());
+			printf("INFO: %s is not exists, %s will not be create\n", a_sType.c_str(), a_sFileName.c_str());
 		}
 	}
 	else if (a_nSize != 0 && m_bVerbose)
 	{
-		printf("INFO: %s is not extract\n", a_pType);
+		printf("INFO: %s is not extract\n", a_sType.c_str());
 	}
 	return bResult;
 }
@@ -1173,7 +1173,7 @@ void CNcch::alignFileSize(n64 a_nAlignment)
 	m_NcchHeader.Ncch.ContentSize = static_cast<u32>(nFileSize / m_nMediaUnitSize);
 }
 
-bool CNcch::encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType)
+bool CNcch::encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const string& a_sType)
 {
 	bool bResult = true;
 	if (a_nSize != 0)
@@ -1182,12 +1182,12 @@ bool CNcch::encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, cons
 	}
 	else if (m_bVerbose)
 	{
-		printf("INFO: %s is not exists\n", a_pType);
+		printf("INFO: %s is not exists\n", a_sType.c_str());
 	}
 	return bResult;
 }
 
-bool CNcch::encryptXorFile(const string& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType)
+bool CNcch::encryptXorFile(const string& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const string& a_sType)
 {
 	bool bResult = true;
 	if (!a_sXorFileName.empty())
@@ -1198,12 +1198,12 @@ bool CNcch::encryptXorFile(const string& a_sXorFileName, n64 a_nOffset, n64 a_nS
 		}
 		else if (m_bVerbose)
 		{
-			printf("INFO: %s is not exists\n", a_pType);
+			printf("INFO: %s is not exists\n", a_sType.c_str());
 		}
 	}
 	else if (a_nSize != 0 && m_bVerbose)
 	{
-		printf("INFO: %s is not decrypt or encrypt\n", a_pType);
+		printf("INFO: %s is not decrypt or encrypt\n", a_sType.c_str());
 	}
 	return bResult;
 }

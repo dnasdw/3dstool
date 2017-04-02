@@ -91,7 +91,7 @@ private:
 	void calculateMediaUnitSize();
 	void calculateAlignment();
 	void calculateValidSize();
-	bool extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType, int a_nTypeId, bool bMediaUnitSize);
+	bool extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, const string& a_sType, int a_nTypeId, bool bMediaUnitSize);
 	bool createHeader();
 	bool createNcch(int a_nIndex);
 	void clearNcch(int a_nIndex);

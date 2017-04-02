@@ -130,7 +130,7 @@ private:
 	void calculateAlignment();
 	void calculateKey();
 	void calculateCounter(EAesCtrType a_eAesCtrType);
-	bool extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const char* a_pType);
+	bool extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const string& a_sType);
 	bool createHeader();
 	bool createExtendedHeader();
 	bool createLogoRegion();
@@ -143,8 +143,8 @@ private:
 	void clearExeFs();
 	void clearRomFs();
 	void alignFileSize(n64 a_nAlignment);
-	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
-	bool encryptXorFile(const string& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
+	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const string& a_sType);
+	bool encryptXorFile(const string& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const string& a_sType);
 	static size_t onDownload(char* a_pData, size_t a_uSize, size_t a_uNmemb, void* a_pUserData);
 	static const CBigNum s_Slot0x18KeyX;
 	static const CBigNum s_Slot0x1BKeyX;

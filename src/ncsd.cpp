@@ -297,7 +297,7 @@ void CNcsd::calculateValidSize()
 	m_nValidSize *= m_nMediaUnitSize;
 }
 
-bool CNcsd::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType, int a_nTypeId, bool bMediaUnitSize)
+bool CNcsd::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, const string& a_sType, int a_nTypeId, bool bMediaUnitSize)
 {
 	bool bResult = true;
 	if (!a_sFileName.empty())
@@ -328,11 +328,11 @@ bool CNcsd::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, c
 		{
 			if (a_nTypeId < 0 || a_nTypeId >= 8)
 			{
-				printf("INFO: %s is not exists, %s will not be create\n", a_pType, a_sFileName.c_str());
+				printf("INFO: %s is not exists, %s will not be create\n", a_sType.c_str(), a_sFileName.c_str());
 			}
 			else
 			{
-				printf("INFO: %s %d is not exists, %s will not be create\n", a_pType, a_nTypeId, a_sFileName.c_str());
+				printf("INFO: %s %d is not exists, %s will not be create\n", a_sType.c_str(), a_nTypeId, a_sFileName.c_str());
 			}
 		}
 	}
@@ -340,11 +340,11 @@ bool CNcsd::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, c
 	{
 		if (a_nTypeId < 0 || a_nTypeId >= 8)
 		{
-			printf("INFO: %s is not extract\n", a_pType);
+			printf("INFO: %s is not extract\n", a_sType.c_str());
 		}
 		else
 		{
-			printf("INFO: %s %d is not extract\n", a_pType, a_nTypeId);
+			printf("INFO: %s %d is not extract\n", a_sType.c_str(), a_nTypeId);
 		}
 	}
 	return bResult;
