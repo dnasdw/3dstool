@@ -25,6 +25,7 @@ An all-in-one tool for extracting/creating 3ds roms.
 - v1.0.18 @ 2016.12.04 - Compatible with yaz0 with alignment property
 - v1.0.19 @ 2017.01.11 - Fix romfs hash bug
 - v1.0.20 @ 2017.03.24 - Refactoring
+- v1.0.21 @ 2017.04.02 - Refactoring
 
 ## Platforms
 
