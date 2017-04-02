@@ -24,7 +24,6 @@ CNcch::CNcch()
 	, m_pExtendedHeaderFileName(nullptr)
 	, m_pLogoRegionFileName(nullptr)
 	, m_pPlainRegionFileName(nullptr)
-	, m_pExeFsFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_fpNcch(nullptr)
@@ -100,9 +99,9 @@ void CNcch::SetPlainRegionFileName(const char* a_pPlainRegionFileName)
 	m_pPlainRegionFileName = a_pPlainRegionFileName;
 }
 
-void CNcch::SetExeFsFileName(const char* a_pExeFsFileName)
+void CNcch::SetExeFsFileName(const string& a_sExeFsFileName)
 {
-	m_pExeFsFileName = a_pExeFsFileName;
+	m_sExeFsFileName = a_sExeFsFileName;
 }
 
 void CNcch::SetRomFsFileName(const string& a_sRomFsFileName)
@@ -228,7 +227,7 @@ bool CNcch::ExtractFile()
 		}
 		if (bEncryptResult)
 		{
-			FILE* fp = Fopen(m_pExeFsFileName, "wb");
+			FILE* fp = Fopen(m_sExeFsFileName.c_str(), "wb");
 			if (fp == nullptr)
 			{
 				bResult = false;
@@ -237,7 +236,7 @@ bool CNcch::ExtractFile()
 			{
 				if (m_bVerbose)
 				{
-					printf("save: %s\n", m_pExeFsFileName);
+					printf("save: %s\n", m_sExeFsFileName.c_str());
 				}
 				fwrite(pExeFs, 1, static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1]), fp);
 				fclose(fp);
@@ -248,13 +247,13 @@ bool CNcch::ExtractFile()
 		{
 			delete[] pExeFs;
 			bResult = false;
-			extractFile(m_pExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], true, "exefs");
+			extractFile(m_sExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], true, "exefs");
 		}
 	}
 	else
 	{
 		m_sXorFileName = m_sExeFsXorFileName;
-		if (!extractFile(m_pExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], false, "exefs"))
+		if (!extractFile(m_sExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], false, "exefs"))
 		{
 			bResult = false;
 		}
@@ -943,9 +942,9 @@ bool CNcch::createPlainRegion()
 
 bool CNcch::createExeFs()
 {
-	if (m_pExeFsFileName != nullptr)
+	if (!m_sExeFsFileName.empty())
 	{
-		FILE* fp = Fopen(m_pExeFsFileName, "rb");
+		FILE* fp = Fopen(m_sExeFsFileName.c_str(), "rb");
 		if (fp == nullptr)
 		{
 			clearExeFs();
@@ -953,7 +952,7 @@ bool CNcch::createExeFs()
 		}
 		if (m_bVerbose)
 		{
-			printf("load: %s\n", m_pExeFsFileName);
+			printf("load: %s\n", m_sExeFsFileName.c_str());
 		}
 		Fseek(fp, 0, SEEK_END);
 		n64 nFileSize = Ftell(fp);

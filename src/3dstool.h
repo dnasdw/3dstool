@@ -103,7 +103,7 @@ private:
 	const char* m_pExtendedHeaderFileName;
 	const char* m_pLogoRegionFileName;
 	const char* m_pPlainRegionFileName;
-	const char* m_pExeFsFileName;
+	string m_sExeFsFileName;
 	string m_sRomFsFileName;
 	string m_sExtendedHeaderXorFileName;
 	string m_sExeFsXorFileName;

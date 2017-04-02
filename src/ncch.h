@@ -103,7 +103,7 @@ public:
 	void SetExtendedHeaderFileName(const char* a_pExtendedHeaderFileName);
 	void SetLogoRegionFileName(const char* a_pLogoRegionFileName);
 	void SetPlainRegionFileName(const char* a_pPlainRegionFileName);
-	void SetExeFsFileName(const char* a_pExeFsFileName);
+	void SetExeFsFileName(const string& a_sExeFsFileName);
 	void SetRomFsFileName(const string& a_sRomFsFileName);
 	void SetExtendedHeaderXorFileName(const string& a_sExtendedHeaderXorFileName);
 	void SetExeFsXorFileName(const string& a_sExeFsXorFileName);
@@ -161,7 +161,7 @@ private:
 	const char* m_pExtendedHeaderFileName;
 	const char* m_pLogoRegionFileName;
 	const char* m_pPlainRegionFileName;
-	const char* m_pExeFsFileName;
+	string m_sExeFsFileName;
 	string m_sRomFsFileName;
 	string m_sExtendedHeaderXorFileName;
 	string m_sExeFsXorFileName;
