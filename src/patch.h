@@ -30,7 +30,7 @@ public:
 	void SetFileType(C3dsTool::EFileType a_eFileType);
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
-	void SetOldFileName(const char* a_pOldFileName);
+	void SetOldFileName(const string& a_sOldFileName);
 	void SetNewFileName(const string& a_sNewFileName);
 	void SetPatchFileName(const string& a_sPatchFileName);
 	bool CreatePatchFile();
@@ -58,7 +58,7 @@ private:
 	C3dsTool::EFileType m_eFileType;
 	const char* m_pFileName;
 	bool m_bVerbose;
-	const char* m_pOldFileName;
+	string m_sOldFileName;
 	string m_sNewFileName;
 	string m_sPatchFileName;
 	FILE* m_fpOld;

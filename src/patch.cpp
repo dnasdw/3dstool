@@ -12,7 +12,6 @@ CPatch::CPatch()
 	: m_eFileType(C3dsTool::kFileTypeUnknown)
 	, m_pFileName(nullptr)
 	, m_bVerbose(false)
-	, m_pOldFileName(nullptr)
 	, m_fpOld(nullptr)
 	, m_fpNew(nullptr)
 	, m_fpPatch(nullptr)
@@ -40,9 +39,9 @@ void CPatch::SetVerbose(bool a_bVerbose)
 	m_bVerbose = a_bVerbose;
 }
 
-void CPatch::SetOldFileName(const char* a_pOldFileName)
+void CPatch::SetOldFileName(const string& a_sOldFileName)
 {
-	m_pOldFileName = a_pOldFileName;
+	m_sOldFileName = a_sOldFileName;
 }
 
 void CPatch::SetNewFileName(const string& a_sNewFileName)
@@ -57,7 +56,7 @@ void CPatch::SetPatchFileName(const string& a_sPatchFileName)
 
 bool CPatch::CreatePatchFile()
 {
-	m_fpOld = Fopen(m_pOldFileName, "rb");
+	m_fpOld = Fopen(m_sOldFileName.c_str(), "rb");
 	if (m_fpOld == nullptr)
 	{
 		return false;
@@ -91,23 +90,23 @@ bool CPatch::CreatePatchFile()
 	bool bResult = true;
 	if (m_bVerbose)
 	{
-		printf("INFO: create patch from %s and %s\n", m_pOldFileName, m_sNewFileName.c_str());
+		printf("INFO: create patch from %s and %s\n", m_sOldFileName.c_str(), m_sNewFileName.c_str());
 	}
-	if (m_eFileType == C3dsTool::kFileTypeCci && CNcsd::IsNcsdFile(m_pOldFileName) && CNcsd::IsNcsdFile(m_sNewFileName))
+	if (m_eFileType == C3dsTool::kFileTypeCci && CNcsd::IsNcsdFile(m_sOldFileName) && CNcsd::IsNcsdFile(m_sNewFileName))
 	{
 		if (!createNcsdPatchFile())
 		{
 			bResult = false;
 		}
 	}
-	else if (m_eFileType == C3dsTool::kFileTypeCxi && CNcch::IsCxiFile(m_pOldFileName) && CNcch::IsCxiFile(m_sNewFileName))
+	else if (m_eFileType == C3dsTool::kFileTypeCxi && CNcch::IsCxiFile(m_sOldFileName) && CNcch::IsCxiFile(m_sNewFileName))
 	{
 		if (!createNcchPatchFile(m_eFileType, 0, 0, true))
 		{
 			bResult = false;
 		}
 	}
-	else if (m_eFileType == C3dsTool::kFileTypeCfa && CNcch::IsCfaFile(m_pOldFileName) && CNcch::IsCfaFile(m_sNewFileName))
+	else if (m_eFileType == C3dsTool::kFileTypeCfa && CNcch::IsCfaFile(m_sOldFileName) && CNcch::IsCfaFile(m_sNewFileName))
 	{
 		if (!createNcchPatchFile(m_eFileType, 0, 0, true))
 		{
