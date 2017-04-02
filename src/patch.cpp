@@ -10,7 +10,6 @@ const u8 CPatch::s_uCurrentVersionPatchLevel = 0;
 
 CPatch::CPatch()
 	: m_eFileType(C3dsTool::kFileTypeUnknown)
-	, m_pFileName(nullptr)
 	, m_bVerbose(false)
 	, m_fpOld(nullptr)
 	, m_fpNew(nullptr)
@@ -29,9 +28,9 @@ void CPatch::SetFileType(C3dsTool::EFileType a_eFileType)
 	m_eFileType = a_eFileType;
 }
 
-void CPatch::SetFileName(const char* a_pFileName)
+void CPatch::SetFileName(const string& a_sFileName)
 {
-	m_pFileName = a_pFileName;
+	m_sFileName = a_sFileName;
 }
 
 void CPatch::SetVerbose(bool a_bVerbose)
@@ -138,7 +137,7 @@ bool CPatch::CreatePatchFile()
 
 bool CPatch::ApplyPatchFile()
 {
-	m_fpOld = Fopen(m_pFileName, "rb+");
+	m_fpOld = Fopen(m_sFileName.c_str(), "rb+");
 	if (m_fpOld == nullptr)
 	{
 		return false;
@@ -171,7 +170,7 @@ bool CPatch::ApplyPatchFile()
 	}
 	if (m_bVerbose)
 	{
-		printf("INFO: apply patch to %s\n", m_pFileName);
+		printf("INFO: apply patch to %s\n", m_sFileName.c_str());
 	}
 	bool bResult = false;
 	bool bPatched = false;
@@ -205,7 +204,7 @@ bool CPatch::ApplyPatchFile()
 	{
 		fclose(m_fpPatch);
 		fclose(m_fpOld);
-		printf("ERROR: %s was already patched\n\n", m_pFileName);
+		printf("ERROR: %s was already patched\n\n", m_sFileName.c_str());
 		return true;
 	}
 	Fseek(m_fpPatch, -n3psOffset, SEEK_END);

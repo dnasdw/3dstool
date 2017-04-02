@@ -18,12 +18,12 @@ class CBanner
 public:
 	CBanner();
 	~CBanner();
-	void SetFileName(const char* a_pFileName);
+	void SetFileName(const string& a_sFileName);
 	void SetVerbose(bool a_bVerbose);
 	void SetBannerDirName(const string& a_sBannerDirName);
 	bool ExtractFile();
 	bool CreateFile();
-	static bool IsBannerFile(const char* a_pFileName);
+	static bool IsBannerFile(const string& a_sFileName);
 	static const u32 s_uSignature;
 	static const int s_nCbmdSizeAlignment;
 	static const char* s_pCbmdHeaderFileName;
@@ -36,7 +36,7 @@ private:
 	bool createCbmdHeader();
 	bool createCbmdBody();
 	bool createBcwav();
-	const char* m_pFileName;
+	string m_sFileName;
 	bool m_bVerbose;
 	string m_sBannerDirName;
 	FILE* m_fpBanner;

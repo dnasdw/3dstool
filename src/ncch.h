@@ -92,7 +92,7 @@ public:
 	CNcch();
 	~CNcch();
 	void SetFileType(C3dsTool::EFileType a_eFileType);
-	void SetFileName(const char* a_pFileName);
+	void SetFileName(const string& a_sFileName);
 	void SetVerbose(bool a_bVerbose);
 	void SetHeaderFileName(const string& a_sHeaderFileName);
 	void SetEncryptMode(int a_nEncryptMode);
@@ -150,7 +150,7 @@ private:
 	static const CBigNum s_Slot0x1BKeyX;
 	static const CBigNum s_Slot0x25KeyX;
 	C3dsTool::EFileType m_eFileType;
-	const char* m_pFileName;
+	string m_sFileName;
 	bool m_bVerbose;
 	string m_sHeaderFileName;
 	int m_nEncryptMode;

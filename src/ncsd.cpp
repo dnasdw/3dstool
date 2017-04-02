@@ -5,8 +5,7 @@ const n64 CNcsd::s_nOffsetFirstNcch = 0x4000;
 const int CNcsd::s_nBlockSize = 0x1000;
 
 CNcsd::CNcsd()
-	: m_pFileName(nullptr)
-	, m_bVerbose(false)
+	: m_bVerbose(false)
 	, m_bNotPad(false)
 	, m_nLastPartitionIndex(7)
 	, m_fpNcsd(nullptr)
@@ -23,9 +22,9 @@ CNcsd::~CNcsd()
 {
 }
 
-void CNcsd::SetFileName(const char* a_pFileName)
+void CNcsd::SetFileName(const string& a_sFileName)
 {
-	m_pFileName = a_pFileName;
+	m_sFileName = a_sFileName;
 }
 
 void CNcsd::SetVerbose(bool a_bVerbose)
@@ -71,7 +70,7 @@ n64* CNcsd::GetOffsetAndSize()
 bool CNcsd::ExtractFile()
 {
 	bool bResult = true;
-	m_fpNcsd = Fopen(m_pFileName, "rb");
+	m_fpNcsd = Fopen(m_sFileName.c_str(), "rb");
 	if (m_fpNcsd == nullptr)
 	{
 		return false;
@@ -96,7 +95,7 @@ bool CNcsd::ExtractFile()
 bool CNcsd::CreateFile()
 {
 	bool bResult = true;
-	m_fpNcsd = Fopen(m_pFileName, "wb");
+	m_fpNcsd = Fopen(m_sFileName.c_str(), "wb");
 	if (m_fpNcsd == nullptr)
 	{
 		return false;
@@ -151,7 +150,7 @@ bool CNcsd::CreateFile()
 
 bool CNcsd::TrimFile()
 {
-	m_fpNcsd = Fopen(m_pFileName, "rb+");
+	m_fpNcsd = Fopen(m_sFileName.c_str(), "rb+");
 	if (m_fpNcsd == nullptr)
 	{
 		return false;
@@ -185,7 +184,7 @@ bool CNcsd::TrimFile()
 
 bool CNcsd::PadFile()
 {
-	m_fpNcsd = Fopen(m_pFileName, "rb+");
+	m_fpNcsd = Fopen(m_sFileName.c_str(), "rb+");
 	if (m_fpNcsd == nullptr)
 	{
 		return false;

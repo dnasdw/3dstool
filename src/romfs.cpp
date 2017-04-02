@@ -29,9 +29,9 @@ CRomFs::~CRomFs()
 {
 }
 
-void CRomFs::SetFileName(const char* a_pFileName)
+void CRomFs::SetFileName(const string& a_sFileName)
 {
-	m_sFileName = a_pFileName;
+	m_sFileName = a_sFileName;
 }
 
 void CRomFs::SetVerbose(bool a_bVerbose)

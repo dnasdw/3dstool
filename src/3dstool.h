@@ -80,7 +80,7 @@ private:
 	int sample();
 	EAction m_eAction;
 	EFileType m_eFileType;
-	const char* m_pFileName;
+	string m_sFileName;
 	bool m_bVerbose;
 	string m_sHeaderFileName;
 	int m_nEncryptMode;

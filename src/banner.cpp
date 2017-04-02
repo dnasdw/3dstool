@@ -8,8 +8,7 @@ const char* CBanner::s_pCbmdBodyFileName = "banner%d.bcmdl";
 const char* CBanner::s_pBcwavFileName = "banner.bcwav";
 
 CBanner::CBanner()
-	: m_pFileName(nullptr)
-	, m_bVerbose(false)
+	: m_bVerbose(false)
 	, m_fpBanner(nullptr)
 {
 	memset(&m_CbmdHeader, 0, sizeof(m_CbmdHeader));
@@ -19,9 +18,9 @@ CBanner::~CBanner()
 {
 }
 
-void CBanner::SetFileName(const char* a_pFileName)
+void CBanner::SetFileName(const string& a_sFileName)
 {
-	m_pFileName = a_pFileName;
+	m_sFileName = a_sFileName;
 }
 
 void CBanner::SetVerbose(bool a_bVerbose)
@@ -37,7 +36,7 @@ void CBanner::SetBannerDirName(const string& a_sBannerDirName)
 bool CBanner::ExtractFile()
 {
 	bool bResult = true;
-	m_fpBanner = Fopen(m_pFileName, "rb");
+	m_fpBanner = Fopen(m_sFileName.c_str(), "rb");
 	if (m_fpBanner == nullptr)
 	{
 		return false;
@@ -75,7 +74,7 @@ bool CBanner::ExtractFile()
 bool CBanner::CreateFile()
 {
 	bool bResult = true;
-	m_fpBanner = Fopen(m_pFileName, "wb");
+	m_fpBanner = Fopen(m_sFileName.c_str(), "wb");
 	if (m_fpBanner == nullptr)
 	{
 		return false;
@@ -99,9 +98,9 @@ bool CBanner::CreateFile()
 	return bResult;
 }
 
-bool CBanner::IsBannerFile(const char* a_pFileName)
+bool CBanner::IsBannerFile(const string& a_sFileName)
 {
-	FILE* fp = Fopen(a_pFileName, "rb");
+	FILE* fp = Fopen(a_sFileName.c_str(), "rb");
 	if (fp == nullptr)
 	{
 		return false;

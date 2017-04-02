@@ -69,7 +69,7 @@ public:
 	};
 	CNcsd();
 	~CNcsd();
-	void SetFileName(const char* a_pFileName);
+	void SetFileName(const string& a_sFileName);
 	void SetVerbose(bool a_bVerbose);
 	void SetHeaderFileName(const string& a_sHeaderFileName);
 	void SetNcchFileName(const map<int, string>& a_mNcchFileName);
@@ -95,7 +95,7 @@ private:
 	bool createHeader();
 	bool createNcch(int a_nIndex);
 	void clearNcch(int a_nIndex);
-	const char* m_pFileName;
+	string m_sFileName;
 	bool m_bVerbose;
 	string m_sHeaderFileName;
 	map<int, string> m_mNcchFileName;

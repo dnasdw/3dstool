@@ -14,7 +14,6 @@ const CBigNum CNcch::s_Slot0x25KeyX = "CEE7D8AB30C00DAE850EF5E382AC5AF3";
 
 CNcch::CNcch()
 	: m_eFileType(C3dsTool::kFileTypeUnknown)
-	, m_pFileName(nullptr)
 	, m_bVerbose(false)
 	, m_nEncryptMode(kEncryptModeNone)
 	, m_bNotUpdateExtendedHeaderHash(false)
@@ -40,9 +39,9 @@ void CNcch::SetFileType(C3dsTool::EFileType a_eFileType)
 	m_eFileType = a_eFileType;
 }
 
-void CNcch::SetFileName(const char* a_pFileName)
+void CNcch::SetFileName(const string& a_sFileName)
 {
-	m_pFileName = a_pFileName;
+	m_sFileName = a_sFileName;
 }
 
 void CNcch::SetVerbose(bool a_bVerbose)
@@ -158,7 +157,7 @@ n64* CNcch::GetOffsetAndSize()
 bool CNcch::ExtractFile()
 {
 	bool bResult = true;
-	m_fpNcch = Fopen(m_pFileName, "rb");
+	m_fpNcch = Fopen(m_sFileName.c_str(), "rb");
 	if (m_fpNcch == nullptr)
 	{
 		return false;
@@ -276,7 +275,7 @@ bool CNcch::ExtractFile()
 bool CNcch::CreateFile()
 {
 	bool bResult = true;
-	m_fpNcch = Fopen(m_pFileName, "wb");
+	m_fpNcch = Fopen(m_sFileName.c_str(), "wb");
 	if (m_fpNcch == nullptr)
 	{
 		return false;
@@ -323,7 +322,7 @@ bool CNcch::CreateFile()
 bool CNcch::EncryptFile()
 {
 	bool bResult = true;
-	m_fpNcch = Fopen(m_pFileName, "rb");
+	m_fpNcch = Fopen(m_sFileName.c_str(), "rb");
 	if (m_fpNcch == nullptr)
 	{
 		return false;
@@ -366,7 +365,7 @@ bool CNcch::EncryptFile()
 		}
 		else if (m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] != 0)
 		{
-			m_fpNcch = Fopen(m_pFileName, "rb");
+			m_fpNcch = Fopen(m_sFileName.c_str(), "rb");
 			if (m_fpNcch == nullptr)
 			{
 				bResult = false;
@@ -1179,7 +1178,7 @@ bool CNcch::encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, cons
 	bool bResult = true;
 	if (a_nSize != 0)
 	{
-		bResult = FEncryptAesCtrFile(m_pFileName, m_Key, m_Counter, a_nOffset, a_nSize, false, a_nXorOffset);
+		bResult = FEncryptAesCtrFile(m_sFileName, m_Key, m_Counter, a_nOffset, a_nSize, false, a_nXorOffset);
 	}
 	else if (m_bVerbose)
 	{
@@ -1195,7 +1194,7 @@ bool CNcch::encryptXorFile(const string& a_sXorFileName, n64 a_nOffset, n64 a_nS
 	{
 		if (a_nSize != 0)
 		{
-			bResult = FEncryptXorFile(m_pFileName, a_sXorFileName, a_nOffset, a_nSize, false, a_nXorOffset);
+			bResult = FEncryptXorFile(m_sFileName, a_sXorFileName, a_nOffset, a_nSize, false, a_nXorOffset);
 		}
 		else if (m_bVerbose)
 		{

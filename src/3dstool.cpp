@@ -106,7 +106,6 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 C3dsTool::C3dsTool()
 	: m_eAction(kActionNone)
 	, m_eFileType(kFileTypeUnknown)
-	, m_pFileName(nullptr)
 	, m_bVerbose(false)
 	, m_nEncryptMode(CNcch::kEncryptModeNone)
 	, m_nCompressAlign(1)
@@ -203,7 +202,7 @@ int C3dsTool::CheckOptions()
 		printf("ERROR: nothing to do\n\n");
 		return 1;
 	}
-	if (m_eAction != kActionDiff && m_eAction != kActionSample && m_eAction != kActionHelp && m_pFileName == nullptr)
+	if (m_eAction != kActionDiff && m_eAction != kActionSample && m_eAction != kActionHelp && m_sFileName.empty())
 	{
 		printf("ERROR: no --file option\n\n");
 		return 1;
@@ -358,14 +357,14 @@ int C3dsTool::CheckOptions()
 					printf("ERROR: --xor can not with --extendedheader-xor or --exefs-xor or --romfs-xor\n\n");
 					return 1;
 				}
-				if (CNcch::IsCxiFile(m_pFileName))
+				if (CNcch::IsCxiFile(m_sFileName))
 				{
 					if (m_eFileType != kFileTypeUnknown && m_eFileType != kFileTypeCxi && m_bVerbose)
 					{
 						printf("INFO: ignore --type option\n");
 					}
 				}
-				else if (CNcch::IsCfaFile(m_pFileName))
+				else if (CNcch::IsCfaFile(m_sFileName))
 				{
 					if (m_sRomFsXorFileName.empty())
 					{
@@ -379,7 +378,7 @@ int C3dsTool::CheckOptions()
 				}
 				else
 				{
-					printf("ERROR: %s is not a ncch file\n\n", m_pFileName);
+					printf("ERROR: %s is not a ncch file\n\n", m_sFileName.c_str());
 					return 1;
 				}
 			}
@@ -394,14 +393,14 @@ int C3dsTool::CheckOptions()
 		}
 		if (m_sCompressOutFileName.empty())
 		{
-			m_sCompressOutFileName = m_pFileName;
+			m_sCompressOutFileName = m_sFileName;
 		}
 	}
 	if (m_eAction == kActionTrim || m_eAction == kActionPad)
 	{
-		if (!CNcsd::IsNcsdFile(m_pFileName))
+		if (!CNcsd::IsNcsdFile(m_sFileName))
 		{
-			printf("ERROR: %s is not a ncsd file\n\n", m_pFileName);
+			printf("ERROR: %s is not a ncsd file\n\n", m_sFileName.c_str());
 			return 1;
 		}
 		else if (m_eFileType != kFileTypeUnknown && m_eFileType != kFileTypeCci && m_bVerbose)
@@ -719,7 +718,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_pFileName = a_pArgv[++a_nIndex];
+		m_sFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "verbose") == 0)
 	{
@@ -1135,27 +1134,27 @@ bool C3dsTool::checkFileType()
 {
 	if (m_eFileType == kFileTypeUnknown)
 	{
-		if (CNcsd::IsNcsdFile(m_pFileName))
+		if (CNcsd::IsNcsdFile(m_sFileName))
 		{
 			m_eFileType = kFileTypeCci;
 		}
-		else if (CNcch::IsCxiFile(m_pFileName))
+		else if (CNcch::IsCxiFile(m_sFileName))
 		{
 			m_eFileType = kFileTypeCxi;
 		}
-		else if (CNcch::IsCfaFile(m_pFileName))
+		else if (CNcch::IsCfaFile(m_sFileName))
 		{
 			m_eFileType = kFileTypeCfa;
 		}
-		else if (CExeFs::IsExeFsFile(m_pFileName, 0))
+		else if (CExeFs::IsExeFsFile(m_sFileName, 0))
 		{
 			m_eFileType = kFileTypeExeFs;
 		}
-		else if (CRomFs::IsRomFsFile(m_pFileName))
+		else if (CRomFs::IsRomFsFile(m_sFileName))
 		{
 			m_eFileType = kFileTypeRomFs;
 		}
-		else if (CBanner::IsBannerFile(m_pFileName))
+		else if (CBanner::IsBannerFile(m_sFileName))
 		{
 			m_eFileType = kFileTypeBanner;
 		}
@@ -1171,22 +1170,22 @@ bool C3dsTool::checkFileType()
 		switch (m_eFileType)
 		{
 		case kFileTypeCci:
-			bMatch = CNcsd::IsNcsdFile(m_pFileName);
+			bMatch = CNcsd::IsNcsdFile(m_sFileName);
 			break;
 		case kFileTypeCxi:
-			bMatch = CNcch::IsCxiFile(m_pFileName);
+			bMatch = CNcch::IsCxiFile(m_sFileName);
 			break;
 		case kFileTypeCfa:
-			bMatch = CNcch::IsCfaFile(m_pFileName);
+			bMatch = CNcch::IsCfaFile(m_sFileName);
 			break;
 		case kFileTypeExeFs:
-			bMatch = CExeFs::IsExeFsFile(m_pFileName, 0);
+			bMatch = CExeFs::IsExeFsFile(m_sFileName, 0);
 			break;
 		case kFileTypeRomFs:
-			bMatch = CRomFs::IsRomFsFile(m_pFileName);
+			bMatch = CRomFs::IsRomFsFile(m_sFileName);
 			break;
 		case kFileTypeBanner:
-			bMatch = CBanner::IsBannerFile(m_pFileName);
+			bMatch = CBanner::IsBannerFile(m_sFileName);
 			break;
 		default:
 			break;
@@ -1208,7 +1207,7 @@ bool C3dsTool::extractFile()
 	case kFileTypeCci:
 		{
 			CNcsd ncsd;
-			ncsd.SetFileName(m_pFileName);
+			ncsd.SetFileName(m_sFileName);
 			ncsd.SetVerbose(m_bVerbose);
 			ncsd.SetHeaderFileName(m_sHeaderFileName);
 			ncsd.SetNcchFileName(m_mNcchFileName);
@@ -1218,7 +1217,7 @@ bool C3dsTool::extractFile()
 	case kFileTypeCxi:
 		{
 			CNcch ncch;
-			ncch.SetFileName(m_pFileName);
+			ncch.SetFileName(m_sFileName);
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
@@ -1240,7 +1239,7 @@ bool C3dsTool::extractFile()
 	case kFileTypeCfa:
 		{
 			CNcch ncch;
-			ncch.SetFileName(m_pFileName);
+			ncch.SetFileName(m_sFileName);
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
@@ -1256,7 +1255,7 @@ bool C3dsTool::extractFile()
 	case kFileTypeExeFs:
 		{
 			CExeFs exeFs;
-			exeFs.SetFileName(m_pFileName);
+			exeFs.SetFileName(m_sFileName);
 			exeFs.SetVerbose(m_bVerbose);
 			exeFs.SetHeaderFileName(m_sHeaderFileName);
 			exeFs.SetExeFsDirName(m_sExeFsDirName);
@@ -1267,7 +1266,7 @@ bool C3dsTool::extractFile()
 	case kFileTypeRomFs:
 		{
 			CRomFs romFs;
-			romFs.SetFileName(m_pFileName);
+			romFs.SetFileName(m_sFileName);
 			romFs.SetVerbose(m_bVerbose);
 			romFs.SetRomFsDirName(m_sRomFsDirName);
 			bResult = romFs.ExtractFile();
@@ -1276,7 +1275,7 @@ bool C3dsTool::extractFile()
 	case kFileTypeBanner:
 		{
 			CBanner banner;
-			banner.SetFileName(m_pFileName);
+			banner.SetFileName(m_sFileName);
 			banner.SetVerbose(m_bVerbose);
 			banner.SetBannerDirName(m_sBannerDirName);
 			bResult = banner.ExtractFile();
@@ -1296,7 +1295,7 @@ bool C3dsTool::createFile()
 	case kFileTypeCci:
 		{
 			CNcsd ncsd;
-			ncsd.SetFileName(m_pFileName);
+			ncsd.SetFileName(m_sFileName);
 			ncsd.SetVerbose(m_bVerbose);
 			ncsd.SetHeaderFileName(m_sHeaderFileName);
 			ncsd.SetNcchFileName(m_mNcchFileName);
@@ -1307,7 +1306,7 @@ bool C3dsTool::createFile()
 	case kFileTypeCxi:
 		{
 			CNcch ncch;
-			ncch.SetFileName(m_pFileName);
+			ncch.SetFileName(m_sFileName);
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
@@ -1332,7 +1331,7 @@ bool C3dsTool::createFile()
 	case kFileTypeCfa:
 		{
 			CNcch ncch;
-			ncch.SetFileName(m_pFileName);
+			ncch.SetFileName(m_sFileName);
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
@@ -1350,7 +1349,7 @@ bool C3dsTool::createFile()
 	case kFileTypeExeFs:
 		{
 			CExeFs exeFs;
-			exeFs.SetFileName(m_pFileName);
+			exeFs.SetFileName(m_sFileName);
 			exeFs.SetVerbose(m_bVerbose);
 			exeFs.SetHeaderFileName(m_sHeaderFileName);
 			exeFs.SetExeFsDirName(m_sExeFsDirName);
@@ -1361,7 +1360,7 @@ bool C3dsTool::createFile()
 	case kFileTypeRomFs:
 		{
 			CRomFs romFs;
-			romFs.SetFileName(m_pFileName);
+			romFs.SetFileName(m_sFileName);
 			romFs.SetVerbose(m_bVerbose);
 			romFs.SetRomFsDirName(m_sRomFsDirName);
 			romFs.SetRomFsFileName(m_sRomFsFileName);
@@ -1371,7 +1370,7 @@ bool C3dsTool::createFile()
 	case kFileTypeBanner:
 		{
 			CBanner banner;
-			banner.SetFileName(m_pFileName);
+			banner.SetFileName(m_sFileName);
 			banner.SetVerbose(m_bVerbose);
 			banner.SetBannerDirName(m_sBannerDirName);
 			bResult = banner.CreateFile();
@@ -1388,16 +1387,16 @@ bool C3dsTool::encryptFile()
 	bool bResult = false;
 	if (m_nEncryptMode == CNcch::kEncryptModeAesCtr && m_bCounterValid)
 	{
-		bResult = FEncryptAesCtrFile(m_pFileName, m_Key, m_Counter, 0, 0, true, 0);
+		bResult = FEncryptAesCtrFile(m_sFileName, m_Key, m_Counter, 0, 0, true, 0);
 	}
 	else if (m_nEncryptMode == CNcch::kEncryptModeXor && !m_sXorFileName.empty())
 	{
-		bResult = FEncryptXorFile(m_pFileName, m_sXorFileName, 0, 0, true, 0);
+		bResult = FEncryptXorFile(m_sFileName, m_sXorFileName, 0, 0, true, 0);
 	}
-	else if (CNcch::IsCxiFile(m_pFileName))
+	else if (CNcch::IsCxiFile(m_sFileName))
 	{
 		CNcch ncch;
-		ncch.SetFileName(m_pFileName);
+		ncch.SetFileName(m_sFileName);
 		ncch.SetVerbose(m_bVerbose);
 		ncch.SetEncryptMode(m_nEncryptMode);
 		ncch.SetKey(m_Key);
@@ -1409,10 +1408,10 @@ bool C3dsTool::encryptFile()
 		ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 		bResult = ncch.EncryptFile();
 	}
-	else if (CNcch::IsCfaFile(m_pFileName))
+	else if (CNcch::IsCfaFile(m_sFileName))
 	{
 		CNcch ncch;
-		ncch.SetFileName(m_pFileName);
+		ncch.SetFileName(m_sFileName);
 		ncch.SetVerbose(m_bVerbose);
 		ncch.SetEncryptMode(m_nEncryptMode);
 		ncch.SetKey(m_Key);
@@ -1426,7 +1425,7 @@ bool C3dsTool::encryptFile()
 
 bool C3dsTool::uncompressFile()
 {
-	FILE* fp = Fopen(m_pFileName, "rb");
+	FILE* fp = Fopen(m_sFileName.c_str(), "rb");
 	bool bResult = fp != nullptr;
 	if (bResult)
 	{
@@ -1511,7 +1510,7 @@ bool C3dsTool::uncompressFile()
 
 bool C3dsTool::compressFile()
 {
-	FILE* fp = Fopen(m_pFileName, "rb");
+	FILE* fp = Fopen(m_sFileName.c_str(), "rb");
 	bool bReuslt = fp != nullptr;
 	if (bReuslt)
 	{
@@ -1594,7 +1593,7 @@ bool C3dsTool::compressFile()
 bool C3dsTool::trimFile()
 {
 	CNcsd ncsd;
-	ncsd.SetFileName(m_pFileName);
+	ncsd.SetFileName(m_sFileName);
 	ncsd.SetVerbose(m_bVerbose);
 	ncsd.SetLastPartitionIndex(m_nLastPartitionIndex);
 	bool bResult = ncsd.TrimFile();
@@ -1604,7 +1603,7 @@ bool C3dsTool::trimFile()
 bool C3dsTool::padFile()
 {
 	CNcsd ncsd;
-	ncsd.SetFileName(m_pFileName);
+	ncsd.SetFileName(m_sFileName);
 	ncsd.SetVerbose(m_bVerbose);
 	bool bResult = ncsd.PadFile();
 	return bResult;
@@ -1624,7 +1623,7 @@ bool C3dsTool::diffFile()
 bool C3dsTool::patchFile()
 {
 	CPatch patch;
-	patch.SetFileName(m_pFileName);
+	patch.SetFileName(m_sFileName);
 	patch.SetVerbose(m_bVerbose);
 	patch.SetPatchFileName(m_sPatchFileName);
 	return patch.ApplyPatchFile();

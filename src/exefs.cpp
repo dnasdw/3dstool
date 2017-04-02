@@ -5,8 +5,7 @@
 const int CExeFs::s_nBlockSize = 0x200;
 
 CExeFs::CExeFs()
-	: m_pFileName(nullptr)
-	, m_bVerbose(false)
+	: m_bVerbose(false)
 	, m_bUncompress(false)
 	, m_bCompress(false)
 	, m_fpExeFs(nullptr)
@@ -21,9 +20,9 @@ CExeFs::~CExeFs()
 {
 }
 
-void CExeFs::SetFileName(const char* a_pFileName)
+void CExeFs::SetFileName(const string& a_sFileName)
 {
-	m_pFileName = a_pFileName;
+	m_sFileName = a_sFileName;
 }
 
 void CExeFs::SetVerbose(bool a_bVerbose)
@@ -54,7 +53,7 @@ void CExeFs::SetCompress(bool a_bCompress)
 bool CExeFs::ExtractFile()
 {
 	bool bResult = true;
-	m_fpExeFs = Fopen(m_pFileName, "rb");
+	m_fpExeFs = Fopen(m_sFileName.c_str(), "rb");
 	if (m_fpExeFs == nullptr)
 	{
 		return false;
@@ -83,7 +82,7 @@ bool CExeFs::ExtractFile()
 bool CExeFs::CreateFile()
 {
 	bool bResult = true;
-	m_fpExeFs = Fopen(m_pFileName, "wb");
+	m_fpExeFs = Fopen(m_sFileName.c_str(), "wb");
 	if (m_fpExeFs == nullptr)
 	{
 		return false;
@@ -107,9 +106,9 @@ bool CExeFs::CreateFile()
 	return bResult;
 }
 
-bool CExeFs::IsExeFsFile(const char* a_pFileName, n64 a_nOffset)
+bool CExeFs::IsExeFsFile(const string& a_sFileName, n64 a_nOffset)
 {
-	FILE* fp = Fopen(a_pFileName, "rb");
+	FILE* fp = Fopen(a_sFileName.c_str(), "rb");
 	if (fp == nullptr)
 	{
 		return false;
