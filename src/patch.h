@@ -31,7 +31,7 @@ public:
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
 	void SetOldFileName(const char* a_pOldFileName);
-	void SetNewFileName(const char* a_pNewFileName);
+	void SetNewFileName(const string& a_sNewFileName);
 	void SetPatchFileName(const string& a_sPatchFileName);
 	bool CreatePatchFile();
 	bool ApplyPatchFile();
@@ -59,7 +59,7 @@ private:
 	const char* m_pFileName;
 	bool m_bVerbose;
 	const char* m_pOldFileName;
-	const char* m_pNewFileName;
+	string m_sNewFileName;
 	string m_sPatchFileName;
 	FILE* m_fpOld;
 	FILE* m_fpNew;

@@ -13,7 +13,6 @@ CPatch::CPatch()
 	, m_pFileName(nullptr)
 	, m_bVerbose(false)
 	, m_pOldFileName(nullptr)
-	, m_pNewFileName(nullptr)
 	, m_fpOld(nullptr)
 	, m_fpNew(nullptr)
 	, m_fpPatch(nullptr)
@@ -46,9 +45,9 @@ void CPatch::SetOldFileName(const char* a_pOldFileName)
 	m_pOldFileName = a_pOldFileName;
 }
 
-void CPatch::SetNewFileName(const char* a_pNewFileName)
+void CPatch::SetNewFileName(const string& a_sNewFileName)
 {
-	m_pNewFileName = a_pNewFileName;
+	m_sNewFileName = a_sNewFileName;
 }
 
 void CPatch::SetPatchFileName(const string& a_sPatchFileName)
@@ -66,7 +65,7 @@ bool CPatch::CreatePatchFile()
 	Fseek(m_fpOld, 0, SEEK_END);
 	n64 nFileSizeOld = Ftell(m_fpOld);
 	Fseek(m_fpOld, 0, SEEK_SET);
-	m_fpNew = Fopen(m_pNewFileName, "rb");
+	m_fpNew = Fopen(m_sNewFileName.c_str(), "rb");
 	if (m_fpNew == nullptr)
 	{
 		fclose(m_fpOld);
@@ -92,23 +91,23 @@ bool CPatch::CreatePatchFile()
 	bool bResult = true;
 	if (m_bVerbose)
 	{
-		printf("INFO: create patch from %s and %s\n", m_pOldFileName, m_pNewFileName);
+		printf("INFO: create patch from %s and %s\n", m_pOldFileName, m_sNewFileName.c_str());
 	}
-	if (m_eFileType == C3dsTool::kFileTypeCci && CNcsd::IsNcsdFile(m_pOldFileName) && CNcsd::IsNcsdFile(m_pNewFileName))
+	if (m_eFileType == C3dsTool::kFileTypeCci && CNcsd::IsNcsdFile(m_pOldFileName) && CNcsd::IsNcsdFile(m_sNewFileName))
 	{
 		if (!createNcsdPatchFile())
 		{
 			bResult = false;
 		}
 	}
-	else if (m_eFileType == C3dsTool::kFileTypeCxi && CNcch::IsCxiFile(m_pOldFileName) && CNcch::IsCxiFile(m_pNewFileName))
+	else if (m_eFileType == C3dsTool::kFileTypeCxi && CNcch::IsCxiFile(m_pOldFileName) && CNcch::IsCxiFile(m_sNewFileName))
 	{
 		if (!createNcchPatchFile(m_eFileType, 0, 0, true))
 		{
 			bResult = false;
 		}
 	}
-	else if (m_eFileType == C3dsTool::kFileTypeCfa && CNcch::IsCfaFile(m_pOldFileName) && CNcch::IsCfaFile(m_pNewFileName))
+	else if (m_eFileType == C3dsTool::kFileTypeCfa && CNcch::IsCfaFile(m_pOldFileName) && CNcch::IsCfaFile(m_sNewFileName))
 	{
 		if (!createNcchPatchFile(m_eFileType, 0, 0, true))
 		{

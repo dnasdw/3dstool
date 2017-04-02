@@ -119,8 +119,8 @@ public:
 	bool CreateFile();
 	bool EncryptFile();
 	void Analyze();
-	static bool IsCxiFile(const char* a_pFileName);
-	static bool IsCfaFile(const char* a_pFileName);
+	static bool IsCxiFile(const string& a_sFileName);
+	static bool IsCfaFile(const string& a_sFileName);
 	static const u32 s_uSignature;
 	static const int s_nBlockSize;
 private:

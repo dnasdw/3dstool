@@ -92,7 +92,7 @@ private:
 	const char* m_pCompressOutFileName;
 	n32 m_nYaz0Align;
 	const char* m_pOldFileName;
-	const char* m_pNewFileName;
+	string m_sNewFileName;
 	string m_sPatchFileName;
 	map<int, string> m_mNcchFileName;
 	bool m_bNotPad;

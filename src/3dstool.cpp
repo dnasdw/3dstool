@@ -116,7 +116,6 @@ C3dsTool::C3dsTool()
 	, m_pCompressOutFileName(nullptr)
 	, m_nYaz0Align(0)
 	, m_pOldFileName(nullptr)
-	, m_pNewFileName(nullptr)
 	, m_bNotPad(false)
 	, m_nLastPartitionIndex(7)
 	, m_bNotUpdateExtendedHeaderHash(false)
@@ -421,7 +420,7 @@ int C3dsTool::CheckOptions()
 			printf("ERROR: no --old option\n\n");
 			return 1;
 		}
-		if (m_pNewFileName == nullptr)
+		if (m_sNewFileName.empty())
 		{
 			printf("ERROR: no --new option\n\n");
 			return 1;
@@ -902,7 +901,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_pNewFileName = a_pArgv[++a_nIndex];
+		m_sNewFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "patch-file") == 0)
 	{
@@ -1621,7 +1620,7 @@ bool C3dsTool::diffFile()
 	patch.SetFileType(m_eFileType);
 	patch.SetVerbose(m_bVerbose);
 	patch.SetOldFileName(m_pOldFileName);
-	patch.SetNewFileName(m_pNewFileName);
+	patch.SetNewFileName(m_sNewFileName);
 	patch.SetPatchFileName(m_sPatchFileName);
 	return patch.CreatePatchFile();
 }

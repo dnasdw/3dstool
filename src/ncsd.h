@@ -83,7 +83,7 @@ public:
 	bool TrimFile();
 	bool PadFile();
 	void Analyze();
-	static bool IsNcsdFile(const char* a_pFileName);
+	static bool IsNcsdFile(const string& a_sFileName);
 	static const u32 s_uSignature;
 	static const n64 s_nOffsetFirstNcch;
 	static const int s_nBlockSize;

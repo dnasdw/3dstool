@@ -254,9 +254,9 @@ void CNcsd::Analyze()
 	}
 }
 
-bool CNcsd::IsNcsdFile(const char* a_pFileName)
+bool CNcsd::IsNcsdFile(const string& a_sFileName)
 {
-	FILE* fp = Fopen(a_pFileName, "rb");
+	FILE* fp = Fopen(a_sFileName.c_str(), "rb");
 	if (fp == nullptr)
 	{
 		return false;

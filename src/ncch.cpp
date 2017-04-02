@@ -464,9 +464,9 @@ void CNcch::Analyze()
 	}
 }
 
-bool CNcch::IsCxiFile(const char* a_pFileName)
+bool CNcch::IsCxiFile(const string& a_sFileName)
 {
-	FILE* fp = Fopen(a_pFileName, "rb");
+	FILE* fp = Fopen(a_sFileName.c_str(), "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -490,9 +490,9 @@ bool CNcch::IsCxiFile(const char* a_pFileName)
 	return bIsCxiFile;
 }
 
-bool CNcch::IsCfaFile(const char* a_pFileName)
+bool CNcch::IsCfaFile(const string& a_sFileName)
 {
-	FILE* fp = Fopen(a_pFileName, "rb");
+	FILE* fp = Fopen(a_sFileName.c_str(), "rb");
 	if (fp == nullptr)
 	{
 		return false;
