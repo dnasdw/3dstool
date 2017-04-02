@@ -131,7 +131,6 @@ C3dsTool::C3dsTool()
 	, m_pExtendedHeaderXorFileName(nullptr)
 	, m_pExeFsXorFileName(nullptr)
 	, m_pExeFsTopXorFileName(nullptr)
-	, m_pRomFsXorFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_bCounterValid(false)
@@ -367,7 +366,7 @@ int C3dsTool::CheckOptions()
 		}
 		else if (m_nEncryptMode == CNcch::kEncryptModeXor)
 		{
-			if (m_pExtendedHeaderXorFileName != nullptr || m_pExeFsXorFileName != nullptr || m_pRomFsXorFileName != nullptr)
+			if (m_pExtendedHeaderXorFileName != nullptr || m_pExeFsXorFileName != nullptr || !m_sRomFsXorFileName.empty())
 			{
 				if (m_pXorFileName != nullptr)
 				{
@@ -383,7 +382,7 @@ int C3dsTool::CheckOptions()
 				}
 				else if (CNcch::IsCfaFile(m_pFileName))
 				{
-					if (m_pRomFsXorFileName == nullptr)
+					if (m_sRomFsXorFileName.empty())
 					{
 						printf("ERROR: no --romfs-xor option\n\n");
 						return 1;
@@ -1074,7 +1073,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_pRomFsXorFileName = a_pArgv[++a_nIndex];
+		m_sRomFsXorFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "exefs-top-auto-key") == 0)
 	{
@@ -1102,7 +1101,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		if (m_pRomFsXorFileName != nullptr)
+		if (!m_sRomFsXorFileName.empty())
 		{
 			return kParseOptionReturnOptionConflict;
 		}
@@ -1247,7 +1246,7 @@ bool C3dsTool::extractFile()
 			ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
 			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 			ncch.SetExeFsTopXorFileName(m_pExeFsTopXorFileName);
-			ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
+			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
 			ncch.SetExeFsTopAutoKey(m_bExeFsTopAutoKey);
 			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 			bResult = ncch.ExtractFile();
@@ -1264,7 +1263,7 @@ bool C3dsTool::extractFile()
 			ncch.SetExeFsFileName(m_pExeFsFileName);
 			ncch.SetRomFsFileName(m_pRomFsFileName);
 			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
-			ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
+			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
 			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 			bResult = ncch.ExtractFile();
 		}
@@ -1339,7 +1338,7 @@ bool C3dsTool::createFile()
 			ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
 			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 			ncch.SetExeFsTopXorFileName(m_pExeFsTopXorFileName);
-			ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
+			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
 			ncch.SetExeFsTopAutoKey(m_bExeFsTopAutoKey);
 			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 			bResult = ncch.CreateFile();
@@ -1358,7 +1357,7 @@ bool C3dsTool::createFile()
 			ncch.SetExeFsFileName(m_pExeFsFileName);
 			ncch.SetRomFsFileName(m_pRomFsFileName);
 			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
-			ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
+			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
 			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 			bResult = ncch.CreateFile();
 		}
@@ -1420,7 +1419,7 @@ bool C3dsTool::encryptFile()
 		ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
 		ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
 		ncch.SetExeFsTopXorFileName(m_pExeFsTopXorFileName);
-		ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
+		ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
 		ncch.SetExeFsTopAutoKey(m_bExeFsTopAutoKey);
 		ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 		bResult = ncch.EncryptFile();
@@ -1433,7 +1432,7 @@ bool C3dsTool::encryptFile()
 		ncch.SetEncryptMode(m_nEncryptMode);
 		ncch.SetKey(m_Key);
 		ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
-		ncch.SetRomFsXorFileName(m_pRomFsXorFileName);
+		ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
 		ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 		bResult = ncch.EncryptFile();
 	}

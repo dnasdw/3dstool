@@ -108,7 +108,7 @@ public:
 	void SetExtendedHeaderXorFileName(const char* a_pExtendedHeaderXorFileName);
 	void SetExeFsXorFileName(const char* a_pExeFsXorFileName);
 	void SetExeFsTopXorFileName(const char* a_pExeFsTopXorFileName);
-	void SetRomFsXorFileName(const char* a_pRomFsXorFileName);
+	void SetRomFsXorFileName(const string& a_sRomFsXorFileName);
 	void SetExeFsTopAutoKey(bool a_bExeFsTopAutoKey);
 	void SetRomFsAutoKey(bool a_bRomFsAutoKey);
 	void SetFilePtr(FILE* a_fpNcch);
@@ -144,7 +144,7 @@ private:
 	void clearRomFs();
 	void alignFileSize(n64 a_nAlignment);
 	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
-	bool encryptXorFile(const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
+	bool encryptXorFile(const string& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType);
 	static size_t onDownload(char* a_pData, size_t a_uSize, size_t a_uNmemb, void* a_pUserData);
 	static const CBigNum s_Slot0x18KeyX;
 	static const CBigNum s_Slot0x1BKeyX;
@@ -166,7 +166,7 @@ private:
 	const char* m_pExtendedHeaderXorFileName;
 	const char* m_pExeFsXorFileName;
 	const char* m_pExeFsTopXorFileName;
-	const char* m_pRomFsXorFileName;
+	string m_sRomFsXorFileName;
 	bool m_bExeFsTopAutoKey;
 	bool m_bRomFsAutoKey;
 	FILE* m_fpNcch;
@@ -177,7 +177,7 @@ private:
 	bool m_bAlignToBlockSize;
 	string m_sExtKey;
 	CBigNum m_Counter;
-	const char* m_pXorFileName;
+	string m_sXorFileName;
 };
 
 #endif	// NCCH_H_

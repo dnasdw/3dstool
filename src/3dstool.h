@@ -108,7 +108,7 @@ private:
 	const char* m_pExtendedHeaderXorFileName;
 	const char* m_pExeFsXorFileName;
 	const char* m_pExeFsTopXorFileName;
-	const char* m_pRomFsXorFileName;
+	string m_sRomFsXorFileName;
 	bool m_bExeFsTopAutoKey;
 	bool m_bRomFsAutoKey;
 	string m_sExeFsDirName;

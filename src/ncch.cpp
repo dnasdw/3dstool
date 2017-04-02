@@ -29,14 +29,12 @@ CNcch::CNcch()
 	, m_pExtendedHeaderXorFileName(nullptr)
 	, m_pExeFsXorFileName(nullptr)
 	, m_pExeFsTopXorFileName(nullptr)
-	, m_pRomFsXorFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_fpNcch(nullptr)
 	, m_nOffset(0)
 	, m_nMediaUnitSize(1 << 9)
 	, m_bAlignToBlockSize(false)
-	, m_pXorFileName(nullptr)
 {
 	memset(&m_NcchHeader, 0, sizeof(m_NcchHeader));
 	memset(m_nOffsetAndSize, 0, sizeof(m_nOffsetAndSize));
@@ -131,9 +129,9 @@ void CNcch::SetExeFsTopXorFileName(const char* a_pExeFsTopXorFileName)
 	m_pExeFsTopXorFileName = a_pExeFsTopXorFileName;
 }
 
-void CNcch::SetRomFsXorFileName(const char* a_pRomFsXorFileName)
+void CNcch::SetRomFsXorFileName(const string& a_sRomFsXorFileName)
 {
-	m_pRomFsXorFileName = a_pRomFsXorFileName;
+	m_sRomFsXorFileName = a_sRomFsXorFileName;
 }
 
 void CNcch::SetExeFsTopAutoKey(bool a_bExeFsTopAutoKey)
@@ -183,7 +181,7 @@ bool CNcch::ExtractFile()
 		bResult = false;
 	}
 	calculateCounter(kAesCtrTypeExtendedHeader);
-	m_pXorFileName = m_pExtendedHeaderXorFileName;
+	m_sXorFileName = m_pExtendedHeaderXorFileName;
 	if (!extractFile(m_pExtendedHeaderFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], false, "extendedheader"))
 	{
 		bResult = false;
@@ -259,14 +257,14 @@ bool CNcch::ExtractFile()
 	}
 	else
 	{
-		m_pXorFileName = m_pExeFsXorFileName;
+		m_sXorFileName = m_pExeFsXorFileName;
 		if (!extractFile(m_pExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], false, "exefs"))
 		{
 			bResult = false;
 		}
 	}
 	calculateCounter(kAesCtrTypeRomFs);
-	m_pXorFileName = m_pRomFsXorFileName;
+	m_sXorFileName = m_sRomFsXorFileName;
 	if (m_bRomFsAutoKey)
 	{
 		m_nEncryptMode = kEncryptModeAesCtr;
@@ -431,7 +429,7 @@ bool CNcch::EncryptFile()
 				bResult = false;
 			}
 		}
-		else if (!encryptXorFile(m_pRomFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], 0, "romfs"))
+		else if (!encryptXorFile(m_sRomFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], 0, "romfs"))
 		{
 			bResult = false;
 		}
@@ -761,7 +759,7 @@ bool CNcch::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, boo
 				{
 					printf("save: %s\n", a_pFileName);
 				}
-				if (a_bPlainData || m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_pXorFileName == nullptr))
+				if (a_bPlainData || m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_sXorFileName.empty()))
 				{
 					CopyFile(fp, m_fpNcch, a_nOffset, a_nSize);
 				}
@@ -771,7 +769,7 @@ bool CNcch::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, boo
 				}
 				else if (m_nEncryptMode == kEncryptModeXor)
 				{
-					FEncryptXorCopyFile(fp, m_fpNcch, m_pXorFileName, a_nOffset, a_nSize);
+					FEncryptXorCopyFile(fp, m_fpNcch, m_sXorFileName, a_nOffset, a_nSize);
 				}
 				fclose(fp);
 			}
@@ -1112,7 +1110,7 @@ bool CNcch::createRomFs()
 		m_NcchHeader.Ncch.RomFsOffset = m_NcchHeader.Ncch.ContentSize;
 		m_NcchHeader.Ncch.RomFsSize = static_cast<u32>(Align(nFileSize, m_nMediaUnitSize) / m_nMediaUnitSize);
 		calculateCounter(kAesCtrTypeRomFs);
-		if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_pRomFsXorFileName == nullptr && !m_bRomFsAutoKey))
+		if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_sRomFsXorFileName.empty() && !m_bRomFsAutoKey))
 		{
 			CopyFile(m_fpNcch, fp, 0, nFileSize);
 		}
@@ -1126,7 +1124,7 @@ bool CNcch::createRomFs()
 			{
 				FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key, m_Counter, 0, nFileSize);
 			}
-			else if (!FEncryptXorCopyFile(m_fpNcch, fp, m_pRomFsXorFileName, 0, nFileSize))
+			else if (!FEncryptXorCopyFile(m_fpNcch, fp, m_sRomFsXorFileName, 0, nFileSize))
 			{
 				fclose(fp);
 				clearRomFs();
@@ -1199,14 +1197,14 @@ bool CNcch::encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, cons
 	return bResult;
 }
 
-bool CNcch::encryptXorFile(const char* a_pXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType)
+bool CNcch::encryptXorFile(const string& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const char* a_pType)
 {
 	bool bResult = true;
-	if (a_pXorFileName != nullptr)
+	if (!a_sXorFileName.empty())
 	{
 		if (a_nSize != 0)
 		{
-			bResult = FEncryptXorFile(m_pFileName, a_pXorFileName, a_nOffset, a_nSize, false, a_nXorOffset);
+			bResult = FEncryptXorFile(m_pFileName, a_sXorFileName, a_nOffset, a_nSize, false, a_nXorOffset);
 		}
 		else if (m_bVerbose)
 		{
