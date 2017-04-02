@@ -16,9 +16,7 @@ const int CRomFs::s_nEntryNameAlignment = 4;
 const n64 CRomFs::s_nFileSizeAlignment = 0x10;
 
 CRomFs::CRomFs()
-	: m_pFileName(nullptr)
-	, m_bVerbose(false)
-	, m_pRomFsFileName(nullptr)
+	: m_bVerbose(false)
 	, m_fpRomFs(nullptr)
 	, m_nLevel3Offset(s_nBlockSize)
 	, m_bRemapped(false)
@@ -33,7 +31,7 @@ CRomFs::~CRomFs()
 
 void CRomFs::SetFileName(const char* a_pFileName)
 {
-	m_pFileName = a_pFileName;
+	m_sFileName = a_pFileName;
 }
 
 void CRomFs::SetVerbose(bool a_bVerbose)
@@ -46,15 +44,15 @@ void CRomFs::SetRomFsDirName(const string& a_sRomFsDirName)
 	m_sRomFsDirName = AToU(a_sRomFsDirName);
 }
 
-void CRomFs::SetRomFsFileName(const char* a_pRomFsFileName)
+void CRomFs::SetRomFsFileName(const string& a_sRomFsFileName)
 {
-	m_pRomFsFileName = a_pRomFsFileName;
+	m_sRomFsFileName = a_sRomFsFileName;
 }
 
 bool CRomFs::ExtractFile()
 {
 	bool bResult = true;
-	m_fpRomFs = Fopen(m_pFileName, "rb");
+	m_fpRomFs = Fopen(m_sFileName.c_str(), "rb");
 	if (m_fpRomFs == nullptr)
 	{
 		return false;
@@ -105,7 +103,7 @@ bool CRomFs::CreateFile()
 	createHeader();
 	initLevelBuffer();
 	n64 nFileSize = Align(m_LevelBuffer[2].FilePos + m_RomFsHeader.Level2.Size, s_nBlockSize);
-	m_fpRomFs = Fopen(m_pFileName, "wb");
+	m_fpRomFs = Fopen(m_sFileName.c_str(), "wb");
 	if (m_fpRomFs == nullptr)
 	{
 		return false;
@@ -119,9 +117,9 @@ bool CRomFs::CreateFile()
 	return bResult;
 }
 
-bool CRomFs::IsRomFsFile(const char* a_pFileName)
+bool CRomFs::IsRomFsFile(const string& a_sFileName)
 {
-	FILE* fp = Fopen(a_pFileName, "rb");
+	FILE* fp = Fopen(a_sFileName.c_str(), "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -689,10 +687,10 @@ void CRomFs::createMetaInfo()
 
 void CRomFs::remap()
 {
-	if (m_pRomFsFileName != nullptr)
+	if (!m_sRomFsFileName.empty())
 	{
 		CRomFs romFs;
-		romFs.m_pFileName = m_pRomFsFileName;
+		romFs.m_sFileName = m_sRomFsFileName;
 		romFs.m_sRomFsDirName = m_sRomFsDirName;
 		if (!romFs.travelFile())
 		{
@@ -801,7 +799,7 @@ void CRomFs::remap()
 
 bool CRomFs::travelFile()
 {
-	m_fpRomFs = Fopen(m_pFileName, "rb");
+	m_fpRomFs = Fopen(m_sFileName.c_str(), "rb");
 	if (m_fpRomFs == nullptr)
 	{
 		return false;

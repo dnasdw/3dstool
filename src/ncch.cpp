@@ -25,7 +25,6 @@ CNcch::CNcch()
 	, m_pLogoRegionFileName(nullptr)
 	, m_pPlainRegionFileName(nullptr)
 	, m_pExeFsFileName(nullptr)
-	, m_pRomFsFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_fpNcch(nullptr)
@@ -106,9 +105,9 @@ void CNcch::SetExeFsFileName(const char* a_pExeFsFileName)
 	m_pExeFsFileName = a_pExeFsFileName;
 }
 
-void CNcch::SetRomFsFileName(const char* a_pRomFsFileName)
+void CNcch::SetRomFsFileName(const string& a_sRomFsFileName)
 {
-	m_pRomFsFileName = a_pRomFsFileName;
+	m_sRomFsFileName = a_sRomFsFileName;
 }
 
 void CNcch::SetExtendedHeaderXorFileName(const string& a_sExtendedHeaderXorFileName)
@@ -265,13 +264,13 @@ bool CNcch::ExtractFile()
 	if (m_bRomFsAutoKey)
 	{
 		m_nEncryptMode = kEncryptModeAesCtr;
-		if (!extractFile(m_pRomFsFileName, m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], false, "romfs"))
+		if (!extractFile(m_sRomFsFileName, m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], false, "romfs"))
 		{
 			bResult = false;
 		}
 		m_nEncryptMode = kEncryptModeXor;
 	}
-	else if (!extractFile(m_pRomFsFileName, m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], false, "romfs"))
+	else if (!extractFile(m_sRomFsFileName, m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], false, "romfs"))
 	{
 		bResult = false;
 	}
@@ -738,14 +737,14 @@ void CNcch::calculateCounter(EAesCtrType a_eAesCtrType)
 	}
 }
 
-bool CNcch::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const char* a_pType)
+bool CNcch::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const char* a_pType)
 {
 	bool bResult = true;
-	if (a_pFileName != nullptr)
+	if (!a_sFileName.empty())
 	{
 		if (a_nSize != 0)
 		{
-			FILE* fp = Fopen(a_pFileName, "wb");
+			FILE* fp = Fopen(a_sFileName.c_str(), "wb");
 			if (fp == nullptr)
 			{
 				bResult = false;
@@ -754,7 +753,7 @@ bool CNcch::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, boo
 			{
 				if (m_bVerbose)
 				{
-					printf("save: %s\n", a_pFileName);
+					printf("save: %s\n", a_sFileName.c_str());
 				}
 				if (a_bPlainData || m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_sXorFileName.empty()))
 				{
@@ -773,7 +772,7 @@ bool CNcch::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, boo
 		}
 		else if (m_bVerbose)
 		{
-			printf("INFO: %s is not exists, %s will not be create\n", a_pType, a_pFileName);
+			printf("INFO: %s is not exists, %s will not be create\n", a_pType, a_sFileName.c_str());
 		}
 	}
 	else if (a_nSize != 0 && m_bVerbose)
@@ -1056,10 +1055,10 @@ bool CNcch::createExeFs()
 
 bool CNcch::createRomFs()
 {
-	if (m_pRomFsFileName != nullptr)
+	if (!m_sRomFsFileName.empty())
 	{
-		bool bEncrypted = !CRomFs::IsRomFsFile(m_pRomFsFileName);
-		FILE* fp = Fopen(m_pRomFsFileName, "rb");
+		bool bEncrypted = !CRomFs::IsRomFsFile(m_sRomFsFileName);
+		FILE* fp = Fopen(m_sRomFsFileName.c_str(), "rb");
 		if (fp == nullptr)
 		{
 			clearRomFs();
@@ -1072,7 +1071,7 @@ bool CNcch::createRomFs()
 		}
 		if (m_bVerbose)
 		{
-			printf("load: %s\n", m_pRomFsFileName);
+			printf("load: %s\n", m_sRomFsFileName.c_str());
 		}
 		Fseek(fp, 0, SEEK_END);
 		n64 nFileSize = Ftell(fp);

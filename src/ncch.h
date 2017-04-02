@@ -104,7 +104,7 @@ public:
 	void SetLogoRegionFileName(const char* a_pLogoRegionFileName);
 	void SetPlainRegionFileName(const char* a_pPlainRegionFileName);
 	void SetExeFsFileName(const char* a_pExeFsFileName);
-	void SetRomFsFileName(const char* a_pRomFsFileName);
+	void SetRomFsFileName(const string& a_sRomFsFileName);
 	void SetExtendedHeaderXorFileName(const string& a_sExtendedHeaderXorFileName);
 	void SetExeFsXorFileName(const string& a_sExeFsXorFileName);
 	void SetExeFsTopXorFileName(const string& a_sExeFsTopXorFileName);
@@ -130,7 +130,7 @@ private:
 	void calculateAlignment();
 	void calculateKey();
 	void calculateCounter(EAesCtrType a_eAesCtrType);
-	bool extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const char* a_pType);
+	bool extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const char* a_pType);
 	bool createHeader();
 	bool createExtendedHeader();
 	bool createLogoRegion();
@@ -162,7 +162,7 @@ private:
 	const char* m_pLogoRegionFileName;
 	const char* m_pPlainRegionFileName;
 	const char* m_pExeFsFileName;
-	const char* m_pRomFsFileName;
+	string m_sRomFsFileName;
 	string m_sExtendedHeaderXorFileName;
 	string m_sExeFsXorFileName;
 	string m_sExeFsTopXorFileName;

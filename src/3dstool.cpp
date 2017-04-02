@@ -127,7 +127,6 @@ C3dsTool::C3dsTool()
 	, m_pLogoRegionFileName(nullptr)
 	, m_pPlainRegionFileName(nullptr)
 	, m_pExeFsFileName(nullptr)
-	, m_pRomFsFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_bCounterValid(false)
@@ -249,14 +248,14 @@ int C3dsTool::CheckOptions()
 			}
 			break;
 		case kFileTypeCxi:
-			if (m_pHeaderFileName == nullptr && m_pExtendedHeaderFileName == nullptr && m_pLogoRegionFileName == nullptr && m_pPlainRegionFileName == nullptr && m_pExeFsFileName == nullptr && m_pRomFsFileName == nullptr)
+			if (m_pHeaderFileName == nullptr && m_pExtendedHeaderFileName == nullptr && m_pLogoRegionFileName == nullptr && m_pPlainRegionFileName == nullptr && m_pExeFsFileName == nullptr && m_sRomFsFileName.empty())
 			{
 				printf("ERROR: nothing to be extract\n\n");
 				return 1;
 			}
 			break;
 		case kFileTypeCfa:
-			if (m_pHeaderFileName == nullptr && m_pRomFsFileName == nullptr)
+			if (m_pHeaderFileName == nullptr && m_sRomFsFileName.empty())
 			{
 				printf("ERROR: nothing to be extract\n\n");
 				return 1;
@@ -322,7 +321,7 @@ int C3dsTool::CheckOptions()
 			}
 			else if (m_eFileType == kFileTypeCfa)
 			{
-				if (m_pRomFsFileName == nullptr)
+				if (m_sRomFsFileName.empty())
 				{
 					printf("ERROR: no --romfs option\n\n");
 					return 1;
@@ -998,7 +997,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_pRomFsFileName = a_pArgv[++a_nIndex];
+		m_sRomFsFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "extendedheader-xor") == 0 || strcmp(a_pName, "exh-xor") == 0)
 	{
@@ -1239,7 +1238,7 @@ bool C3dsTool::extractFile()
 			ncch.SetLogoRegionFileName(m_pLogoRegionFileName);
 			ncch.SetPlainRegionFileName(m_pPlainRegionFileName);
 			ncch.SetExeFsFileName(m_pExeFsFileName);
-			ncch.SetRomFsFileName(m_pRomFsFileName);
+			ncch.SetRomFsFileName(m_sRomFsFileName);
 			ncch.SetExtendedHeaderXorFileName(m_sExtendedHeaderXorFileName);
 			ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
 			ncch.SetExeFsTopXorFileName(m_sExeFsTopXorFileName);
@@ -1258,7 +1257,7 @@ bool C3dsTool::extractFile()
 			ncch.SetEncryptMode(m_nEncryptMode);
 			ncch.SetKey(m_Key);
 			ncch.SetExeFsFileName(m_pExeFsFileName);
-			ncch.SetRomFsFileName(m_pRomFsFileName);
+			ncch.SetRomFsFileName(m_sRomFsFileName);
 			ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
 			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
 			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
@@ -1331,7 +1330,7 @@ bool C3dsTool::createFile()
 			ncch.SetLogoRegionFileName(m_pLogoRegionFileName);
 			ncch.SetPlainRegionFileName(m_pPlainRegionFileName);
 			ncch.SetExeFsFileName(m_pExeFsFileName);
-			ncch.SetRomFsFileName(m_pRomFsFileName);
+			ncch.SetRomFsFileName(m_sRomFsFileName);
 			ncch.SetExtendedHeaderXorFileName(m_sExtendedHeaderXorFileName);
 			ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
 			ncch.SetExeFsTopXorFileName(m_sExeFsTopXorFileName);
@@ -1352,7 +1351,7 @@ bool C3dsTool::createFile()
 			ncch.SetNotUpdateExeFsHash(m_bNotUpdateExeFsHash);
 			ncch.SetNotUpdateRomFsHash(m_bNotUpdateRomFsHash);
 			ncch.SetExeFsFileName(m_pExeFsFileName);
-			ncch.SetRomFsFileName(m_pRomFsFileName);
+			ncch.SetRomFsFileName(m_sRomFsFileName);
 			ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
 			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
 			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
@@ -1376,7 +1375,7 @@ bool C3dsTool::createFile()
 			romFs.SetFileName(m_pFileName);
 			romFs.SetVerbose(m_bVerbose);
 			romFs.SetRomFsDirName(m_sRomFsDirName);
-			romFs.SetRomFsFileName(m_pRomFsFileName);
+			romFs.SetRomFsFileName(m_sRomFsFileName);
 			bResult = romFs.CreateFile();
 		}
 		break;
