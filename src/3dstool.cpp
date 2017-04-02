@@ -130,7 +130,6 @@ C3dsTool::C3dsTool()
 	, m_pRomFsFileName(nullptr)
 	, m_pExtendedHeaderXorFileName(nullptr)
 	, m_pExeFsXorFileName(nullptr)
-	, m_pExeFsTopXorFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_bCounterValid(false)
@@ -1053,7 +1052,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_pExeFsTopXorFileName = a_pArgv[++a_nIndex];
+		m_sExeFsTopXorFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "romfs-xor") == 0)
 	{
@@ -1085,7 +1084,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		if (m_pExeFsTopXorFileName != nullptr)
+		if (!m_sExeFsTopXorFileName.empty())
 		{
 			return kParseOptionReturnOptionConflict;
 		}
@@ -1245,7 +1244,7 @@ bool C3dsTool::extractFile()
 			ncch.SetRomFsFileName(m_pRomFsFileName);
 			ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
 			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
-			ncch.SetExeFsTopXorFileName(m_pExeFsTopXorFileName);
+			ncch.SetExeFsTopXorFileName(m_sExeFsTopXorFileName);
 			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
 			ncch.SetExeFsTopAutoKey(m_bExeFsTopAutoKey);
 			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
@@ -1337,7 +1336,7 @@ bool C3dsTool::createFile()
 			ncch.SetRomFsFileName(m_pRomFsFileName);
 			ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
 			ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
-			ncch.SetExeFsTopXorFileName(m_pExeFsTopXorFileName);
+			ncch.SetExeFsTopXorFileName(m_sExeFsTopXorFileName);
 			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
 			ncch.SetExeFsTopAutoKey(m_bExeFsTopAutoKey);
 			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
@@ -1418,7 +1417,7 @@ bool C3dsTool::encryptFile()
 		ncch.SetKey(m_Key);
 		ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
 		ncch.SetExeFsXorFileName(m_pExeFsXorFileName);
-		ncch.SetExeFsTopXorFileName(m_pExeFsTopXorFileName);
+		ncch.SetExeFsTopXorFileName(m_sExeFsTopXorFileName);
 		ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
 		ncch.SetExeFsTopAutoKey(m_bExeFsTopAutoKey);
 		ncch.SetRomFsAutoKey(m_bRomFsAutoKey);

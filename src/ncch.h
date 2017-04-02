@@ -107,7 +107,7 @@ public:
 	void SetRomFsFileName(const char* a_pRomFsFileName);
 	void SetExtendedHeaderXorFileName(const char* a_pExtendedHeaderXorFileName);
 	void SetExeFsXorFileName(const char* a_pExeFsXorFileName);
-	void SetExeFsTopXorFileName(const char* a_pExeFsTopXorFileName);
+	void SetExeFsTopXorFileName(const string& a_sExeFsTopXorFileName);
 	void SetRomFsXorFileName(const string& a_sRomFsXorFileName);
 	void SetExeFsTopAutoKey(bool a_bExeFsTopAutoKey);
 	void SetRomFsAutoKey(bool a_bRomFsAutoKey);
@@ -165,7 +165,7 @@ private:
 	const char* m_pRomFsFileName;
 	const char* m_pExtendedHeaderXorFileName;
 	const char* m_pExeFsXorFileName;
-	const char* m_pExeFsTopXorFileName;
+	string m_sExeFsTopXorFileName;
 	string m_sRomFsXorFileName;
 	bool m_bExeFsTopAutoKey;
 	bool m_bRomFsAutoKey;

@@ -14,6 +14,6 @@ bool FEncryptXorFile(const string& a_sDataFileName, const string& a_sXorFileName
 
 void FEncryptAesCtrData(void* a_pData, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataSize, n64 a_nXorOffset);
 
-bool FEncryptXorData(void* a_pData, const char* a_pXorFileName, n64 a_nDataSize, n64 a_nXorOffset);
+bool FEncryptXorData(void* a_pData, const string& a_sXorFileName, n64 a_nDataSize, n64 a_nXorOffset);
 
 #endif	// _3DSCRYPT_H_

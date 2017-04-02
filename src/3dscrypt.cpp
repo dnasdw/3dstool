@@ -233,9 +233,9 @@ void FEncryptAesCtrData(void* a_pData, const CBigNum& a_Key, const CBigNum& a_Co
 	}
 }
 
-bool FEncryptXorData(void* a_pData, const char* a_pXorFileName, n64 a_nDataSize, n64 a_nXorOffset)
+bool FEncryptXorData(void* a_pData, const string& a_sXorFileName, n64 a_nDataSize, n64 a_nXorOffset)
 {
-	FILE* fpXor = Fopen(a_pXorFileName, "rb");
+	FILE* fpXor = Fopen(a_sXorFileName.c_str(), "rb");
 	if (fpXor == nullptr)
 	{
 		return false;
@@ -245,7 +245,7 @@ bool FEncryptXorData(void* a_pData, const char* a_pXorFileName, n64 a_nDataSize,
 	if (nXorSize - a_nXorOffset < a_nDataSize)
 	{
 		fclose(fpXor);
-		printf("ERROR: xor file %s size less than data size\n\n", a_pXorFileName);
+		printf("ERROR: xor file %s size less than data size\n\n", a_sXorFileName.c_str());
 		return false;
 	}
 	Fseek(fpXor, a_nXorOffset, SEEK_SET);
