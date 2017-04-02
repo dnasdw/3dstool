@@ -16,7 +16,6 @@ CNcch::CNcch()
 	: m_eFileType(C3dsTool::kFileTypeUnknown)
 	, m_pFileName(nullptr)
 	, m_bVerbose(false)
-	, m_pHeaderFileName(nullptr)
 	, m_nEncryptMode(kEncryptModeNone)
 	, m_bNotUpdateExtendedHeaderHash(false)
 	, m_bNotUpdateExeFsHash(false)
@@ -51,9 +50,9 @@ void CNcch::SetVerbose(bool a_bVerbose)
 	m_bVerbose = a_bVerbose;
 }
 
-void CNcch::SetHeaderFileName(const char* a_pHeaderFileName)
+void CNcch::SetHeaderFileName(const string& a_sHeaderFileName)
 {
-	m_pHeaderFileName = a_pHeaderFileName;
+	m_sHeaderFileName = a_sHeaderFileName;
 }
 
 void CNcch::SetEncryptMode(int a_nEncryptMode)
@@ -168,7 +167,7 @@ bool CNcch::ExtractFile()
 	calculateMediaUnitSize();
 	calculateOffsetSize();
 	calculateKey();
-	if (!extractFile(m_pHeaderFileName, 0, sizeof(m_NcchHeader), true, "ncch header"))
+	if (!extractFile(m_sHeaderFileName, 0, sizeof(m_NcchHeader), true, "ncch header"))
 	{
 		bResult = false;
 	}
@@ -780,14 +779,14 @@ bool CNcch::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, b
 
 bool CNcch::createHeader()
 {
-	FILE* fp = Fopen(m_pHeaderFileName, "rb");
+	FILE* fp = Fopen(m_sHeaderFileName.c_str(), "rb");
 	if (fp == nullptr)
 	{
 		return false;
 	}
 	if (m_bVerbose)
 	{
-		printf("load: %s\n", m_pHeaderFileName);
+		printf("load: %s\n", m_sHeaderFileName.c_str());
 	}
 	Fseek(fp, 0, SEEK_END);
 	n64 nFileSize = Ftell(fp);

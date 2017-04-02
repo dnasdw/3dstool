@@ -82,7 +82,7 @@ private:
 	EFileType m_eFileType;
 	const char* m_pFileName;
 	bool m_bVerbose;
-	const char* m_pHeaderFileName;
+	string m_sHeaderFileName;
 	int m_nEncryptMode;
 	CBigNum m_Key;
 	CBigNum m_Counter;

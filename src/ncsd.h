@@ -71,7 +71,7 @@ public:
 	~CNcsd();
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
-	void SetHeaderFileName(const char* a_pHeaderFileName);
+	void SetHeaderFileName(const string& a_sHeaderFileName);
 	void SetNcchFileName(const map<int, string>& a_mNcchFileName);
 	void SetNotPad(bool a_bNotPad);
 	void SetLastPartitionIndex(int a_nLastPartitionIndex);
@@ -97,7 +97,7 @@ private:
 	void clearNcch(int a_nIndex);
 	const char* m_pFileName;
 	bool m_bVerbose;
-	const char* m_pHeaderFileName;
+	string m_sHeaderFileName;
 	map<int, string> m_mNcchFileName;
 	bool m_bNotPad;
 	int m_nLastPartitionIndex;

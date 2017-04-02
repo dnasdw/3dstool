@@ -108,7 +108,6 @@ C3dsTool::C3dsTool()
 	, m_eFileType(kFileTypeUnknown)
 	, m_pFileName(nullptr)
 	, m_bVerbose(false)
-	, m_pHeaderFileName(nullptr)
 	, m_nEncryptMode(CNcch::kEncryptModeNone)
 	, m_nCompressAlign(1)
 	, m_eCompressType(kCompressTypeNone)
@@ -219,7 +218,7 @@ int C3dsTool::CheckOptions()
 		switch (m_eFileType)
 		{
 		case kFileTypeCci:
-			if (m_pHeaderFileName == nullptr)
+			if (m_sHeaderFileName.empty())
 			{
 				bool bEmpty = true;
 				for (int i = 0; i < 8; i++)
@@ -238,21 +237,21 @@ int C3dsTool::CheckOptions()
 			}
 			break;
 		case kFileTypeCxi:
-			if (m_pHeaderFileName == nullptr && m_sExtendedHeaderFileName.empty() && m_sLogoRegionFileName.empty() && m_sPlainRegionFileName.empty() && m_sExeFsFileName.empty() && m_sRomFsFileName.empty())
+			if (m_sHeaderFileName.empty() && m_sExtendedHeaderFileName.empty() && m_sLogoRegionFileName.empty() && m_sPlainRegionFileName.empty() && m_sExeFsFileName.empty() && m_sRomFsFileName.empty())
 			{
 				printf("ERROR: nothing to be extract\n\n");
 				return 1;
 			}
 			break;
 		case kFileTypeCfa:
-			if (m_pHeaderFileName == nullptr && m_sRomFsFileName.empty())
+			if (m_sHeaderFileName.empty() && m_sRomFsFileName.empty())
 			{
 				printf("ERROR: nothing to be extract\n\n");
 				return 1;
 			}
 			break;
 		case kFileTypeExeFs:
-			if (m_pHeaderFileName == nullptr && m_sExeFsDirName.empty())
+			if (m_sHeaderFileName.empty() && m_sExeFsDirName.empty())
 			{
 				printf("ERROR: nothing to be extract\n\n");
 				return 1;
@@ -287,7 +286,7 @@ int C3dsTool::CheckOptions()
 		{
 			if (m_eFileType == kFileTypeCci || m_eFileType == kFileTypeCxi || m_eFileType == kFileTypeCfa || m_eFileType == kFileTypeExeFs)
 			{
-				if (m_pHeaderFileName == nullptr)
+				if (m_sHeaderFileName.empty())
 				{
 					printf("ERROR: no --header option\n\n");
 					return 1;
@@ -732,7 +731,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_pHeaderFileName = a_pArgv[++a_nIndex];
+		m_sHeaderFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "key0") == 0)
 	{
@@ -1211,7 +1210,7 @@ bool C3dsTool::extractFile()
 			CNcsd ncsd;
 			ncsd.SetFileName(m_pFileName);
 			ncsd.SetVerbose(m_bVerbose);
-			ncsd.SetHeaderFileName(m_pHeaderFileName);
+			ncsd.SetHeaderFileName(m_sHeaderFileName);
 			ncsd.SetNcchFileName(m_mNcchFileName);
 			bResult = ncsd.ExtractFile();
 		}
@@ -1221,7 +1220,7 @@ bool C3dsTool::extractFile()
 			CNcch ncch;
 			ncch.SetFileName(m_pFileName);
 			ncch.SetVerbose(m_bVerbose);
-			ncch.SetHeaderFileName(m_pHeaderFileName);
+			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
 			ncch.SetKey(m_Key);
 			ncch.SetExtendedHeaderFileName(m_sExtendedHeaderFileName);
@@ -1243,7 +1242,7 @@ bool C3dsTool::extractFile()
 			CNcch ncch;
 			ncch.SetFileName(m_pFileName);
 			ncch.SetVerbose(m_bVerbose);
-			ncch.SetHeaderFileName(m_pHeaderFileName);
+			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
 			ncch.SetKey(m_Key);
 			ncch.SetExeFsFileName(m_sExeFsFileName);
@@ -1259,7 +1258,7 @@ bool C3dsTool::extractFile()
 			CExeFs exeFs;
 			exeFs.SetFileName(m_pFileName);
 			exeFs.SetVerbose(m_bVerbose);
-			exeFs.SetHeaderFileName(m_pHeaderFileName);
+			exeFs.SetHeaderFileName(m_sHeaderFileName);
 			exeFs.SetExeFsDirName(m_sExeFsDirName);
 			exeFs.SetUncompress(m_bUncompress);
 			bResult = exeFs.ExtractFile();
@@ -1299,7 +1298,7 @@ bool C3dsTool::createFile()
 			CNcsd ncsd;
 			ncsd.SetFileName(m_pFileName);
 			ncsd.SetVerbose(m_bVerbose);
-			ncsd.SetHeaderFileName(m_pHeaderFileName);
+			ncsd.SetHeaderFileName(m_sHeaderFileName);
 			ncsd.SetNcchFileName(m_mNcchFileName);
 			ncsd.SetNotPad(m_bNotPad);
 			bResult = ncsd.CreateFile();
@@ -1310,7 +1309,7 @@ bool C3dsTool::createFile()
 			CNcch ncch;
 			ncch.SetFileName(m_pFileName);
 			ncch.SetVerbose(m_bVerbose);
-			ncch.SetHeaderFileName(m_pHeaderFileName);
+			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
 			ncch.SetKey(m_Key);
 			ncch.SetNotUpdateExtendedHeaderHash(m_bNotUpdateExtendedHeaderHash);
@@ -1335,7 +1334,7 @@ bool C3dsTool::createFile()
 			CNcch ncch;
 			ncch.SetFileName(m_pFileName);
 			ncch.SetVerbose(m_bVerbose);
-			ncch.SetHeaderFileName(m_pHeaderFileName);
+			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
 			ncch.SetKey(m_Key);
 			ncch.SetNotUpdateExeFsHash(m_bNotUpdateExeFsHash);
@@ -1353,7 +1352,7 @@ bool C3dsTool::createFile()
 			CExeFs exeFs;
 			exeFs.SetFileName(m_pFileName);
 			exeFs.SetVerbose(m_bVerbose);
-			exeFs.SetHeaderFileName(m_pHeaderFileName);
+			exeFs.SetHeaderFileName(m_sHeaderFileName);
 			exeFs.SetExeFsDirName(m_sExeFsDirName);
 			exeFs.SetCompress(m_bCompress);
 			bResult = exeFs.CreateFile();

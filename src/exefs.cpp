@@ -7,7 +7,6 @@ const int CExeFs::s_nBlockSize = 0x200;
 CExeFs::CExeFs()
 	: m_pFileName(nullptr)
 	, m_bVerbose(false)
-	, m_pHeaderFileName(nullptr)
 	, m_bUncompress(false)
 	, m_bCompress(false)
 	, m_fpExeFs(nullptr)
@@ -32,9 +31,9 @@ void CExeFs::SetVerbose(bool a_bVerbose)
 	m_bVerbose = a_bVerbose;
 }
 
-void CExeFs::SetHeaderFileName(const char* a_pHeaderFileName)
+void CExeFs::SetHeaderFileName(const string& a_sHeaderFileName)
 {
-	m_pHeaderFileName = a_pHeaderFileName;
+	m_sHeaderFileName = a_sHeaderFileName;
 }
 
 void CExeFs::SetExeFsDirName(const string& a_sExeFsDirName)
@@ -130,9 +129,9 @@ bool CExeFs::IsExeFsSuperBlock(const ExeFsSuperBlock& a_ExeFsSuperBlock)
 bool CExeFs::extractHeader()
 {
 	bool bResult = true;
-	if (m_pHeaderFileName != nullptr)
+	if (!m_sHeaderFileName.empty())
 	{
-		FILE* fp = Fopen(m_pHeaderFileName, "wb");
+		FILE* fp = Fopen(m_sHeaderFileName.c_str(), "wb");
 		if (fp == nullptr)
 		{
 			bResult = false;
@@ -141,7 +140,7 @@ bool CExeFs::extractHeader()
 		{
 			if (m_bVerbose)
 			{
-				printf("save: %s\n", m_pHeaderFileName);
+				printf("save: %s\n", m_sHeaderFileName.c_str());
 			}
 			fwrite(&m_ExeFsSuperBlock, sizeof(m_ExeFsSuperBlock), 1, fp);
 			fclose(fp);
@@ -234,7 +233,7 @@ bool CExeFs::extractSection(int a_nIndex)
 
 bool CExeFs::createHeader()
 {
-	FILE* fp = Fopen(m_pHeaderFileName, "rb");
+	FILE* fp = Fopen(m_sHeaderFileName.c_str(), "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -249,7 +248,7 @@ bool CExeFs::createHeader()
 	}
 	if (m_bVerbose)
 	{
-		printf("load: %s\n", m_pHeaderFileName);
+		printf("load: %s\n", m_sHeaderFileName.c_str());
 	}
 	Fseek(fp, 0, SEEK_SET);
 	fread(&m_ExeFsSuperBlock, sizeof(m_ExeFsSuperBlock), 1, fp);

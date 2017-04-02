@@ -7,7 +7,6 @@ const int CNcsd::s_nBlockSize = 0x1000;
 CNcsd::CNcsd()
 	: m_pFileName(nullptr)
 	, m_bVerbose(false)
-	, m_pHeaderFileName(nullptr)
 	, m_bNotPad(false)
 	, m_nLastPartitionIndex(7)
 	, m_fpNcsd(nullptr)
@@ -34,9 +33,9 @@ void CNcsd::SetVerbose(bool a_bVerbose)
 	m_bVerbose = a_bVerbose;
 }
 
-void CNcsd::SetHeaderFileName(const char* a_pHeaderFileName)
+void CNcsd::SetHeaderFileName(const string& a_sHeaderFileName)
 {
-	m_pHeaderFileName = a_pHeaderFileName;
+	m_sHeaderFileName = a_sHeaderFileName;
 }
 
 void CNcsd::SetNcchFileName(const map<int, string>& a_mNcchFileName)
@@ -79,7 +78,7 @@ bool CNcsd::ExtractFile()
 	}
 	fread(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
 	calculateMediaUnitSize();
-	if (!extractFile(m_pHeaderFileName, 0, s_nOffsetFirstNcch, "ncsd header", -1, false))
+	if (!extractFile(m_sHeaderFileName, 0, s_nOffsetFirstNcch, "ncsd header", -1, false))
 	{
 		bResult = false;
 	}
@@ -354,7 +353,7 @@ bool CNcsd::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, c
 
 bool CNcsd::createHeader()
 {
-	FILE* fp = Fopen(m_pHeaderFileName, "rb");
+	FILE* fp = Fopen(m_sHeaderFileName.c_str(), "rb");
 	if (fp == nullptr)
 	{
 		return false;
@@ -369,7 +368,7 @@ bool CNcsd::createHeader()
 	}
 	if (m_bVerbose)
 	{
-		printf("load: %s\n", m_pHeaderFileName);
+		printf("load: %s\n", m_sHeaderFileName.c_str());
 	}
 	Fseek(fp, 0, SEEK_SET);
 	fread(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, fp);

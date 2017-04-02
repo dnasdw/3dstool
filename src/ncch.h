@@ -94,7 +94,7 @@ public:
 	void SetFileType(C3dsTool::EFileType a_eFileType);
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
-	void SetHeaderFileName(const char* a_pHeaderFileName);
+	void SetHeaderFileName(const string& a_sHeaderFileName);
 	void SetEncryptMode(int a_nEncryptMode);
 	void SetKey(const CBigNum& a_Key);
 	void SetNotUpdateExtendedHeaderHash(bool a_bNotUpdateExtendedHeaderHash);
@@ -152,7 +152,7 @@ private:
 	C3dsTool::EFileType m_eFileType;
 	const char* m_pFileName;
 	bool m_bVerbose;
-	const char* m_pHeaderFileName;
+	string m_sHeaderFileName;
 	int m_nEncryptMode;
 	CBigNum m_Key;
 	bool m_bNotUpdateExtendedHeaderHash;

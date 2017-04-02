@@ -26,7 +26,7 @@ public:
 	~CExeFs();
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
-	void SetHeaderFileName(const char* a_pHeaderFileName);
+	void SetHeaderFileName(const string& a_sHeaderFileName);
 	void SetExeFsDirName(const string& a_sExeFsDirName);
 	void SetUncompress(bool a_bUncompress);
 	void SetCompress(bool a_bCompress);
@@ -43,7 +43,7 @@ private:
 	void clearSection(int a_nIndex);
 	const char* m_pFileName;
 	bool m_bVerbose;
-	const char* m_pHeaderFileName;
+	string m_sHeaderFileName;
 	UString m_sExeFsDirName;
 	bool m_bUncompress;
 	bool m_bCompress;
