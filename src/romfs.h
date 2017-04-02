@@ -121,7 +121,7 @@ public:
 	~CRomFs();
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
-	void SetRomFsDirName(const char* a_pRomFsDirName);
+	void SetRomFsDirName(const string& a_sRomFsDirName);
 	void SetRomFsFileName(const char* a_pRomFsFileName);
 	bool ExtractFile();
 	bool CreateFile();

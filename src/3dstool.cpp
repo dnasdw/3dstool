@@ -135,7 +135,6 @@ C3dsTool::C3dsTool()
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_pExeFsDirName(nullptr)
-	, m_pRomFsDirName(nullptr)
 	, m_bCounterValid(false)
 	, m_bUncompress(false)
 	, m_bCompress(false)
@@ -276,7 +275,7 @@ int C3dsTool::CheckOptions()
 			}
 			break;
 		case kFileTypeRomFs:
-			if (m_pRomFsDirName == nullptr)
+			if (m_sRomFsDirName.empty())
 			{
 				printf("ERROR: no --romfs-dir option\n\n");
 				return 1;
@@ -344,7 +343,7 @@ int C3dsTool::CheckOptions()
 			}
 			else if (m_eFileType == kFileTypeRomFs)
 			{
-				if (m_pRomFsDirName == nullptr)
+				if (m_sRomFsDirName.empty())
 				{
 					printf("ERROR: no --romfs-dir option\n\n");
 					return 1;
@@ -1124,7 +1123,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_pRomFsDirName = a_pArgv[++a_nIndex];
+		m_sRomFsDirName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "banner-dir") == 0)
 	{
@@ -1287,7 +1286,7 @@ bool C3dsTool::extractFile()
 			CRomFs romFs;
 			romFs.SetFileName(m_pFileName);
 			romFs.SetVerbose(m_bVerbose);
-			romFs.SetRomFsDirName(m_pRomFsDirName);
+			romFs.SetRomFsDirName(m_sRomFsDirName);
 			bResult = romFs.ExtractFile();
 		}
 		break;
@@ -1381,7 +1380,7 @@ bool C3dsTool::createFile()
 			CRomFs romFs;
 			romFs.SetFileName(m_pFileName);
 			romFs.SetVerbose(m_bVerbose);
-			romFs.SetRomFsDirName(m_pRomFsDirName);
+			romFs.SetRomFsDirName(m_sRomFsDirName);
 			romFs.SetRomFsFileName(m_pRomFsFileName);
 			bResult = romFs.CreateFile();
 		}
