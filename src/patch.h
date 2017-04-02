@@ -32,7 +32,7 @@ public:
 	void SetVerbose(bool a_bVerbose);
 	void SetOldFileName(const char* a_pOldFileName);
 	void SetNewFileName(const char* a_pNewFileName);
-	void SetPatchFileName(const char* a_pPatchFileName);
+	void SetPatchFileName(const string& a_sPatchFileName);
 	bool CreatePatchFile();
 	bool ApplyPatchFile();
 	static const u32 s_uSignature;
@@ -60,7 +60,7 @@ private:
 	bool m_bVerbose;
 	const char* m_pOldFileName;
 	const char* m_pNewFileName;
-	const char* m_pPatchFileName;
+	string m_sPatchFileName;
 	FILE* m_fpOld;
 	FILE* m_fpNew;
 	FILE* m_fpPatch;

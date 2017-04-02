@@ -93,7 +93,7 @@ private:
 	n32 m_nYaz0Align;
 	const char* m_pOldFileName;
 	const char* m_pNewFileName;
-	const char* m_pPatchFileName;
+	string m_sPatchFileName;
 	map<int, string> m_mNcchFileName;
 	bool m_bNotPad;
 	int m_nLastPartitionIndex;

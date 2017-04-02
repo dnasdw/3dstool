@@ -117,7 +117,6 @@ C3dsTool::C3dsTool()
 	, m_nYaz0Align(0)
 	, m_pOldFileName(nullptr)
 	, m_pNewFileName(nullptr)
-	, m_pPatchFileName(nullptr)
 	, m_bNotPad(false)
 	, m_nLastPartitionIndex(7)
 	, m_bNotUpdateExtendedHeaderHash(false)
@@ -427,7 +426,7 @@ int C3dsTool::CheckOptions()
 			printf("ERROR: no --new option\n\n");
 			return 1;
 		}
-		if (m_pPatchFileName == nullptr)
+		if (m_sPatchFileName.empty())
 		{
 			printf("ERROR: no --patch-file option\n\n");
 			return 1;
@@ -435,7 +434,7 @@ int C3dsTool::CheckOptions()
 	}
 	if (m_eAction == kActionPatch)
 	{
-		if (m_pPatchFileName == nullptr)
+		if (m_sPatchFileName.empty())
 		{
 			printf("ERROR: no --patch-file option\n\n");
 			return 1;
@@ -911,7 +910,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_pPatchFileName = a_pArgv[++a_nIndex];
+		m_sPatchFileName = a_pArgv[++a_nIndex];
 	}
 	else if (StartWith<string>(a_pName, "partition"))
 	{
@@ -1623,7 +1622,7 @@ bool C3dsTool::diffFile()
 	patch.SetVerbose(m_bVerbose);
 	patch.SetOldFileName(m_pOldFileName);
 	patch.SetNewFileName(m_pNewFileName);
-	patch.SetPatchFileName(m_pPatchFileName);
+	patch.SetPatchFileName(m_sPatchFileName);
 	return patch.CreatePatchFile();
 }
 
@@ -1632,7 +1631,7 @@ bool C3dsTool::patchFile()
 	CPatch patch;
 	patch.SetFileName(m_pFileName);
 	patch.SetVerbose(m_bVerbose);
-	patch.SetPatchFileName(m_pPatchFileName);
+	patch.SetPatchFileName(m_sPatchFileName);
 	return patch.ApplyPatchFile();
 }
 

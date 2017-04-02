@@ -14,7 +14,6 @@ CPatch::CPatch()
 	, m_bVerbose(false)
 	, m_pOldFileName(nullptr)
 	, m_pNewFileName(nullptr)
-	, m_pPatchFileName(nullptr)
 	, m_fpOld(nullptr)
 	, m_fpNew(nullptr)
 	, m_fpPatch(nullptr)
@@ -52,9 +51,9 @@ void CPatch::SetNewFileName(const char* a_pNewFileName)
 	m_pNewFileName = a_pNewFileName;
 }
 
-void CPatch::SetPatchFileName(const char* a_pPatchFileName)
+void CPatch::SetPatchFileName(const string& a_sPatchFileName)
 {
-	m_pPatchFileName = a_pPatchFileName;
+	m_sPatchFileName = a_sPatchFileName;
 }
 
 bool CPatch::CreatePatchFile()
@@ -76,7 +75,7 @@ bool CPatch::CreatePatchFile()
 	Fseek(m_fpNew, 0, SEEK_END);
 	n64 nFileSizeNew = Ftell(m_fpNew);
 	Fseek(m_fpNew, 0, SEEK_SET);
-	m_fpPatch = Fopen(m_pPatchFileName, "wb");
+	m_fpPatch = Fopen(m_sPatchFileName.c_str(), "wb");
 	if (m_fpPatch == nullptr)
 	{
 		fclose(m_fpNew);
@@ -146,7 +145,7 @@ bool CPatch::ApplyPatchFile()
 	{
 		return false;
 	}
-	m_fpPatch = Fopen(m_pPatchFileName, "rb");
+	m_fpPatch = Fopen(m_sPatchFileName.c_str(), "rb");
 	if (m_fpPatch == nullptr)
 	{
 		fclose(m_fpOld);
@@ -161,7 +160,7 @@ bool CPatch::ApplyPatchFile()
 	{
 		fclose(m_fpPatch);
 		fclose(m_fpOld);
-		printf("ERROR: not support patch file %s\n\n", m_pPatchFileName);
+		printf("ERROR: not support patch file %s\n\n", m_sPatchFileName.c_str());
 		return false;
 	}
 	calculateVersion();
