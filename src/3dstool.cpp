@@ -125,7 +125,6 @@ C3dsTool::C3dsTool()
 	, m_bNotUpdateRomFsHash(false)
 	, m_pExtendedHeaderFileName(nullptr)
 	, m_pLogoRegionFileName(nullptr)
-	, m_pPlainRegionFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_bCounterValid(false)
@@ -247,7 +246,7 @@ int C3dsTool::CheckOptions()
 			}
 			break;
 		case kFileTypeCxi:
-			if (m_pHeaderFileName == nullptr && m_pExtendedHeaderFileName == nullptr && m_pLogoRegionFileName == nullptr && m_pPlainRegionFileName == nullptr && m_sExeFsFileName.empty() && m_sRomFsFileName.empty())
+			if (m_pHeaderFileName == nullptr && m_pExtendedHeaderFileName == nullptr && m_pLogoRegionFileName == nullptr && m_sPlainRegionFileName.empty() && m_sExeFsFileName.empty() && m_sRomFsFileName.empty())
 			{
 				printf("ERROR: nothing to be extract\n\n");
 				return 1;
@@ -980,7 +979,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_pPlainRegionFileName = a_pArgv[++a_nIndex];
+		m_sPlainRegionFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "exefs") == 0)
 	{
@@ -1235,7 +1234,7 @@ bool C3dsTool::extractFile()
 			ncch.SetKey(m_Key);
 			ncch.SetExtendedHeaderFileName(m_pExtendedHeaderFileName);
 			ncch.SetLogoRegionFileName(m_pLogoRegionFileName);
-			ncch.SetPlainRegionFileName(m_pPlainRegionFileName);
+			ncch.SetPlainRegionFileName(m_sPlainRegionFileName);
 			ncch.SetExeFsFileName(m_sExeFsFileName);
 			ncch.SetRomFsFileName(m_sRomFsFileName);
 			ncch.SetExtendedHeaderXorFileName(m_sExtendedHeaderXorFileName);
@@ -1327,7 +1326,7 @@ bool C3dsTool::createFile()
 			ncch.SetNotUpdateRomFsHash(m_bNotUpdateRomFsHash);
 			ncch.SetExtendedHeaderFileName(m_pExtendedHeaderFileName);
 			ncch.SetLogoRegionFileName(m_pLogoRegionFileName);
-			ncch.SetPlainRegionFileName(m_pPlainRegionFileName);
+			ncch.SetPlainRegionFileName(m_sPlainRegionFileName);
 			ncch.SetExeFsFileName(m_sExeFsFileName);
 			ncch.SetRomFsFileName(m_sRomFsFileName);
 			ncch.SetExtendedHeaderXorFileName(m_sExtendedHeaderXorFileName);

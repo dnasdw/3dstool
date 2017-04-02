@@ -102,7 +102,7 @@ public:
 	void SetNotUpdateRomFsHash(bool a_bNotUpdateRomFsHash);
 	void SetExtendedHeaderFileName(const char* a_pExtendedHeaderFileName);
 	void SetLogoRegionFileName(const char* a_pLogoRegionFileName);
-	void SetPlainRegionFileName(const char* a_pPlainRegionFileName);
+	void SetPlainRegionFileName(const string& a_sPlainRegionFileName);
 	void SetExeFsFileName(const string& a_sExeFsFileName);
 	void SetRomFsFileName(const string& a_sRomFsFileName);
 	void SetExtendedHeaderXorFileName(const string& a_sExtendedHeaderXorFileName);
@@ -160,7 +160,7 @@ private:
 	bool m_bNotUpdateRomFsHash;
 	const char* m_pExtendedHeaderFileName;
 	const char* m_pLogoRegionFileName;
-	const char* m_pPlainRegionFileName;
+	string m_sPlainRegionFileName;
 	string m_sExeFsFileName;
 	string m_sRomFsFileName;
 	string m_sExtendedHeaderXorFileName;

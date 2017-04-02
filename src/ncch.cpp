@@ -23,7 +23,6 @@ CNcch::CNcch()
 	, m_bNotUpdateRomFsHash(false)
 	, m_pExtendedHeaderFileName(nullptr)
 	, m_pLogoRegionFileName(nullptr)
-	, m_pPlainRegionFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_fpNcch(nullptr)
@@ -94,9 +93,9 @@ void CNcch::SetLogoRegionFileName(const char* a_pLogoRegionFileName)
 	m_pLogoRegionFileName = a_pLogoRegionFileName;
 }
 
-void CNcch::SetPlainRegionFileName(const char* a_pPlainRegionFileName)
+void CNcch::SetPlainRegionFileName(const string& a_sPlainRegionFileName)
 {
-	m_pPlainRegionFileName = a_pPlainRegionFileName;
+	m_sPlainRegionFileName = a_sPlainRegionFileName;
 }
 
 void CNcch::SetExeFsFileName(const string& a_sExeFsFileName)
@@ -185,7 +184,7 @@ bool CNcch::ExtractFile()
 	{
 		bResult = false;
 	}
-	if (!extractFile(m_pPlainRegionFileName, m_nOffsetAndSize[kOffsetSizeIndexPlainRegion * 2], m_nOffsetAndSize[kOffsetSizeIndexPlainRegion * 2 + 1], true, "plainregion"))
+	if (!extractFile(m_sPlainRegionFileName, m_nOffsetAndSize[kOffsetSizeIndexPlainRegion * 2], m_nOffsetAndSize[kOffsetSizeIndexPlainRegion * 2 + 1], true, "plainregion"))
 	{
 		bResult = false;
 	}
@@ -910,9 +909,9 @@ bool CNcch::createLogoRegion()
 
 bool CNcch::createPlainRegion()
 {
-	if (m_pPlainRegionFileName != nullptr)
+	if (!m_sPlainRegionFileName.empty())
 	{
-		FILE* fp = Fopen(m_pPlainRegionFileName, "rb");
+		FILE* fp = Fopen(m_sPlainRegionFileName.c_str(), "rb");
 		if (fp == nullptr)
 		{
 			clearPlainRegion();
@@ -920,7 +919,7 @@ bool CNcch::createPlainRegion()
 		}
 		if (m_bVerbose)
 		{
-			printf("load: %s\n", m_pPlainRegionFileName);
+			printf("load: %s\n", m_sPlainRegionFileName.c_str());
 		}
 		Fseek(fp, 0, SEEK_END);
 		n64 nFileSize = Ftell(fp);

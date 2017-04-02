@@ -102,7 +102,7 @@ private:
 	bool m_bNotUpdateRomFsHash;
 	const char* m_pExtendedHeaderFileName;
 	const char* m_pLogoRegionFileName;
-	const char* m_pPlainRegionFileName;
+	string m_sPlainRegionFileName;
 	string m_sExeFsFileName;
 	string m_sRomFsFileName;
 	string m_sExtendedHeaderXorFileName;
