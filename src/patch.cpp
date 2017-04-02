@@ -48,9 +48,9 @@ void CPatch::SetNewFileName(const string& a_sNewFileName)
 	m_sNewFileName = a_sNewFileName;
 }
 
-void CPatch::SetPatchFileName(const string& a_sPatchFileName)
+void CPatch::SetPatchFileName(const UString& a_sPatchFileName)
 {
-	m_sPatchFileName = AToU(a_sPatchFileName);
+	m_sPatchFileName = a_sPatchFileName;
 }
 
 bool CPatch::CreatePatchFile()

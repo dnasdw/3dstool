@@ -93,7 +93,7 @@ private:
 	n32 m_nYaz0Align;
 	string m_sOldFileName;
 	string m_sNewFileName;
-	string m_sPatchFileName;
+	UString m_sPatchFileName;
 	map<int, string> m_mNcchFileName;
 	bool m_bNotPad;
 	int m_nLastPartitionIndex;

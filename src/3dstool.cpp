@@ -904,7 +904,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sPatchFileName = a_pArgv[++a_nIndex];
+		m_sPatchFileName = AToU(a_pArgv[++a_nIndex]);
 	}
 	else if (StartWith<string>(a_pName, "partition"))
 	{
