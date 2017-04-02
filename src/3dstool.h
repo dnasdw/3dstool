@@ -94,7 +94,7 @@ private:
 	const char* m_pOldFileName;
 	const char* m_pNewFileName;
 	const char* m_pPatchFileName;
-	const char* m_pNcchFileName[8];
+	map<int, string> m_mNcchFileName;
 	bool m_bNotPad;
 	int m_nLastPartitionIndex;
 	bool m_bNotUpdateExtendedHeaderHash;

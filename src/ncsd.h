@@ -72,7 +72,7 @@ public:
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
 	void SetHeaderFileName(const char* a_pHeaderFileName);
-	void SetNcchFileName(const char* a_pNcchFileName[]);
+	void SetNcchFileName(const map<int, string>& a_mNcchFileName);
 	void SetNotPad(bool a_bNotPad);
 	void SetLastPartitionIndex(int a_nLastPartitionIndex);
 	void SetFilePtr(FILE* a_fpNcsd);
@@ -91,14 +91,14 @@ private:
 	void calculateMediaUnitSize();
 	void calculateAlignment();
 	void calculateValidSize();
-	bool extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType, int a_nTypeId, bool bMediaUnitSize);
+	bool extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType, int a_nTypeId, bool bMediaUnitSize);
 	bool createHeader();
 	bool createNcch(int a_nIndex);
 	void clearNcch(int a_nIndex);
 	const char* m_pFileName;
 	bool m_bVerbose;
 	const char* m_pHeaderFileName;
-	const char* m_pNcchFileName[8];
+	map<int, string> m_mNcchFileName;
 	bool m_bNotPad;
 	int m_nLastPartitionIndex;
 	FILE* m_fpNcsd;

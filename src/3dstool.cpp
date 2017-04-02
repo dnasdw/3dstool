@@ -129,7 +129,6 @@ C3dsTool::C3dsTool()
 	, m_bUncompress(false)
 	, m_bCompress(false)
 {
-	memset(m_pNcchFileName, 0, sizeof(m_pNcchFileName));
 }
 
 C3dsTool::~C3dsTool()
@@ -227,16 +226,16 @@ int C3dsTool::CheckOptions()
 		case kFileTypeCci:
 			if (m_pHeaderFileName == nullptr)
 			{
-				bool bNull = true;
+				bool bEmpty = true;
 				for (int i = 0; i < 8; i++)
 				{
-					if (m_pNcchFileName[i] != nullptr)
+					if (!m_mNcchFileName[i].empty())
 					{
-						bNull = false;
+						bEmpty = false;
 						break;
 					}
 				}
-				if (bNull)
+				if (bEmpty)
 				{
 					printf("ERROR: nothing to be extract\n\n");
 					return 1;
@@ -301,7 +300,7 @@ int C3dsTool::CheckOptions()
 			}
 			if (m_eFileType == kFileTypeCci)
 			{
-				if (m_pNcchFileName[0] == nullptr)
+				if (m_mNcchFileName[0].empty())
 				{
 					printf("ERROR: no --partition0 option\n\n");
 					return 1;
@@ -925,7 +924,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_pNcchFileName[nIndex] = a_pArgv[++a_nIndex];
+		m_mNcchFileName[nIndex] = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "not-pad") == 0)
 	{
@@ -1218,7 +1217,7 @@ bool C3dsTool::extractFile()
 			ncsd.SetFileName(m_pFileName);
 			ncsd.SetVerbose(m_bVerbose);
 			ncsd.SetHeaderFileName(m_pHeaderFileName);
-			ncsd.SetNcchFileName(m_pNcchFileName);
+			ncsd.SetNcchFileName(m_mNcchFileName);
 			bResult = ncsd.ExtractFile();
 		}
 		break;
@@ -1306,7 +1305,7 @@ bool C3dsTool::createFile()
 			ncsd.SetFileName(m_pFileName);
 			ncsd.SetVerbose(m_bVerbose);
 			ncsd.SetHeaderFileName(m_pHeaderFileName);
-			ncsd.SetNcchFileName(m_pNcchFileName);
+			ncsd.SetNcchFileName(m_mNcchFileName);
 			ncsd.SetNotPad(m_bNotPad);
 			bResult = ncsd.CreateFile();
 		}

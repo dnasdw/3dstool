@@ -15,7 +15,6 @@ CNcsd::CNcsd()
 	, m_bAlignToBlockSize(false)
 	, m_nValidSize(0)
 {
-	memset(m_pNcchFileName, 0, sizeof(m_pNcchFileName));
 	memset(&m_NcsdHeader, 0, sizeof(m_NcsdHeader));
 	memset(&m_CardInfo, 0, sizeof(m_CardInfo));
 	memset(m_nOffsetAndSize, 0, sizeof(m_nOffsetAndSize));
@@ -40,9 +39,9 @@ void CNcsd::SetHeaderFileName(const char* a_pHeaderFileName)
 	m_pHeaderFileName = a_pHeaderFileName;
 }
 
-void CNcsd::SetNcchFileName(const char* a_pNcchFileName[])
+void CNcsd::SetNcchFileName(const map<int, string>& a_mNcchFileName)
 {
-	memcpy(m_pNcchFileName, a_pNcchFileName, sizeof(m_pNcchFileName));
+	m_mNcchFileName.insert(a_mNcchFileName.begin(), a_mNcchFileName.end());
 }
 
 void CNcsd::SetNotPad(bool a_bNotPad)
@@ -86,7 +85,7 @@ bool CNcsd::ExtractFile()
 	}
 	for (int i = 0; i < 8; i++)
 	{
-		if (!extractFile(m_pNcchFileName[i], m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2], m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2 + 1], "partition", i, true))
+		if (!extractFile(m_mNcchFileName[i], m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2], m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2 + 1], "partition", i, true))
 		{
 			bResult = false;
 		}
@@ -300,14 +299,14 @@ void CNcsd::calculateValidSize()
 	m_nValidSize *= m_nMediaUnitSize;
 }
 
-bool CNcsd::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType, int a_nTypeId, bool bMediaUnitSize)
+bool CNcsd::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, const char* a_pType, int a_nTypeId, bool bMediaUnitSize)
 {
 	bool bResult = true;
-	if (a_pFileName != nullptr)
+	if (!a_sFileName.empty())
 	{
 		if (a_nOffset != 0 || a_nSize != 0)
 		{
-			FILE* fp = Fopen(a_pFileName, "wb");
+			FILE* fp = Fopen(a_sFileName.c_str(), "wb");
 			if (fp == nullptr)
 			{
 				bResult = false;
@@ -316,7 +315,7 @@ bool CNcsd::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, con
 			{
 				if (m_bVerbose)
 				{
-					printf("save: %s\n", a_pFileName);
+					printf("save: %s\n", a_sFileName.c_str());
 				}
 				if (bMediaUnitSize)
 				{
@@ -331,11 +330,11 @@ bool CNcsd::extractFile(const char* a_pFileName, n64 a_nOffset, n64 a_nSize, con
 		{
 			if (a_nTypeId < 0 || a_nTypeId >= 8)
 			{
-				printf("INFO: %s is not exists, %s will not be create\n", a_pType, a_pFileName);
+				printf("INFO: %s is not exists, %s will not be create\n", a_pType, a_sFileName.c_str());
 			}
 			else
 			{
-				printf("INFO: %s %d is not exists, %s will not be create\n", a_pType, a_nTypeId, a_pFileName);
+				printf("INFO: %s %d is not exists, %s will not be create\n", a_pType, a_nTypeId, a_sFileName.c_str());
 			}
 		}
 	}
@@ -384,9 +383,9 @@ bool CNcsd::createHeader()
 
 bool CNcsd::createNcch(int a_nIndex)
 {
-	if (m_pNcchFileName[a_nIndex] != nullptr)
+	if (!m_mNcchFileName[a_nIndex].empty())
 	{
-		FILE* fp = Fopen(m_pNcchFileName[a_nIndex], "rb");
+		FILE* fp = Fopen(m_mNcchFileName[a_nIndex].c_str(), "rb");
 		if (fp == nullptr)
 		{
 			clearNcch(a_nIndex);
@@ -394,7 +393,7 @@ bool CNcsd::createNcch(int a_nIndex)
 		}
 		if (m_bVerbose)
 		{
-			printf("load: %s\n", m_pNcchFileName[a_nIndex]);
+			printf("load: %s\n", m_mNcchFileName[a_nIndex].c_str());
 		}
 		Fseek(fp, 0, SEEK_END);
 		n64 nFileSize = Ftell(fp);
