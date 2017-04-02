@@ -123,7 +123,6 @@ C3dsTool::C3dsTool()
 	, m_bNotUpdateExtendedHeaderHash(false)
 	, m_bNotUpdateExeFsHash(false)
 	, m_bNotUpdateRomFsHash(false)
-	, m_pExtendedHeaderFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_bCounterValid(false)
@@ -245,7 +244,7 @@ int C3dsTool::CheckOptions()
 			}
 			break;
 		case kFileTypeCxi:
-			if (m_pHeaderFileName == nullptr && m_pExtendedHeaderFileName == nullptr && m_sLogoRegionFileName.empty() && m_sPlainRegionFileName.empty() && m_sExeFsFileName.empty() && m_sRomFsFileName.empty())
+			if (m_pHeaderFileName == nullptr && m_sExtendedHeaderFileName.empty() && m_sLogoRegionFileName.empty() && m_sPlainRegionFileName.empty() && m_sExeFsFileName.empty() && m_sRomFsFileName.empty())
 			{
 				printf("ERROR: nothing to be extract\n\n");
 				return 1;
@@ -310,7 +309,7 @@ int C3dsTool::CheckOptions()
 			}
 			else if (m_eFileType == kFileTypeCxi)
 			{
-				if (m_pExtendedHeaderFileName == nullptr || m_sExeFsFileName.empty())
+				if (m_sExtendedHeaderFileName.empty() || m_sExeFsFileName.empty())
 				{
 					printf("ERROR: no --extendedheader or --exefs option\n\n");
 					return 1;
@@ -962,7 +961,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_pExtendedHeaderFileName = a_pArgv[++a_nIndex];
+		m_sExtendedHeaderFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "logoregion") == 0 || strcmp(a_pName, "logo") == 0)
 	{
@@ -1231,7 +1230,7 @@ bool C3dsTool::extractFile()
 			ncch.SetHeaderFileName(m_pHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
 			ncch.SetKey(m_Key);
-			ncch.SetExtendedHeaderFileName(m_pExtendedHeaderFileName);
+			ncch.SetExtendedHeaderFileName(m_sExtendedHeaderFileName);
 			ncch.SetLogoRegionFileName(m_sLogoRegionFileName);
 			ncch.SetPlainRegionFileName(m_sPlainRegionFileName);
 			ncch.SetExeFsFileName(m_sExeFsFileName);
@@ -1323,7 +1322,7 @@ bool C3dsTool::createFile()
 			ncch.SetNotUpdateExtendedHeaderHash(m_bNotUpdateExtendedHeaderHash);
 			ncch.SetNotUpdateExeFsHash(m_bNotUpdateExeFsHash);
 			ncch.SetNotUpdateRomFsHash(m_bNotUpdateRomFsHash);
-			ncch.SetExtendedHeaderFileName(m_pExtendedHeaderFileName);
+			ncch.SetExtendedHeaderFileName(m_sExtendedHeaderFileName);
 			ncch.SetLogoRegionFileName(m_sLogoRegionFileName);
 			ncch.SetPlainRegionFileName(m_sPlainRegionFileName);
 			ncch.SetExeFsFileName(m_sExeFsFileName);

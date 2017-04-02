@@ -100,7 +100,7 @@ private:
 	bool m_bNotUpdateExtendedHeaderHash;
 	bool m_bNotUpdateExeFsHash;
 	bool m_bNotUpdateRomFsHash;
-	const char* m_pExtendedHeaderFileName;
+	string m_sExtendedHeaderFileName;
 	string m_sLogoRegionFileName;
 	string m_sPlainRegionFileName;
 	string m_sExeFsFileName;

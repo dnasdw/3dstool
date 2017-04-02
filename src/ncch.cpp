@@ -21,7 +21,6 @@ CNcch::CNcch()
 	, m_bNotUpdateExtendedHeaderHash(false)
 	, m_bNotUpdateExeFsHash(false)
 	, m_bNotUpdateRomFsHash(false)
-	, m_pExtendedHeaderFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_fpNcch(nullptr)
@@ -82,9 +81,9 @@ void CNcch::SetNotUpdateRomFsHash(bool a_bNotUpdateRomFsHash)
 	m_bNotUpdateRomFsHash = a_bNotUpdateRomFsHash;
 }
 
-void CNcch::SetExtendedHeaderFileName(const char* a_pExtendedHeaderFileName)
+void CNcch::SetExtendedHeaderFileName(const string& a_sExtendedHeaderFileName)
 {
-	m_pExtendedHeaderFileName = a_pExtendedHeaderFileName;
+	m_sExtendedHeaderFileName = a_sExtendedHeaderFileName;
 }
 
 void CNcch::SetLogoRegionFileName(const string& a_sLogoRegionFileName)
@@ -175,7 +174,7 @@ bool CNcch::ExtractFile()
 	}
 	calculateCounter(kAesCtrTypeExtendedHeader);
 	m_sXorFileName = m_sExtendedHeaderXorFileName;
-	if (!extractFile(m_pExtendedHeaderFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], false, "extendedheader"))
+	if (!extractFile(m_sExtendedHeaderFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], false, "extendedheader"))
 	{
 		bResult = false;
 	}
@@ -817,9 +816,9 @@ bool CNcch::createHeader()
 
 bool CNcch::createExtendedHeader()
 {
-	if (m_pExtendedHeaderFileName != nullptr)
+	if (!m_sExtendedHeaderFileName.empty())
 	{
-		FILE* fp = Fopen(m_pExtendedHeaderFileName, "rb");
+		FILE* fp = Fopen(m_sExtendedHeaderFileName.c_str(), "rb");
 		if (fp == nullptr)
 		{
 			clearExtendedHeader();
@@ -827,7 +826,7 @@ bool CNcch::createExtendedHeader()
 		}
 		if (m_bVerbose)
 		{
-			printf("load: %s\n", m_pExtendedHeaderFileName);
+			printf("load: %s\n", m_sExtendedHeaderFileName.c_str());
 		}
 		Fseek(fp, 0, SEEK_END);
 		n64 nFileSize = Ftell(fp);
