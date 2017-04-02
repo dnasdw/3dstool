@@ -127,21 +127,21 @@ const UString& UGetModuleFileName()
 	u32 uPathSize = uMaxPath;
 	if (_NSGetExecutablePath(szPath, &uPathSize) != 0)
 	{
-		printf("ERROR: _NSGetExecutablePath error\n\n");
 		sFileName.clear();
+		printf("ERROR: _NSGetExecutablePath error\n\n");
 	}
 	else if (realpath(szPath, &*sFileName.begin()) == nullptr)
 	{
-		printf("ERROR: realpath error\n\n");
 		sFileName.clear();
+		printf("ERROR: realpath error\n\n");
 	}
 	uSize = strlen(sFileName.c_str());
 #elif SDW_PLATFORM == SDW_PLATFORM_LINUX || SDW_PLATFORM == SDW_PLATFORM_CYGWIN
 	ssize_t nCount = readlink("/proc/self/exe", &*sFileName.begin(), uMaxPath);
 	if (nCount == -1)
 	{
-		printf("ERROR: readlink /proc/self/exe error\n\n");
 		sFileName.clear();
+		printf("ERROR: readlink /proc/self/exe error\n\n");
 	}
 	else
 	{

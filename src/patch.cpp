@@ -159,17 +159,17 @@ bool CPatch::ApplyPatchFile()
 	fread(&m_3dsPatchSystemHeader, sizeof(m_3dsPatchSystemHeader), 1, m_fpPatch);
 	if (m_3dsPatchSystemHeader.Signature != s_uSignature)
 	{
-		printf("ERROR: not support patch file %s\n\n", m_pPatchFileName);
 		fclose(m_fpPatch);
 		fclose(m_fpOld);
+		printf("ERROR: not support patch file %s\n\n", m_pPatchFileName);
 		return false;
 	}
 	calculateVersion();
 	if (m_uVersion > 0x010000)
 	{
-		printf("ERROR: not support patch file version %" PRIu8 ".%" PRIu8 ".%" PRIu8 "\n\n", m_3dsPatchSystemHeader.VersionMajor, m_3dsPatchSystemHeader.VersionMinor, m_3dsPatchSystemHeader.VersionPatchLevel);
 		fclose(m_fpPatch);
 		fclose(m_fpOld);
+		printf("ERROR: not support patch file version %" PRIu8 ".%" PRIu8 ".%" PRIu8 "\n\n", m_3dsPatchSystemHeader.VersionMajor, m_3dsPatchSystemHeader.VersionMinor, m_3dsPatchSystemHeader.VersionPatchLevel);
 		return false;
 	}
 	if (m_bVerbose)
@@ -206,9 +206,9 @@ bool CPatch::ApplyPatchFile()
 	}
 	if (bPatched)
 	{
-		printf("ERROR: %s was already patched\n\n", m_pFileName);
 		fclose(m_fpPatch);
 		fclose(m_fpOld);
+		printf("ERROR: %s was already patched\n\n", m_pFileName);
 		return true;
 	}
 	Fseek(m_fpPatch, -n3psOffset, SEEK_END);
