@@ -22,7 +22,6 @@ CNcch::CNcch()
 	, m_bNotUpdateExeFsHash(false)
 	, m_bNotUpdateRomFsHash(false)
 	, m_pExtendedHeaderFileName(nullptr)
-	, m_pLogoRegionFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_fpNcch(nullptr)
@@ -88,9 +87,9 @@ void CNcch::SetExtendedHeaderFileName(const char* a_pExtendedHeaderFileName)
 	m_pExtendedHeaderFileName = a_pExtendedHeaderFileName;
 }
 
-void CNcch::SetLogoRegionFileName(const char* a_pLogoRegionFileName)
+void CNcch::SetLogoRegionFileName(const string& a_sLogoRegionFileName)
 {
-	m_pLogoRegionFileName = a_pLogoRegionFileName;
+	m_sLogoRegionFileName = a_sLogoRegionFileName;
 }
 
 void CNcch::SetPlainRegionFileName(const string& a_sPlainRegionFileName)
@@ -180,7 +179,7 @@ bool CNcch::ExtractFile()
 	{
 		bResult = false;
 	}
-	if (!extractFile(m_pLogoRegionFileName, m_nOffsetAndSize[kOffsetSizeIndexLogoRegion * 2], m_nOffsetAndSize[kOffsetSizeIndexLogoRegion * 2 + 1], true, "logoregion"))
+	if (!extractFile(m_sLogoRegionFileName, m_nOffsetAndSize[kOffsetSizeIndexLogoRegion * 2], m_nOffsetAndSize[kOffsetSizeIndexLogoRegion * 2 + 1], true, "logoregion"))
 	{
 		bResult = false;
 	}
@@ -874,9 +873,9 @@ bool CNcch::createExtendedHeader()
 
 bool CNcch::createLogoRegion()
 {
-	if (m_pLogoRegionFileName != nullptr)
+	if (!m_sLogoRegionFileName.empty())
 	{
-		FILE* fp = Fopen(m_pLogoRegionFileName, "rb");
+		FILE* fp = Fopen(m_sLogoRegionFileName.c_str(), "rb");
 		if (fp == nullptr)
 		{
 			clearLogoRegion();
@@ -884,7 +883,7 @@ bool CNcch::createLogoRegion()
 		}
 		if (m_bVerbose)
 		{
-			printf("load: %s\n", m_pLogoRegionFileName);
+			printf("load: %s\n", m_sLogoRegionFileName.c_str());
 		}
 		Fseek(fp, 0, SEEK_END);
 		n64 nFileSize = Ftell(fp);
