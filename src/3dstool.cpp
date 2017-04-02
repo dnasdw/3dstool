@@ -140,7 +140,6 @@ C3dsTool::C3dsTool()
 	, m_bCounterValid(false)
 	, m_bUncompress(false)
 	, m_bCompress(false)
-	, m_pMessage(nullptr)
 {
 	memset(m_pNcchFileName, 0, sizeof(m_pNcchFileName));
 }
@@ -183,7 +182,7 @@ int C3dsTool::ParseOptions(int a_nArgc, char* a_pArgv[])
 					printf("ERROR: no argument\n\n");
 					return 1;
 				case kParseOptionReturnUnknownArgument:
-					printf("ERROR: unknown argument \"%s\"\n\n", m_pMessage);
+					printf("ERROR: unknown argument \"%s\"\n\n", m_sMessage.c_str());
 					return 1;
 				case kParseOptionReturnOptionConflict:
 					printf("ERROR: option conflict\n\n");
@@ -204,7 +203,7 @@ int C3dsTool::ParseOptions(int a_nArgc, char* a_pArgv[])
 				printf("ERROR: no argument\n\n");
 				return 1;
 			case kParseOptionReturnUnknownArgument:
-				printf("ERROR: unknown argument \"%s\"\n\n", m_pMessage);
+				printf("ERROR: unknown argument \"%s\"\n\n", m_sMessage.c_str());
 				return 1;
 			case kParseOptionReturnOptionConflict:
 				printf("ERROR: option conflict\n\n");
@@ -232,7 +231,7 @@ int C3dsTool::CheckOptions()
 	{
 		if (!checkFileType())
 		{
-			printf("ERROR: %s\n\n", m_pMessage);
+			printf("ERROR: %s\n\n", m_sMessage.c_str());
 			return 1;
 		}
 		switch (m_eFileType)
@@ -702,34 +701,34 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		char* pType = a_pArgv[++a_nIndex];
-		if (strcmp(pType, "card") == 0 || strcmp(pType, "cci") == 0 || strcmp(pType, "3ds") == 0)
+		string sType = a_pArgv[++a_nIndex];
+		if (sType == "card" || sType == "cci" || sType == "3ds")
 		{
 			m_eFileType = kFileTypeCci;
 		}
-		else if (strcmp(pType, "exec") == 0 || strcmp(pType, "cxi") == 0)
+		else if (sType == "exec" || sType == "cxi")
 		{
 			m_eFileType = kFileTypeCxi;
 		}
-		else if (strcmp(pType, "data") == 0 || strcmp(pType, "cfa") == 0)
+		else if (sType == "data" || sType == "cfa")
 		{
 			m_eFileType = kFileTypeCfa;
 		}
-		else if (strcmp(pType, "exefs") == 0)
+		else if (sType == "exefs")
 		{
 			m_eFileType = kFileTypeExeFs;
 		}
-		else if (strcmp(pType, "romfs") == 0)
+		else if (sType == "romfs")
 		{
 			m_eFileType = kFileTypeRomFs;
 		}
-		else if (strcmp(pType, "banner") == 0)
+		else if (sType == "banner")
 		{
 			m_eFileType = kFileTypeBanner;
 		}
 		else
 		{
-			m_pMessage = pType;
+			m_sMessage = sType;
 			return kParseOptionReturnUnknownArgument;
 		}
 	}
@@ -830,11 +829,11 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		char* pCompressAlign = a_pArgv[++a_nIndex];
-		n32 nCompressAlign = SToN32(pCompressAlign);
+		string sCompressAlign = a_pArgv[++a_nIndex];
+		n32 nCompressAlign = SToN32(sCompressAlign);
 		if (nCompressAlign != 1 && nCompressAlign != 4 && nCompressAlign != 8 && nCompressAlign != 16 && nCompressAlign != 32)
 		{
-			m_pMessage = pCompressAlign;
+			m_sMessage = sCompressAlign;
 			return kParseOptionReturnUnknownArgument;
 		}
 		m_nCompressAlign = nCompressAlign;
@@ -845,38 +844,38 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		char* pType = a_pArgv[++a_nIndex];
-		if (strcmp(pType, "blz") == 0)
+		string sType = a_pArgv[++a_nIndex];
+		if (sType == "blz")
 		{
 			m_eCompressType = kCompressTypeBlz;
 		}
-		else if (strcmp(pType, "lz") == 0)
+		else if (sType == "lz")
 		{
 			m_eCompressType = kCompressTypeLz;
 		}
-		else if (strcmp(pType, "lzex") == 0)
+		else if (sType == "lzex")
 		{
 			m_eCompressType = kCompressTypeLzEx;
 		}
-		else if (strcmp(pType, "h4") == 0)
+		else if (sType == "h4")
 		{
 			m_eCompressType = kCompressTypeH4;
 		}
-		else if (strcmp(pType, "h8") == 0)
+		else if (sType == "h8")
 		{
 			m_eCompressType = kCompressTypeH8;
 		}
-		else if (strcmp(pType, "rl") == 0)
+		else if (sType == "rl")
 		{
 			m_eCompressType = kCompressTypeRl;
 		}
-		else if (strcmp(pType, "yaz0") == 0)
+		else if (sType == "yaz0")
 		{
 			m_eCompressType = kCompressTypeYaz0;
 		}
 		else
 		{
-			m_pMessage = pType;
+			m_sMessage = sType;
 			return kParseOptionReturnUnknownArgument;
 		}
 	}
@@ -894,11 +893,11 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		char* pYaz0Align = a_pArgv[++a_nIndex];
-		n32 nYaz0Align = SToN32(pYaz0Align);
+		string sYaz0Align = a_pArgv[++a_nIndex];
+		n32 nYaz0Align = SToN32(sYaz0Align);
 		if (nYaz0Align != 0 && nYaz0Align != 128)
 		{
-			m_pMessage = pYaz0Align;
+			m_sMessage = sYaz0Align;
 			return kParseOptionReturnUnknownArgument;
 		}
 		m_nYaz0Align = nYaz0Align;
@@ -1181,7 +1180,7 @@ bool C3dsTool::checkFileType()
 		}
 		else
 		{
-			m_pMessage = "unknown file type";
+			m_sMessage = "unknown file type";
 			return false;
 		}
 	}
@@ -1213,7 +1212,7 @@ bool C3dsTool::checkFileType()
 		}
 		if (!bMatch)
 		{
-			m_pMessage = "the file type is mismatch";
+			m_sMessage = "the file type is mismatch";
 			return false;
 		}
 	}

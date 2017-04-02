@@ -117,7 +117,7 @@ private:
 	bool m_bCounterValid;
 	bool m_bUncompress;
 	bool m_bCompress;
-	const char* m_pMessage;
+	string m_sMessage;
 };
 
 #endif	// _3DSTOOL_H_
