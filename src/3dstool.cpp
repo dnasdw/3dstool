@@ -128,7 +128,6 @@ C3dsTool::C3dsTool()
 	, m_pPlainRegionFileName(nullptr)
 	, m_pExeFsFileName(nullptr)
 	, m_pRomFsFileName(nullptr)
-	, m_pExtendedHeaderXorFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_bCounterValid(false)
@@ -364,7 +363,7 @@ int C3dsTool::CheckOptions()
 		}
 		else if (m_nEncryptMode == CNcch::kEncryptModeXor)
 		{
-			if (m_pExtendedHeaderXorFileName != nullptr || !m_sExeFsXorFileName.empty() || !m_sRomFsXorFileName.empty())
+			if (!m_sExtendedHeaderXorFileName.empty() || !m_sExeFsXorFileName.empty() || !m_sRomFsXorFileName.empty())
 			{
 				if (m_pXorFileName != nullptr)
 				{
@@ -1015,7 +1014,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_pExtendedHeaderXorFileName = a_pArgv[++a_nIndex];
+		m_sExtendedHeaderXorFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "exefs-xor") == 0)
 	{
@@ -1241,7 +1240,7 @@ bool C3dsTool::extractFile()
 			ncch.SetPlainRegionFileName(m_pPlainRegionFileName);
 			ncch.SetExeFsFileName(m_pExeFsFileName);
 			ncch.SetRomFsFileName(m_pRomFsFileName);
-			ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
+			ncch.SetExtendedHeaderXorFileName(m_sExtendedHeaderXorFileName);
 			ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
 			ncch.SetExeFsTopXorFileName(m_sExeFsTopXorFileName);
 			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
@@ -1333,7 +1332,7 @@ bool C3dsTool::createFile()
 			ncch.SetPlainRegionFileName(m_pPlainRegionFileName);
 			ncch.SetExeFsFileName(m_pExeFsFileName);
 			ncch.SetRomFsFileName(m_pRomFsFileName);
-			ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
+			ncch.SetExtendedHeaderXorFileName(m_sExtendedHeaderXorFileName);
 			ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
 			ncch.SetExeFsTopXorFileName(m_sExeFsTopXorFileName);
 			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
@@ -1414,7 +1413,7 @@ bool C3dsTool::encryptFile()
 		ncch.SetVerbose(m_bVerbose);
 		ncch.SetEncryptMode(m_nEncryptMode);
 		ncch.SetKey(m_Key);
-		ncch.SetExtendedHeaderXorFileName(m_pExtendedHeaderXorFileName);
+		ncch.SetExtendedHeaderXorFileName(m_sExtendedHeaderXorFileName);
 		ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
 		ncch.SetExeFsTopXorFileName(m_sExeFsTopXorFileName);
 		ncch.SetRomFsXorFileName(m_sRomFsXorFileName);

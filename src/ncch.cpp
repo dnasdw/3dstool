@@ -26,7 +26,6 @@ CNcch::CNcch()
 	, m_pPlainRegionFileName(nullptr)
 	, m_pExeFsFileName(nullptr)
 	, m_pRomFsFileName(nullptr)
-	, m_pExtendedHeaderXorFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_fpNcch(nullptr)
@@ -112,9 +111,9 @@ void CNcch::SetRomFsFileName(const char* a_pRomFsFileName)
 	m_pRomFsFileName = a_pRomFsFileName;
 }
 
-void CNcch::SetExtendedHeaderXorFileName(const char* a_pExtendedHeaderXorFileName)
+void CNcch::SetExtendedHeaderXorFileName(const string& a_sExtendedHeaderXorFileName)
 {
-	m_pExtendedHeaderXorFileName = a_pExtendedHeaderXorFileName;
+	m_sExtendedHeaderXorFileName = a_sExtendedHeaderXorFileName;
 }
 
 void CNcch::SetExeFsXorFileName(const string& a_sExeFsXorFileName)
@@ -179,7 +178,7 @@ bool CNcch::ExtractFile()
 		bResult = false;
 	}
 	calculateCounter(kAesCtrTypeExtendedHeader);
-	m_sXorFileName = m_pExtendedHeaderXorFileName;
+	m_sXorFileName = m_sExtendedHeaderXorFileName;
 	if (!extractFile(m_pExtendedHeaderFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], false, "extendedheader"))
 	{
 		bResult = false;
@@ -360,7 +359,7 @@ bool CNcch::EncryptFile()
 	}
 	else if (m_nEncryptMode == kEncryptModeXor)
 	{
-		if (!encryptXorFile(m_pExtendedHeaderXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], 0, "extendedheader"))
+		if (!encryptXorFile(m_sExtendedHeaderXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], 0, "extendedheader"))
 		{
 			bResult = false;
 		}
@@ -852,7 +851,7 @@ bool CNcch::createExtendedHeader()
 			SHA256(pBuffer, m_NcchHeader.Ncch.ExtendedHeaderSize, m_NcchHeader.Ncch.ExtendedHeaderHash);
 		}
 		delete[] pBuffer;
-		if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_pExtendedHeaderXorFileName == nullptr))
+		if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_sExtendedHeaderXorFileName.empty()))
 		{
 			CopyFile(m_fpNcch, fp, 0, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended));
 		}
@@ -861,7 +860,7 @@ bool CNcch::createExtendedHeader()
 			calculateCounter(kAesCtrTypeExtendedHeader);
 			FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key, m_Counter, 0, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended));
 		}
-		else if (m_nEncryptMode == kEncryptModeXor && !FEncryptXorCopyFile(m_fpNcch, fp, m_pExtendedHeaderXorFileName, 0, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended)))
+		else if (m_nEncryptMode == kEncryptModeXor && !FEncryptXorCopyFile(m_fpNcch, fp, m_sExtendedHeaderXorFileName, 0, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended)))
 		{
 			fclose(fp);
 			clearExtendedHeader();

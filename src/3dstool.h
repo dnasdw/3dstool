@@ -105,7 +105,7 @@ private:
 	const char* m_pPlainRegionFileName;
 	const char* m_pExeFsFileName;
 	const char* m_pRomFsFileName;
-	const char* m_pExtendedHeaderXorFileName;
+	string m_sExtendedHeaderXorFileName;
 	string m_sExeFsXorFileName;
 	string m_sExeFsTopXorFileName;
 	string m_sRomFsXorFileName;

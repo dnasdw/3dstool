@@ -105,7 +105,7 @@ public:
 	void SetPlainRegionFileName(const char* a_pPlainRegionFileName);
 	void SetExeFsFileName(const char* a_pExeFsFileName);
 	void SetRomFsFileName(const char* a_pRomFsFileName);
-	void SetExtendedHeaderXorFileName(const char* a_pExtendedHeaderXorFileName);
+	void SetExtendedHeaderXorFileName(const string& a_sExtendedHeaderXorFileName);
 	void SetExeFsXorFileName(const string& a_sExeFsXorFileName);
 	void SetExeFsTopXorFileName(const string& a_sExeFsTopXorFileName);
 	void SetRomFsXorFileName(const string& a_sRomFsXorFileName);
@@ -163,7 +163,7 @@ private:
 	const char* m_pPlainRegionFileName;
 	const char* m_pExeFsFileName;
 	const char* m_pRomFsFileName;
-	const char* m_pExtendedHeaderXorFileName;
+	string m_sExtendedHeaderXorFileName;
 	string m_sExeFsXorFileName;
 	string m_sExeFsTopXorFileName;
 	string m_sRomFsXorFileName;
