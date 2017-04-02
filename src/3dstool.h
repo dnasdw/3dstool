@@ -106,7 +106,7 @@ private:
 	const char* m_pExeFsFileName;
 	const char* m_pRomFsFileName;
 	const char* m_pExtendedHeaderXorFileName;
-	const char* m_pExeFsXorFileName;
+	string m_sExeFsXorFileName;
 	string m_sExeFsTopXorFileName;
 	string m_sRomFsXorFileName;
 	bool m_bExeFsTopAutoKey;
