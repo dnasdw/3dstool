@@ -110,7 +110,6 @@ C3dsTool::C3dsTool()
 	, m_bVerbose(false)
 	, m_pHeaderFileName(nullptr)
 	, m_nEncryptMode(CNcch::kEncryptModeNone)
-	, m_pXorFileName(nullptr)
 	, m_nCompressAlign(1)
 	, m_eCompressType(kCompressTypeNone)
 	, m_nYaz0Align(0)
@@ -355,7 +354,7 @@ int C3dsTool::CheckOptions()
 		{
 			if (!m_sExtendedHeaderXorFileName.empty() || !m_sExeFsXorFileName.empty() || !m_sRomFsXorFileName.empty())
 			{
-				if (m_pXorFileName != nullptr)
+				if (!m_sXorFileName.empty())
 				{
 					printf("ERROR: --xor can not with --extendedheader-xor or --exefs-xor or --romfs-xor\n\n");
 					return 1;
@@ -804,7 +803,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_pXorFileName = a_pArgv[++a_nIndex];
+		m_sXorFileName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "compress-align") == 0)
 	{
@@ -1392,9 +1391,9 @@ bool C3dsTool::encryptFile()
 	{
 		bResult = FEncryptAesCtrFile(m_pFileName, m_Key, m_Counter, 0, 0, true, 0);
 	}
-	else if (m_nEncryptMode == CNcch::kEncryptModeXor && m_pXorFileName != nullptr)
+	else if (m_nEncryptMode == CNcch::kEncryptModeXor && !m_sXorFileName.empty())
 	{
-		bResult = FEncryptXorFile(m_pFileName, m_pXorFileName, 0, 0, true, 0);
+		bResult = FEncryptXorFile(m_pFileName, m_sXorFileName, 0, 0, true, 0);
 	}
 	else if (CNcch::IsCxiFile(m_pFileName))
 	{

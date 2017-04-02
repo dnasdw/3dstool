@@ -86,7 +86,7 @@ private:
 	int m_nEncryptMode;
 	CBigNum m_Key;
 	CBigNum m_Counter;
-	const char* m_pXorFileName;
+	string m_sXorFileName;
 	n32 m_nCompressAlign;
 	ECompressType m_eCompressType;
 	string m_sCompressOutFileName;
