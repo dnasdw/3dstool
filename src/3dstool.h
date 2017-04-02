@@ -111,7 +111,7 @@ private:
 	const char* m_pRomFsXorFileName;
 	bool m_bExeFsTopAutoKey;
 	bool m_bRomFsAutoKey;
-	const char* m_pExeFsDirName;
+	string m_sExeFsDirName;
 	string m_sRomFsDirName;
 	string m_sBannerDirName;
 	bool m_bCounterValid;

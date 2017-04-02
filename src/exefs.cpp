@@ -37,9 +37,9 @@ void CExeFs::SetHeaderFileName(const char* a_pHeaderFileName)
 	m_pHeaderFileName = a_pHeaderFileName;
 }
 
-void CExeFs::SetExeFsDirName(const char* a_pExeFsDirName)
+void CExeFs::SetExeFsDirName(const string& a_sExeFsDirName)
 {
-	m_sExeFsDirName = AToU(a_pExeFsDirName);
+	m_sExeFsDirName = AToU(a_sExeFsDirName);
 }
 
 void CExeFs::SetUncompress(bool a_bUncompress)

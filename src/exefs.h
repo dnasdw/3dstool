@@ -27,7 +27,7 @@ public:
 	void SetFileName(const char* a_pFileName);
 	void SetVerbose(bool a_bVerbose);
 	void SetHeaderFileName(const char* a_pHeaderFileName);
-	void SetExeFsDirName(const char* a_pExeFsDirName);
+	void SetExeFsDirName(const string& a_sExeFsDirName);
 	void SetUncompress(bool a_bUncompress);
 	void SetCompress(bool a_bCompress);
 	bool ExtractFile();

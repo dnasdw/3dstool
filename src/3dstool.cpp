@@ -134,7 +134,6 @@ C3dsTool::C3dsTool()
 	, m_pRomFsXorFileName(nullptr)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
-	, m_pExeFsDirName(nullptr)
 	, m_bCounterValid(false)
 	, m_bUncompress(false)
 	, m_bCompress(false)
@@ -268,7 +267,7 @@ int C3dsTool::CheckOptions()
 			}
 			break;
 		case kFileTypeExeFs:
-			if (m_pHeaderFileName == nullptr && m_pExeFsDirName == nullptr)
+			if (m_pHeaderFileName == nullptr && m_sExeFsDirName.empty())
 			{
 				printf("ERROR: nothing to be extract\n\n");
 				return 1;
@@ -335,7 +334,7 @@ int C3dsTool::CheckOptions()
 			}
 			else if (m_eFileType == kFileTypeExeFs)
 			{
-				if (m_pExeFsDirName == nullptr)
+				if (m_sExeFsDirName.empty())
 				{
 					printf("ERROR: no --exefs-dir option\n\n");
 					return 1;
@@ -1115,7 +1114,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_pExeFsDirName = a_pArgv[++a_nIndex];
+		m_sExeFsDirName = a_pArgv[++a_nIndex];
 	}
 	else if (strcmp(a_pName, "romfs-dir") == 0)
 	{
@@ -1276,7 +1275,7 @@ bool C3dsTool::extractFile()
 			exeFs.SetFileName(m_pFileName);
 			exeFs.SetVerbose(m_bVerbose);
 			exeFs.SetHeaderFileName(m_pHeaderFileName);
-			exeFs.SetExeFsDirName(m_pExeFsDirName);
+			exeFs.SetExeFsDirName(m_sExeFsDirName);
 			exeFs.SetUncompress(m_bUncompress);
 			bResult = exeFs.ExtractFile();
 		}
@@ -1370,7 +1369,7 @@ bool C3dsTool::createFile()
 			exeFs.SetFileName(m_pFileName);
 			exeFs.SetVerbose(m_bVerbose);
 			exeFs.SetHeaderFileName(m_pHeaderFileName);
-			exeFs.SetExeFsDirName(m_pExeFsDirName);
+			exeFs.SetExeFsDirName(m_sExeFsDirName);
 			exeFs.SetCompress(m_bCompress);
 			bResult = exeFs.CreateFile();
 		}
