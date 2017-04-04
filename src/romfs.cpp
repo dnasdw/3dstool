@@ -39,9 +39,9 @@ void CRomFs::SetVerbose(bool a_bVerbose)
 	m_bVerbose = a_bVerbose;
 }
 
-void CRomFs::SetRomFsDirName(const string& a_sRomFsDirName)
+void CRomFs::SetRomFsDirName(const UString& a_sRomFsDirName)
 {
-	m_sRomFsDirName = AToU(a_sRomFsDirName);
+	m_sRomFsDirName = a_sRomFsDirName;
 }
 
 void CRomFs::SetRomFsFileName(const string& a_sRomFsFileName)
