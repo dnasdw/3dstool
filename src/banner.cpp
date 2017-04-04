@@ -3,9 +3,9 @@
 
 const u32 CBanner::s_uSignature = SDW_CONVERT_ENDIAN32('CBMD');
 const int CBanner::s_nCbmdSizeAlignment = 0x20;
-const char* CBanner::s_pCbmdHeaderFileName = "banner.cbmd";
-const char* CBanner::s_pCbmdBodyFileName = "banner%d.bcmdl";
-const char* CBanner::s_pBcwavFileName = "banner.bcwav";
+const UChar* CBanner::s_pCbmdHeaderFileName = USTR("banner.cbmd");
+const UChar* CBanner::s_pCbmdBodyFileName = USTR("banner%d.bcmdl");
+const UChar* CBanner::s_pBcwavFileName = USTR("banner.bcwav");
 
 CBanner::CBanner()
 	: m_bVerbose(false)
@@ -28,7 +28,7 @@ void CBanner::SetVerbose(bool a_bVerbose)
 	m_bVerbose = a_bVerbose;
 }
 
-void CBanner::SetBannerDirName(const string& a_sBannerDirName)
+void CBanner::SetBannerDirName(const UString& a_sBannerDirName)
 {
 	m_sBannerDirName = a_sBannerDirName;
 }
@@ -44,13 +44,13 @@ bool CBanner::ExtractFile()
 	fread(&m_CbmdHeader, sizeof(m_CbmdHeader), 1, m_fpBanner);
 	if (m_CbmdHeader.CbmdOffset != 0)
 	{
-		printf("INFO: cbmd offset 0x%" PRIX32 " != 0\n\n", m_CbmdHeader.CbmdOffset);
+		UPrintf(USTR("INFO: cbmd offset %") PRIUS USTR(" != 0\n\n"), AToU(Format("0x%" PRIX32, m_CbmdHeader.CbmdOffset)).c_str());
 	}
 	if (m_CbmdHeader.CgfxOffset[0] != sizeof(m_CbmdHeader))
 	{
-		printf("INFO: cgfx 0 offset 0x%" PRIX32 " != 0x%" PRIX32 "\n\n", m_CbmdHeader.CgfxOffset[0], static_cast<u32>(sizeof(m_CbmdHeader)));
+		UPrintf(USTR("INFO: cgfx 0 offset %") PRIUS USTR(" != %") PRIUS USTR("\n\n"), AToU(Format("0x%" PRIX32, m_CbmdHeader.CgfxOffset[0])).c_str(), AToU(Format("0x%" PRIX32, static_cast<u32>(sizeof(m_CbmdHeader)))).c_str());
 	}
-	if (!UMakeDir(AToU(m_sBannerDirName).c_str()))
+	if (!UMakeDir(m_sBannerDirName.c_str()))
 	{
 		fclose(m_fpBanner);
 		return false;
@@ -113,15 +113,15 @@ bool CBanner::IsBannerFile(const string& a_sFileName)
 
 bool CBanner::extractCbmdHeader()
 {
-	string sPath = m_sBannerDirName + "/" + s_pCbmdHeaderFileName;
-	FILE* fp = Fopen(sPath.c_str(), "wb");
+	UString sPath = m_sBannerDirName + USTR("/") + s_pCbmdHeaderFileName;
+	FILE* fp = UFopen(sPath.c_str(), USTR("wb"));
 	if (fp == nullptr)
 	{
 		return false;
 	}
 	if (m_bVerbose)
 	{
-		printf("save: %s\n", sPath.c_str());
+		UPrintf(USTR("save: %") PRIUS USTR("\n"), sPath.c_str());
 	}
 	fwrite(&m_CbmdHeader, sizeof(m_CbmdHeader), 1, fp);
 	fclose(fp);
@@ -138,8 +138,8 @@ bool CBanner::extractCbmdBody()
 	{
 		if (m_CbmdHeader.CgfxOffset[i] != 0)
 		{
-			string sPath = m_sBannerDirName + "/" + Format(s_pCbmdBodyFileName, i);
-			FILE* fp = Fopen(sPath.c_str(), "wb");
+			UString sPath = m_sBannerDirName + USTR("/") + Format(s_pCbmdBodyFileName, i);
+			FILE* fp = UFopen(sPath.c_str(), USTR("wb"));
 			if (fp == nullptr)
 			{
 				bResult = false;
@@ -148,7 +148,7 @@ bool CBanner::extractCbmdBody()
 			{
 				if (m_bVerbose)
 				{
-					printf("save: %s\n", sPath.c_str());
+					UPrintf(USTR("save: %") PRIUS USTR("\n"), sPath.c_str());
 				}
 				u32 uUncompressedSize = 0;
 				bResult = CLz77::GetUncompressedSize(pCompressed + m_CbmdHeader.CgfxOffset[i], m_CbmdHeader.CwavOffset - m_CbmdHeader.CgfxOffset[i], uUncompressedSize);
@@ -162,13 +162,13 @@ bool CBanner::extractCbmdBody()
 					}
 					else
 					{
-						printf("ERROR: uncompress error\n\n");
+						UPrintf(USTR("ERROR: uncompress error\n\n"));
 					}
 					delete[] pUncompressed;
 				}
 				else
 				{
-					printf("ERROR: get uncompressed size error\n\n");
+					UPrintf(USTR("ERROR: get uncompressed size error\n\n"));
 				}
 				fclose(fp);
 			}
@@ -184,15 +184,15 @@ bool CBanner::extractCbmdBody()
 
 bool CBanner::extractBcwav()
 {
-	string sPath = m_sBannerDirName + "/" + s_pBcwavFileName;
-	FILE* fp = Fopen(sPath.c_str(), "wb");
+	UString sPath = m_sBannerDirName + USTR("/") + s_pBcwavFileName;
+	FILE* fp = UFopen(sPath.c_str(), USTR("wb"));
 	if (fp == nullptr)
 	{
 		return false;
 	}
 	if (m_bVerbose)
 	{
-		printf("save: %s\n", sPath.c_str());
+		UPrintf(USTR("save: %") PRIUS USTR("\n"), sPath.c_str());
 	}
 	Fseek(m_fpBanner, 0, SEEK_END);
 	u32 uFileSize = static_cast<u32>(Ftell(m_fpBanner));
@@ -203,8 +203,8 @@ bool CBanner::extractBcwav()
 
 bool CBanner::createCbmdHeader()
 {
-	string sPath = m_sBannerDirName + "/" + s_pCbmdHeaderFileName;
-	FILE* fp = Fopen(sPath.c_str(), "rb");
+	UString sPath = m_sBannerDirName + USTR("/") + s_pCbmdHeaderFileName;
+	FILE* fp = UFopen(sPath.c_str(), USTR("rb"));
 	if (fp == nullptr)
 	{
 		return false;
@@ -214,12 +214,12 @@ bool CBanner::createCbmdHeader()
 	if (nFileSize < sizeof(m_CbmdHeader))
 	{
 		fclose(fp);
-		printf("ERROR: cbmd header is too short\n\n");
+		UPrintf(USTR("ERROR: cbmd header is too short\n\n"));
 		return false;
 	}
 	if (m_bVerbose)
 	{
-		printf("load: %s\n", sPath.c_str());
+		UPrintf(USTR("load: %") PRIUS USTR("\n"), sPath.c_str());
 	}
 	Fseek(fp, 0, SEEK_SET);
 	fread(&m_CbmdHeader, sizeof(m_CbmdHeader), 1, fp);
@@ -234,13 +234,13 @@ bool CBanner::createCbmdBody()
 	for (int i = 0; i < SDW_ARRAY_COUNT(m_CbmdHeader.CgfxOffset); i++)
 	{
 		m_CbmdHeader.CgfxOffset[i] = 0;
-		string sPath = m_sBannerDirName + "/" + Format(s_pCbmdBodyFileName, i);
-		FILE* fp = fopen(sPath.c_str(), "rb");
+		UString sPath = m_sBannerDirName + USTR("/") + Format(s_pCbmdBodyFileName, i);
+		FILE* fp = UFopen(sPath.c_str(), USTR("rb"), false);
 		if (fp != nullptr)
 		{
 			if (m_bVerbose)
 			{
-				printf("load: %s\n", sPath.c_str());
+				UPrintf(USTR("load: %") PRIUS USTR("\n"), sPath.c_str());
 			}
 			Fseek(fp, 0, SEEK_END);
 			u32 uFileSize = static_cast<u32>(Ftell(fp));
@@ -258,7 +258,7 @@ bool CBanner::createCbmdBody()
 			}
 			else
 			{
-				printf("ERROR: compress error\n\n");
+				UPrintf(USTR("ERROR: compress error\n\n"));
 			}
 			delete[] pCompressed;
 			delete[] pData;
@@ -278,15 +278,15 @@ bool CBanner::createCbmdBody()
 
 bool CBanner::createBcwav()
 {
-	string sPath = m_sBannerDirName + "/" + s_pBcwavFileName;
-	FILE* fp = Fopen(sPath.c_str(), "rb");
+	UString sPath = m_sBannerDirName + USTR("/") + s_pBcwavFileName;
+	FILE* fp = UFopen(sPath.c_str(), USTR("rb"));
 	if (fp == nullptr)
 	{
 		return false;
 	}
 	if (m_bVerbose)
 	{
-		printf("load: %s\n", sPath.c_str());
+		UPrintf(USTR("load: %") PRIUS USTR("\n"), sPath.c_str());
 	}
 	Fseek(fp, 0, SEEK_END);
 	u32 uFileSize = static_cast<u32>(Ftell(fp));

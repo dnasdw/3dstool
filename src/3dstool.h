@@ -113,7 +113,7 @@ private:
 	bool m_bRomFsAutoKey;
 	string m_sExeFsDirName;
 	string m_sRomFsDirName;
-	string m_sBannerDirName;
+	UString m_sBannerDirName;
 	bool m_bCounterValid;
 	bool m_bUncompress;
 	bool m_bCompress;

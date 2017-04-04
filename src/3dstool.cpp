@@ -1113,7 +1113,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sBannerDirName = UToA(a_pArgv[++a_nIndex]);
+		m_sBannerDirName = a_pArgv[++a_nIndex];
 	}
 	return kParseOptionReturnSuccess;
 }

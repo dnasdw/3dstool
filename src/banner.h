@@ -20,15 +20,15 @@ public:
 	~CBanner();
 	void SetFileName(const string& a_sFileName);
 	void SetVerbose(bool a_bVerbose);
-	void SetBannerDirName(const string& a_sBannerDirName);
+	void SetBannerDirName(const UString& a_sBannerDirName);
 	bool ExtractFile();
 	bool CreateFile();
 	static bool IsBannerFile(const string& a_sFileName);
 	static const u32 s_uSignature;
 	static const int s_nCbmdSizeAlignment;
-	static const char* s_pCbmdHeaderFileName;
-	static const char* s_pCbmdBodyFileName;
-	static const char* s_pBcwavFileName;
+	static const UChar* s_pCbmdHeaderFileName;
+	static const UChar* s_pCbmdBodyFileName;
+	static const UChar* s_pBcwavFileName;
 private:
 	bool extractCbmdHeader();
 	bool extractCbmdBody();
@@ -38,7 +38,7 @@ private:
 	bool createBcwav();
 	string m_sFileName;
 	bool m_bVerbose;
-	string m_sBannerDirName;
+	UString m_sBannerDirName;
 	FILE* m_fpBanner;
 	SCbmdHeader m_CbmdHeader;
 };
