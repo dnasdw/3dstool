@@ -111,7 +111,7 @@ private:
 	string m_sRomFsXorFileName;
 	bool m_bExeFsTopAutoKey;
 	bool m_bRomFsAutoKey;
-	string m_sExeFsDirName;
+	UString m_sExeFsDirName;
 	UString m_sRomFsDirName;
 	UString m_sBannerDirName;
 	bool m_bCounterValid;
