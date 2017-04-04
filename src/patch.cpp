@@ -28,7 +28,7 @@ void CPatch::SetFileType(C3dsTool::EFileType a_eFileType)
 	m_eFileType = a_eFileType;
 }
 
-void CPatch::SetFileName(const string& a_sFileName)
+void CPatch::SetFileName(const UString& a_sFileName)
 {
 	m_sFileName = a_sFileName;
 }
@@ -38,12 +38,12 @@ void CPatch::SetVerbose(bool a_bVerbose)
 	m_bVerbose = a_bVerbose;
 }
 
-void CPatch::SetOldFileName(const string& a_sOldFileName)
+void CPatch::SetOldFileName(const UString& a_sOldFileName)
 {
 	m_sOldFileName = a_sOldFileName;
 }
 
-void CPatch::SetNewFileName(const string& a_sNewFileName)
+void CPatch::SetNewFileName(const UString& a_sNewFileName)
 {
 	m_sNewFileName = a_sNewFileName;
 }
@@ -55,7 +55,7 @@ void CPatch::SetPatchFileName(const UString& a_sPatchFileName)
 
 bool CPatch::CreatePatchFile()
 {
-	m_fpOld = Fopen(m_sOldFileName.c_str(), "rb");
+	m_fpOld = UFopen(m_sOldFileName.c_str(), USTR("rb"));
 	if (m_fpOld == nullptr)
 	{
 		return false;
@@ -63,7 +63,7 @@ bool CPatch::CreatePatchFile()
 	Fseek(m_fpOld, 0, SEEK_END);
 	n64 nFileSizeOld = Ftell(m_fpOld);
 	Fseek(m_fpOld, 0, SEEK_SET);
-	m_fpNew = Fopen(m_sNewFileName.c_str(), "rb");
+	m_fpNew = UFopen(m_sNewFileName.c_str(), USTR("rb"));
 	if (m_fpNew == nullptr)
 	{
 		fclose(m_fpOld);
@@ -89,7 +89,7 @@ bool CPatch::CreatePatchFile()
 	bool bResult = true;
 	if (m_bVerbose)
 	{
-		printf("INFO: create patch from %s and %s\n", m_sOldFileName.c_str(), m_sNewFileName.c_str());
+		UPrintf(USTR("INFO: create patch from %") PRIUS USTR(" and %") PRIUS USTR("\n"), m_sOldFileName.c_str(), m_sNewFileName.c_str());
 	}
 	if (m_eFileType == C3dsTool::kFileTypeCci && CNcsd::IsNcsdFile(m_sOldFileName) && CNcsd::IsNcsdFile(m_sNewFileName))
 	{
@@ -137,7 +137,7 @@ bool CPatch::CreatePatchFile()
 
 bool CPatch::ApplyPatchFile()
 {
-	m_fpOld = Fopen(m_sFileName.c_str(), "rb+");
+	m_fpOld = UFopen(m_sFileName.c_str(), USTR("rb+"));
 	if (m_fpOld == nullptr)
 	{
 		return false;
@@ -170,7 +170,7 @@ bool CPatch::ApplyPatchFile()
 	}
 	if (m_bVerbose)
 	{
-		printf("INFO: apply patch to %s\n", m_sFileName.c_str());
+		UPrintf(USTR("INFO: apply patch to %") PRIUS USTR("\n"), m_sFileName.c_str());
 	}
 	bool bResult = false;
 	bool bPatched = false;
@@ -204,7 +204,7 @@ bool CPatch::ApplyPatchFile()
 	{
 		fclose(m_fpPatch);
 		fclose(m_fpOld);
-		printf("ERROR: %s was already patched\n\n", m_sFileName.c_str());
+		UPrintf(USTR("ERROR: %") PRIUS USTR(" was already patched\n\n"), m_sFileName.c_str());
 		return true;
 	}
 	Fseek(m_fpPatch, -n3psOffset, SEEK_END);
@@ -216,7 +216,7 @@ bool CPatch::ApplyPatchFile()
 		{
 			if (m_bVerbose)
 			{
-				printf("INFO: patch complete\n");
+				UPrintf(USTR("INFO: patch complete\n"));
 			}
 			bResult = true;
 			break;

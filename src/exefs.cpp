@@ -20,7 +20,7 @@ CExeFs::~CExeFs()
 {
 }
 
-void CExeFs::SetFileName(const string& a_sFileName)
+void CExeFs::SetFileName(const UString& a_sFileName)
 {
 	m_sFileName = a_sFileName;
 }
@@ -30,7 +30,7 @@ void CExeFs::SetVerbose(bool a_bVerbose)
 	m_bVerbose = a_bVerbose;
 }
 
-void CExeFs::SetHeaderFileName(const string& a_sHeaderFileName)
+void CExeFs::SetHeaderFileName(const UString& a_sHeaderFileName)
 {
 	m_sHeaderFileName = a_sHeaderFileName;
 }
@@ -53,7 +53,7 @@ void CExeFs::SetCompress(bool a_bCompress)
 bool CExeFs::ExtractFile()
 {
 	bool bResult = true;
-	m_fpExeFs = Fopen(m_sFileName.c_str(), "rb");
+	m_fpExeFs = UFopen(m_sFileName.c_str(), USTR("rb"));
 	if (m_fpExeFs == nullptr)
 	{
 		return false;
@@ -82,7 +82,7 @@ bool CExeFs::ExtractFile()
 bool CExeFs::CreateFile()
 {
 	bool bResult = true;
-	m_fpExeFs = Fopen(m_sFileName.c_str(), "wb");
+	m_fpExeFs = UFopen(m_sFileName.c_str(), USTR("wb"));
 	if (m_fpExeFs == nullptr)
 	{
 		return false;
@@ -106,9 +106,9 @@ bool CExeFs::CreateFile()
 	return bResult;
 }
 
-bool CExeFs::IsExeFsFile(const string& a_sFileName, n64 a_nOffset)
+bool CExeFs::IsExeFsFile(const UString& a_sFileName, n64 a_nOffset)
 {
-	FILE* fp = Fopen(a_sFileName.c_str(), "rb");
+	FILE* fp = UFopen(a_sFileName.c_str(), USTR("rb"));
 	if (fp == nullptr)
 	{
 		return false;
@@ -130,7 +130,7 @@ bool CExeFs::extractHeader()
 	bool bResult = true;
 	if (!m_sHeaderFileName.empty())
 	{
-		FILE* fp = Fopen(m_sHeaderFileName.c_str(), "wb");
+		FILE* fp = UFopen(m_sHeaderFileName.c_str(), USTR("wb"));
 		if (fp == nullptr)
 		{
 			bResult = false;
@@ -139,7 +139,7 @@ bool CExeFs::extractHeader()
 		{
 			if (m_bVerbose)
 			{
-				printf("save: %s\n", m_sHeaderFileName.c_str());
+				UPrintf(USTR("save: %") PRIUS USTR("\n"), m_sHeaderFileName.c_str());
 			}
 			fwrite(&m_ExeFsSuperBlock, sizeof(m_ExeFsSuperBlock), 1, fp);
 			fclose(fp);
@@ -147,7 +147,7 @@ bool CExeFs::extractHeader()
 	}
 	else if (m_bVerbose)
 	{
-		printf("INFO: exefs header is not extract\n");
+		UPrintf(USTR("INFO: exefs header is not extract\n"));
 	}
 	return bResult;
 }
@@ -232,7 +232,7 @@ bool CExeFs::extractSection(int a_nIndex)
 
 bool CExeFs::createHeader()
 {
-	FILE* fp = Fopen(m_sHeaderFileName.c_str(), "rb");
+	FILE* fp = UFopen(m_sHeaderFileName.c_str(), USTR("rb"));
 	if (fp == nullptr)
 	{
 		return false;
@@ -242,12 +242,12 @@ bool CExeFs::createHeader()
 	if (nFileSize < sizeof(m_ExeFsSuperBlock))
 	{
 		fclose(fp);
-		printf("ERROR: exefs header is too short\n\n");
+		UPrintf(USTR("ERROR: exefs header is too short\n\n"));
 		return false;
 	}
 	if (m_bVerbose)
 	{
-		printf("load: %s\n", m_sHeaderFileName.c_str());
+		UPrintf(USTR("load: %") PRIUS USTR("\n"), m_sHeaderFileName.c_str());
 	}
 	Fseek(fp, 0, SEEK_SET);
 	fread(&m_ExeFsSuperBlock, sizeof(m_ExeFsSuperBlock), 1, fp);

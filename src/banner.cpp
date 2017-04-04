@@ -18,7 +18,7 @@ CBanner::~CBanner()
 {
 }
 
-void CBanner::SetFileName(const string& a_sFileName)
+void CBanner::SetFileName(const UString& a_sFileName)
 {
 	m_sFileName = a_sFileName;
 }
@@ -36,7 +36,7 @@ void CBanner::SetBannerDirName(const UString& a_sBannerDirName)
 bool CBanner::ExtractFile()
 {
 	bool bResult = true;
-	m_fpBanner = Fopen(m_sFileName.c_str(), "rb");
+	m_fpBanner = UFopen(m_sFileName.c_str(), USTR("rb"));
 	if (m_fpBanner == nullptr)
 	{
 		return false;
@@ -74,7 +74,7 @@ bool CBanner::ExtractFile()
 bool CBanner::CreateFile()
 {
 	bool bResult = true;
-	m_fpBanner = Fopen(m_sFileName.c_str(), "wb");
+	m_fpBanner = UFopen(m_sFileName.c_str(), USTR("wb"));
 	if (m_fpBanner == nullptr)
 	{
 		return false;
@@ -98,9 +98,9 @@ bool CBanner::CreateFile()
 	return bResult;
 }
 
-bool CBanner::IsBannerFile(const string& a_sFileName)
+bool CBanner::IsBannerFile(const UString& a_sFileName)
 {
-	FILE* fp = Fopen(a_sFileName.c_str(), "rb");
+	FILE* fp = UFopen(a_sFileName.c_str(), USTR("rb"));
 	if (fp == nullptr)
 	{
 		return false;

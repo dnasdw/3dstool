@@ -718,7 +718,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("verbose")) == 0)
 	{
@@ -730,7 +730,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sHeaderFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sHeaderFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("key0")) == 0)
 	{
@@ -759,7 +759,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 			return kParseOptionReturnOptionConflict;
 		}
 		UString sKey = a_pArgv[++a_nIndex];
-		if (sKey.size() != 32 || sKey.find_first_not_of(USTR("0123456789ABCDEFabcdef")) != string::npos)
+		if (sKey.size() != 32 || sKey.find_first_not_of(USTR("0123456789ABCDEFabcdef")) != UString::npos)
 		{
 			return kParseOptionReturnUnknownArgument;
 		}
@@ -780,7 +780,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 			return kParseOptionReturnOptionConflict;
 		}
 		UString sCounter = a_pArgv[++a_nIndex];
-		if (sCounter.size() != 32 || sCounter.find_first_not_of(USTR("0123456789ABCDEFabcdef")) != string::npos)
+		if (sCounter.size() != 32 || sCounter.find_first_not_of(USTR("0123456789ABCDEFabcdef")) != UString::npos)
 		{
 			return kParseOptionReturnUnknownArgument;
 		}
@@ -865,7 +865,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sCompressOutFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sCompressOutFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("yaz0-align")) == 0)
 	{
@@ -888,7 +888,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sOldFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sOldFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("new")) == 0)
 	{
@@ -896,7 +896,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sNewFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sNewFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("patch-file")) == 0)
 	{
@@ -917,7 +917,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_mNcchFileName[nIndex] = UToA(a_pArgv[++a_nIndex]);
+		m_mNcchFileName[nIndex] = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("not-pad")) == 0)
 	{
@@ -953,7 +953,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sExtendedHeaderFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sExtendedHeaderFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("logoregion")) == 0 || UCscmp(a_pName, USTR("logo")) == 0)
 	{
@@ -961,7 +961,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sLogoRegionFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sLogoRegionFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("plainregion")) == 0 || UCscmp(a_pName, USTR("plain")) == 0)
 	{
@@ -969,7 +969,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sPlainRegionFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sPlainRegionFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("exefs")) == 0)
 	{
@@ -977,7 +977,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sExeFsFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sExeFsFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("romfs")) == 0)
 	{
@@ -985,7 +985,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sRomFsFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sRomFsFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("extendedheader-xor")) == 0 || UCscmp(a_pName, USTR("exh-xor")) == 0)
 	{
@@ -1425,7 +1425,7 @@ bool C3dsTool::encryptFile()
 
 bool C3dsTool::uncompressFile()
 {
-	FILE* fp = Fopen(m_sFileName.c_str(), "rb");
+	FILE* fp = UFopen(m_sFileName.c_str(), USTR("rb"));
 	bool bResult = fp != nullptr;
 	if (bResult)
 	{
@@ -1485,7 +1485,7 @@ bool C3dsTool::uncompressFile()
 			}
 			if (bResult)
 			{
-				fp = Fopen(m_sCompressOutFileName.c_str(), "wb");
+				fp = UFopen(m_sCompressOutFileName.c_str(), USTR("wb"));
 				bResult = fp != nullptr;
 				if (bResult)
 				{
@@ -1510,7 +1510,7 @@ bool C3dsTool::uncompressFile()
 
 bool C3dsTool::compressFile()
 {
-	FILE* fp = Fopen(m_sFileName.c_str(), "rb");
+	FILE* fp = UFopen(m_sFileName.c_str(), USTR("rb"));
 	bool bReuslt = fp != nullptr;
 	if (bReuslt)
 	{
@@ -1572,7 +1572,7 @@ bool C3dsTool::compressFile()
 		}
 		if (bReuslt)
 		{
-			fp = Fopen(m_sCompressOutFileName.c_str(), "wb");
+			fp = UFopen(m_sCompressOutFileName.c_str(), USTR("wb"));
 			bReuslt = fp != nullptr;
 			if (bReuslt)
 			{

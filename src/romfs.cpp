@@ -29,7 +29,7 @@ CRomFs::~CRomFs()
 {
 }
 
-void CRomFs::SetFileName(const string& a_sFileName)
+void CRomFs::SetFileName(const UString& a_sFileName)
 {
 	m_sFileName = a_sFileName;
 }
@@ -44,7 +44,7 @@ void CRomFs::SetRomFsDirName(const UString& a_sRomFsDirName)
 	m_sRomFsDirName = a_sRomFsDirName;
 }
 
-void CRomFs::SetRomFsFileName(const string& a_sRomFsFileName)
+void CRomFs::SetRomFsFileName(const UString& a_sRomFsFileName)
 {
 	m_sRomFsFileName = a_sRomFsFileName;
 }
@@ -52,7 +52,7 @@ void CRomFs::SetRomFsFileName(const string& a_sRomFsFileName)
 bool CRomFs::ExtractFile()
 {
 	bool bResult = true;
-	m_fpRomFs = Fopen(m_sFileName.c_str(), "rb");
+	m_fpRomFs = UFopen(m_sFileName.c_str(), USTR("rb"));
 	if (m_fpRomFs == nullptr)
 	{
 		return false;
@@ -103,7 +103,7 @@ bool CRomFs::CreateFile()
 	createHeader();
 	initLevelBuffer();
 	n64 nFileSize = Align(m_LevelBuffer[2].FilePos + m_RomFsHeader.Level2.Size, s_nBlockSize);
-	m_fpRomFs = Fopen(m_sFileName.c_str(), "wb");
+	m_fpRomFs = UFopen(m_sFileName.c_str(), USTR("wb"));
 	if (m_fpRomFs == nullptr)
 	{
 		return false;
@@ -117,9 +117,9 @@ bool CRomFs::CreateFile()
 	return bResult;
 }
 
-bool CRomFs::IsRomFsFile(const string& a_sFileName)
+bool CRomFs::IsRomFsFile(const UString& a_sFileName)
 {
-	FILE* fp = Fopen(a_sFileName.c_str(), "rb");
+	FILE* fp = UFopen(a_sFileName.c_str(), USTR("rb"));
 	if (fp == nullptr)
 	{
 		return false;
@@ -799,7 +799,7 @@ void CRomFs::remap()
 
 bool CRomFs::travelFile()
 {
-	m_fpRomFs = Fopen(m_sFileName.c_str(), "rb");
+	m_fpRomFs = UFopen(m_sFileName.c_str(), USTR("rb"));
 	if (m_fpRomFs == nullptr)
 	{
 		return false;

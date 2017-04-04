@@ -39,7 +39,7 @@ void CNcch::SetFileType(C3dsTool::EFileType a_eFileType)
 	m_eFileType = a_eFileType;
 }
 
-void CNcch::SetFileName(const string& a_sFileName)
+void CNcch::SetFileName(const UString& a_sFileName)
 {
 	m_sFileName = a_sFileName;
 }
@@ -49,7 +49,7 @@ void CNcch::SetVerbose(bool a_bVerbose)
 	m_bVerbose = a_bVerbose;
 }
 
-void CNcch::SetHeaderFileName(const string& a_sHeaderFileName)
+void CNcch::SetHeaderFileName(const UString& a_sHeaderFileName)
 {
 	m_sHeaderFileName = a_sHeaderFileName;
 }
@@ -79,27 +79,27 @@ void CNcch::SetNotUpdateRomFsHash(bool a_bNotUpdateRomFsHash)
 	m_bNotUpdateRomFsHash = a_bNotUpdateRomFsHash;
 }
 
-void CNcch::SetExtendedHeaderFileName(const string& a_sExtendedHeaderFileName)
+void CNcch::SetExtendedHeaderFileName(const UString& a_sExtendedHeaderFileName)
 {
 	m_sExtendedHeaderFileName = a_sExtendedHeaderFileName;
 }
 
-void CNcch::SetLogoRegionFileName(const string& a_sLogoRegionFileName)
+void CNcch::SetLogoRegionFileName(const UString& a_sLogoRegionFileName)
 {
 	m_sLogoRegionFileName = a_sLogoRegionFileName;
 }
 
-void CNcch::SetPlainRegionFileName(const string& a_sPlainRegionFileName)
+void CNcch::SetPlainRegionFileName(const UString& a_sPlainRegionFileName)
 {
 	m_sPlainRegionFileName = a_sPlainRegionFileName;
 }
 
-void CNcch::SetExeFsFileName(const string& a_sExeFsFileName)
+void CNcch::SetExeFsFileName(const UString& a_sExeFsFileName)
 {
 	m_sExeFsFileName = a_sExeFsFileName;
 }
 
-void CNcch::SetRomFsFileName(const string& a_sRomFsFileName)
+void CNcch::SetRomFsFileName(const UString& a_sRomFsFileName)
 {
 	m_sRomFsFileName = a_sRomFsFileName;
 }
@@ -157,7 +157,7 @@ n64* CNcch::GetOffsetAndSize()
 bool CNcch::ExtractFile()
 {
 	bool bResult = true;
-	m_fpNcch = Fopen(m_sFileName.c_str(), "rb");
+	m_fpNcch = UFopen(m_sFileName.c_str(), USTR("rb"));
 	if (m_fpNcch == nullptr)
 	{
 		return false;
@@ -166,21 +166,21 @@ bool CNcch::ExtractFile()
 	calculateMediaUnitSize();
 	calculateOffsetSize();
 	calculateKey();
-	if (!extractFile(m_sHeaderFileName, 0, sizeof(m_NcchHeader), true, "ncch header"))
+	if (!extractFile(m_sHeaderFileName, 0, sizeof(m_NcchHeader), true, USTR("ncch header")))
 	{
 		bResult = false;
 	}
 	calculateCounter(kAesCtrTypeExtendedHeader);
 	m_sXorFileName = m_sExtendedHeaderXorFileName;
-	if (!extractFile(m_sExtendedHeaderFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], false, "extendedheader"))
+	if (!extractFile(m_sExtendedHeaderFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], false, USTR("extendedheader")))
 	{
 		bResult = false;
 	}
-	if (!extractFile(m_sLogoRegionFileName, m_nOffsetAndSize[kOffsetSizeIndexLogoRegion * 2], m_nOffsetAndSize[kOffsetSizeIndexLogoRegion * 2 + 1], true, "logoregion"))
+	if (!extractFile(m_sLogoRegionFileName, m_nOffsetAndSize[kOffsetSizeIndexLogoRegion * 2], m_nOffsetAndSize[kOffsetSizeIndexLogoRegion * 2 + 1], true, USTR("logoregion")))
 	{
 		bResult = false;
 	}
-	if (!extractFile(m_sPlainRegionFileName, m_nOffsetAndSize[kOffsetSizeIndexPlainRegion * 2], m_nOffsetAndSize[kOffsetSizeIndexPlainRegion * 2 + 1], true, "plainregion"))
+	if (!extractFile(m_sPlainRegionFileName, m_nOffsetAndSize[kOffsetSizeIndexPlainRegion * 2], m_nOffsetAndSize[kOffsetSizeIndexPlainRegion * 2 + 1], true, USTR("plainregion")))
 	{
 		bResult = false;
 	}
@@ -222,7 +222,7 @@ bool CNcch::ExtractFile()
 		}
 		if (bEncryptResult)
 		{
-			FILE* fp = Fopen(m_sExeFsFileName.c_str(), "wb");
+			FILE* fp = UFopen(m_sExeFsFileName.c_str(), USTR("wb"));
 			if (fp == nullptr)
 			{
 				bResult = false;
@@ -231,7 +231,7 @@ bool CNcch::ExtractFile()
 			{
 				if (m_bVerbose)
 				{
-					printf("save: %s\n", m_sExeFsFileName.c_str());
+					UPrintf(USTR("save: %") PRIUS USTR("\n"), m_sExeFsFileName.c_str());
 				}
 				fwrite(pExeFs, 1, static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1]), fp);
 				fclose(fp);
@@ -242,13 +242,13 @@ bool CNcch::ExtractFile()
 		{
 			delete[] pExeFs;
 			bResult = false;
-			extractFile(m_sExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], true, "exefs");
+			extractFile(m_sExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], true, USTR("exefs"));
 		}
 	}
 	else
 	{
 		m_sXorFileName = m_sExeFsXorFileName;
-		if (!extractFile(m_sExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], false, "exefs"))
+		if (!extractFile(m_sExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], false, USTR("exefs")))
 		{
 			bResult = false;
 		}
@@ -258,13 +258,13 @@ bool CNcch::ExtractFile()
 	if (m_bRomFsAutoKey)
 	{
 		m_nEncryptMode = kEncryptModeAesCtr;
-		if (!extractFile(m_sRomFsFileName, m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], false, "romfs"))
+		if (!extractFile(m_sRomFsFileName, m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], false, USTR("romfs")))
 		{
 			bResult = false;
 		}
 		m_nEncryptMode = kEncryptModeXor;
 	}
-	else if (!extractFile(m_sRomFsFileName, m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], false, "romfs"))
+	else if (!extractFile(m_sRomFsFileName, m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], false, USTR("romfs")))
 	{
 		bResult = false;
 	}
@@ -275,7 +275,7 @@ bool CNcch::ExtractFile()
 bool CNcch::CreateFile()
 {
 	bool bResult = true;
-	m_fpNcch = Fopen(m_sFileName.c_str(), "wb");
+	m_fpNcch = UFopen(m_sFileName.c_str(), USTR("wb"));
 	if (m_fpNcch == nullptr)
 	{
 		return false;
@@ -322,7 +322,7 @@ bool CNcch::CreateFile()
 bool CNcch::EncryptFile()
 {
 	bool bResult = true;
-	m_fpNcch = Fopen(m_sFileName.c_str(), "rb");
+	m_fpNcch = UFopen(m_sFileName.c_str(), USTR("rb"));
 	if (m_fpNcch == nullptr)
 	{
 		return false;
@@ -365,7 +365,7 @@ bool CNcch::EncryptFile()
 		}
 		else if (m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] != 0)
 		{
-			m_fpNcch = Fopen(m_sFileName.c_str(), "rb");
+			m_fpNcch = UFopen(m_sFileName.c_str(), USTR("rb"));
 			if (m_fpNcch == nullptr)
 			{
 				bResult = false;
@@ -462,9 +462,9 @@ void CNcch::Analyze()
 	}
 }
 
-bool CNcch::IsCxiFile(const string& a_sFileName)
+bool CNcch::IsCxiFile(const UString& a_sFileName)
 {
-	FILE* fp = Fopen(a_sFileName.c_str(), "rb");
+	FILE* fp = UFopen(a_sFileName.c_str(), USTR("rb"));
 	if (fp == nullptr)
 	{
 		return false;
@@ -488,9 +488,9 @@ bool CNcch::IsCxiFile(const string& a_sFileName)
 	return bIsCxiFile;
 }
 
-bool CNcch::IsCfaFile(const string& a_sFileName)
+bool CNcch::IsCfaFile(const UString& a_sFileName)
 {
-	FILE* fp = Fopen(a_sFileName.c_str(), "rb");
+	FILE* fp = UFopen(a_sFileName.c_str(), USTR("rb"));
 	if (fp == nullptr)
 	{
 		return false;
@@ -731,14 +731,14 @@ void CNcch::calculateCounter(EAesCtrType a_eAesCtrType)
 	}
 }
 
-bool CNcch::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const string& a_sType)
+bool CNcch::extractFile(const UString& a_sFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const UChar* a_pType)
 {
 	bool bResult = true;
 	if (!a_sFileName.empty())
 	{
 		if (a_nSize != 0)
 		{
-			FILE* fp = Fopen(a_sFileName.c_str(), "wb");
+			FILE* fp = UFopen(a_sFileName.c_str(), USTR("wb"));
 			if (fp == nullptr)
 			{
 				bResult = false;
@@ -747,7 +747,7 @@ bool CNcch::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, b
 			{
 				if (m_bVerbose)
 				{
-					printf("save: %s\n", a_sFileName.c_str());
+					UPrintf(USTR("save: %") PRIUS USTR("\n"), a_sFileName.c_str());
 				}
 				if (a_bPlainData || m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_sXorFileName.empty()))
 				{
@@ -766,33 +766,33 @@ bool CNcch::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, b
 		}
 		else if (m_bVerbose)
 		{
-			printf("INFO: %s is not exists, %s will not be create\n", a_sType.c_str(), a_sFileName.c_str());
+			UPrintf(USTR("INFO: %") PRIUS USTR(" is not exists, %") PRIUS USTR(" will not be create\n"), a_pType, a_sFileName.c_str());
 		}
 	}
 	else if (a_nSize != 0 && m_bVerbose)
 	{
-		printf("INFO: %s is not extract\n", a_sType.c_str());
+		UPrintf(USTR("INFO: %") PRIUS USTR(" is not extract\n"), a_pType);
 	}
 	return bResult;
 }
 
 bool CNcch::createHeader()
 {
-	FILE* fp = Fopen(m_sHeaderFileName.c_str(), "rb");
+	FILE* fp = UFopen(m_sHeaderFileName.c_str(), USTR("rb"));
 	if (fp == nullptr)
 	{
 		return false;
 	}
 	if (m_bVerbose)
 	{
-		printf("load: %s\n", m_sHeaderFileName.c_str());
+		UPrintf(USTR("load: %") PRIUS USTR("\n"), m_sHeaderFileName.c_str());
 	}
 	Fseek(fp, 0, SEEK_END);
 	n64 nFileSize = Ftell(fp);
 	if (nFileSize < sizeof(m_NcchHeader))
 	{
 		fclose(fp);
-		printf("ERROR: ncch header is too short\n\n");
+		UPrintf(USTR("ERROR: ncch header is too short\n\n"));
 		return false;
 	}
 	Fseek(fp, 0, SEEK_SET);
@@ -816,7 +816,7 @@ bool CNcch::createExtendedHeader()
 {
 	if (!m_sExtendedHeaderFileName.empty())
 	{
-		FILE* fp = Fopen(m_sExtendedHeaderFileName.c_str(), "rb");
+		FILE* fp = UFopen(m_sExtendedHeaderFileName.c_str(), USTR("rb"));
 		if (fp == nullptr)
 		{
 			clearExtendedHeader();
@@ -824,7 +824,7 @@ bool CNcch::createExtendedHeader()
 		}
 		if (m_bVerbose)
 		{
-			printf("load: %s\n", m_sExtendedHeaderFileName.c_str());
+			UPrintf(USTR("load: %") PRIUS USTR("\n"), m_sExtendedHeaderFileName.c_str());
 		}
 		Fseek(fp, 0, SEEK_END);
 		n64 nFileSize = Ftell(fp);
@@ -832,7 +832,7 @@ bool CNcch::createExtendedHeader()
 		{
 			fclose(fp);
 			clearExtendedHeader();
-			printf("ERROR: extendedheader is too short\n\n");
+			UPrintf(USTR("ERROR: extendedheader is too short\n\n"));
 			return false;
 		}
 		m_NcchHeader.Ncch.ExtendedHeaderSize = sizeof(NcchExtendedHeader);
@@ -872,7 +872,7 @@ bool CNcch::createLogoRegion()
 {
 	if (!m_sLogoRegionFileName.empty())
 	{
-		FILE* fp = Fopen(m_sLogoRegionFileName.c_str(), "rb");
+		FILE* fp = UFopen(m_sLogoRegionFileName.c_str(), USTR("rb"));
 		if (fp == nullptr)
 		{
 			clearLogoRegion();
@@ -880,7 +880,7 @@ bool CNcch::createLogoRegion()
 		}
 		if (m_bVerbose)
 		{
-			printf("load: %s\n", m_sLogoRegionFileName.c_str());
+			UPrintf(USTR("load: %") PRIUS USTR("\n"), m_sLogoRegionFileName.c_str());
 		}
 		Fseek(fp, 0, SEEK_END);
 		n64 nFileSize = Ftell(fp);
@@ -907,7 +907,7 @@ bool CNcch::createPlainRegion()
 {
 	if (!m_sPlainRegionFileName.empty())
 	{
-		FILE* fp = Fopen(m_sPlainRegionFileName.c_str(), "rb");
+		FILE* fp = UFopen(m_sPlainRegionFileName.c_str(), USTR("rb"));
 		if (fp == nullptr)
 		{
 			clearPlainRegion();
@@ -915,7 +915,7 @@ bool CNcch::createPlainRegion()
 		}
 		if (m_bVerbose)
 		{
-			printf("load: %s\n", m_sPlainRegionFileName.c_str());
+			UPrintf(USTR("load: %") PRIUS USTR("\n"), m_sPlainRegionFileName.c_str());
 		}
 		Fseek(fp, 0, SEEK_END);
 		n64 nFileSize = Ftell(fp);
@@ -939,7 +939,7 @@ bool CNcch::createExeFs()
 {
 	if (!m_sExeFsFileName.empty())
 	{
-		FILE* fp = Fopen(m_sExeFsFileName.c_str(), "rb");
+		FILE* fp = UFopen(m_sExeFsFileName.c_str(), USTR("rb"));
 		if (fp == nullptr)
 		{
 			clearExeFs();
@@ -947,7 +947,7 @@ bool CNcch::createExeFs()
 		}
 		if (m_bVerbose)
 		{
-			printf("load: %s\n", m_sExeFsFileName.c_str());
+			UPrintf(USTR("load: %") PRIUS USTR("\n"), m_sExeFsFileName.c_str());
 		}
 		Fseek(fp, 0, SEEK_END);
 		n64 nFileSize = Ftell(fp);
@@ -956,7 +956,7 @@ bool CNcch::createExeFs()
 		{
 			fclose(fp);
 			clearExeFs();
-			printf("ERROR: exefs is too short\n\n");
+			UPrintf(USTR("ERROR: exefs is too short\n\n"));
 			return false;
 		}
 		m_NcchHeader.Ncch.ExeFsOffset = m_NcchHeader.Ncch.ContentSize;
@@ -1052,7 +1052,7 @@ bool CNcch::createRomFs()
 	if (!m_sRomFsFileName.empty())
 	{
 		bool bEncrypted = !CRomFs::IsRomFsFile(m_sRomFsFileName);
-		FILE* fp = Fopen(m_sRomFsFileName.c_str(), "rb");
+		FILE* fp = UFopen(m_sRomFsFileName.c_str(), USTR("rb"));
 		if (fp == nullptr)
 		{
 			clearRomFs();
@@ -1060,12 +1060,12 @@ bool CNcch::createRomFs()
 		}
 		if (bEncrypted && !m_bNotUpdateRomFsHash)
 		{
-			printf("INFO: romfs is encrypted\n");
+			UPrintf(USTR("INFO: romfs is encrypted\n"));
 			m_bNotUpdateRomFsHash = true;
 		}
 		if (m_bVerbose)
 		{
-			printf("load: %s\n", m_sRomFsFileName.c_str());
+			UPrintf(USTR("load: %") PRIUS USTR("\n"), m_sRomFsFileName.c_str());
 		}
 		Fseek(fp, 0, SEEK_END);
 		n64 nFileSize = Ftell(fp);
@@ -1076,7 +1076,7 @@ bool CNcch::createRomFs()
 			{
 				fclose(fp);
 				clearRomFs();
-				printf("ERROR: romfs is too short\n\n");
+				UPrintf(USTR("ERROR: romfs is too short\n\n"));
 				return false;
 			}
 			Fseek(fp, 0, SEEK_SET);
@@ -1087,7 +1087,7 @@ bool CNcch::createRomFs()
 			{
 				fclose(fp);
 				clearRomFs();
-				printf("ERROR: romfs is too short\n\n");
+				UPrintf(USTR("ERROR: romfs is too short\n\n"));
 				return false;
 			}
 			m_NcchHeader.Ncch.RomFsHashRegionSize = static_cast<u32>(nSuperBlockSize / m_nMediaUnitSize);

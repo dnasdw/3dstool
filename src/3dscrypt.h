@@ -8,9 +8,9 @@ void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const CBigNum& a_Key,
 
 bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const UString& a_sXorFileName, n64 a_nOffset, n64 a_nSize);
 
-bool FEncryptAesCtrFile(const string& a_sDataFileName, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset);
+bool FEncryptAesCtrFile(const UString& a_sDataFileName, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset);
 
-bool FEncryptXorFile(const string& a_sDataFileName, const UString& a_sXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset);
+bool FEncryptXorFile(const UString& a_sDataFileName, const UString& a_sXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset);
 
 void FEncryptAesCtrData(void* a_pData, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataSize, n64 a_nXorOffset);
 

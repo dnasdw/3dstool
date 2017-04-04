@@ -24,15 +24,15 @@ class CExeFs
 public:
 	CExeFs();
 	~CExeFs();
-	void SetFileName(const string& a_sFileName);
+	void SetFileName(const UString& a_sFileName);
 	void SetVerbose(bool a_bVerbose);
-	void SetHeaderFileName(const string& a_sHeaderFileName);
+	void SetHeaderFileName(const UString& a_sHeaderFileName);
 	void SetExeFsDirName(const UString& a_sExeFsDirName);
 	void SetUncompress(bool a_bUncompress);
 	void SetCompress(bool a_bCompress);
 	bool ExtractFile();
 	bool CreateFile();
-	static bool IsExeFsFile(const string& a_sFileName, n64 a_nOffset);
+	static bool IsExeFsFile(const UString& a_sFileName, n64 a_nOffset);
 	static bool IsExeFsSuperBlock(const ExeFsSuperBlock& a_ExeFsSuperBlock);
 	static const int s_nBlockSize;
 private:
@@ -41,9 +41,9 @@ private:
 	bool createHeader();
 	bool createSection(int a_nIndex);
 	void clearSection(int a_nIndex);
-	string m_sFileName;
+	UString m_sFileName;
 	bool m_bVerbose;
-	string m_sHeaderFileName;
+	UString m_sHeaderFileName;
 	UString m_sExeFsDirName;
 	bool m_bUncompress;
 	bool m_bCompress;

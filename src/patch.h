@@ -28,10 +28,10 @@ public:
 	CPatch();
 	~CPatch();
 	void SetFileType(C3dsTool::EFileType a_eFileType);
-	void SetFileName(const string& a_sFileName);
+	void SetFileName(const UString& a_sFileName);
 	void SetVerbose(bool a_bVerbose);
-	void SetOldFileName(const string& a_sOldFileName);
-	void SetNewFileName(const string& a_sNewFileName);
+	void SetOldFileName(const UString& a_sOldFileName);
+	void SetNewFileName(const UString& a_sNewFileName);
 	void SetPatchFileName(const UString& a_sPatchFileName);
 	bool CreatePatchFile();
 	bool ApplyPatchFile();
@@ -56,10 +56,10 @@ private:
 	void executeChangeSize(n64 a_nSize);
 	void executeSeekWrite(bool a_bSeekSet, n64 a_nOffset, size_t a_nSize, u8* a_pData);
 	C3dsTool::EFileType m_eFileType;
-	string m_sFileName;
+	UString m_sFileName;
 	bool m_bVerbose;
-	string m_sOldFileName;
-	string m_sNewFileName;
+	UString m_sOldFileName;
+	UString m_sNewFileName;
 	UString m_sPatchFileName;
 	FILE* m_fpOld;
 	FILE* m_fpNew;

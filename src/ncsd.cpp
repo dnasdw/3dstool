@@ -22,7 +22,7 @@ CNcsd::~CNcsd()
 {
 }
 
-void CNcsd::SetFileName(const string& a_sFileName)
+void CNcsd::SetFileName(const UString& a_sFileName)
 {
 	m_sFileName = a_sFileName;
 }
@@ -32,12 +32,12 @@ void CNcsd::SetVerbose(bool a_bVerbose)
 	m_bVerbose = a_bVerbose;
 }
 
-void CNcsd::SetHeaderFileName(const string& a_sHeaderFileName)
+void CNcsd::SetHeaderFileName(const UString& a_sHeaderFileName)
 {
 	m_sHeaderFileName = a_sHeaderFileName;
 }
 
-void CNcsd::SetNcchFileName(const map<int, string>& a_mNcchFileName)
+void CNcsd::SetNcchFileName(const map<int, UString>& a_mNcchFileName)
 {
 	m_mNcchFileName.insert(a_mNcchFileName.begin(), a_mNcchFileName.end());
 }
@@ -70,20 +70,20 @@ n64* CNcsd::GetOffsetAndSize()
 bool CNcsd::ExtractFile()
 {
 	bool bResult = true;
-	m_fpNcsd = Fopen(m_sFileName.c_str(), "rb");
+	m_fpNcsd = UFopen(m_sFileName.c_str(), USTR("rb"));
 	if (m_fpNcsd == nullptr)
 	{
 		return false;
 	}
 	fread(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, m_fpNcsd);
 	calculateMediaUnitSize();
-	if (!extractFile(m_sHeaderFileName, 0, s_nOffsetFirstNcch, "ncsd header", -1, false))
+	if (!extractFile(m_sHeaderFileName, 0, s_nOffsetFirstNcch, USTR("ncsd header"), -1, false))
 	{
 		bResult = false;
 	}
 	for (int i = 0; i < 8; i++)
 	{
-		if (!extractFile(m_mNcchFileName[i], m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2], m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2 + 1], "partition", i, true))
+		if (!extractFile(m_mNcchFileName[i], m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2], m_NcsdHeader.Ncsd.ParitionOffsetAndSize[i * 2 + 1], USTR("partition"), i, true))
 		{
 			bResult = false;
 		}
@@ -95,7 +95,7 @@ bool CNcsd::ExtractFile()
 bool CNcsd::CreateFile()
 {
 	bool bResult = true;
-	m_fpNcsd = Fopen(m_sFileName.c_str(), "wb");
+	m_fpNcsd = UFopen(m_sFileName.c_str(), USTR("wb"));
 	if (m_fpNcsd == nullptr)
 	{
 		return false;
@@ -121,7 +121,7 @@ bool CNcsd::CreateFile()
 		m_bNotPad = false;
 		if (m_bVerbose)
 		{
-			printf("INFO: not support --not-pad with CARD2 type\n");
+			UPrintf(USTR("INFO: not support --not-pad with CARD2 type\n"));
 		}
 	}
 	if (m_bNotPad)
@@ -150,7 +150,7 @@ bool CNcsd::CreateFile()
 
 bool CNcsd::TrimFile()
 {
-	m_fpNcsd = Fopen(m_sFileName.c_str(), "rb+");
+	m_fpNcsd = UFopen(m_sFileName.c_str(), USTR("rb+"));
 	if (m_fpNcsd == nullptr)
 	{
 		return false;
@@ -160,7 +160,7 @@ bool CNcsd::TrimFile()
 	{
 		if (m_bVerbose)
 		{
-			printf("INFO: not support --trim with CARD2 type\n");
+			UPrintf(USTR("INFO: not support --trim with CARD2 type\n"));
 		}
 		fclose(m_fpNcsd);
 		return false;
@@ -184,7 +184,7 @@ bool CNcsd::TrimFile()
 
 bool CNcsd::PadFile()
 {
-	m_fpNcsd = Fopen(m_sFileName.c_str(), "rb+");
+	m_fpNcsd = UFopen(m_sFileName.c_str(), USTR("rb+"));
 	if (m_fpNcsd == nullptr)
 	{
 		return false;
@@ -194,7 +194,7 @@ bool CNcsd::PadFile()
 	{
 		if (m_bVerbose)
 		{
-			printf("INFO: not support --pad with CARD2 type\n");
+			UPrintf(USTR("INFO: not support --pad with CARD2 type\n"));
 		}
 		fclose(m_fpNcsd);
 		return false;
@@ -252,9 +252,9 @@ void CNcsd::Analyze()
 	}
 }
 
-bool CNcsd::IsNcsdFile(const string& a_sFileName)
+bool CNcsd::IsNcsdFile(const UString& a_sFileName)
 {
-	FILE* fp = Fopen(a_sFileName.c_str(), "rb");
+	FILE* fp = UFopen(a_sFileName.c_str(), USTR("rb"));
 	if (fp == nullptr)
 	{
 		return false;
@@ -297,14 +297,14 @@ void CNcsd::calculateValidSize()
 	m_nValidSize *= m_nMediaUnitSize;
 }
 
-bool CNcsd::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, const string& a_sType, int a_nTypeId, bool bMediaUnitSize)
+bool CNcsd::extractFile(const UString& a_sFileName, n64 a_nOffset, n64 a_nSize, const UChar* a_pType, int a_nTypeId, bool bMediaUnitSize)
 {
 	bool bResult = true;
 	if (!a_sFileName.empty())
 	{
 		if (a_nOffset != 0 || a_nSize != 0)
 		{
-			FILE* fp = Fopen(a_sFileName.c_str(), "wb");
+			FILE* fp = UFopen(a_sFileName.c_str(), USTR("wb"));
 			if (fp == nullptr)
 			{
 				bResult = false;
@@ -313,7 +313,7 @@ bool CNcsd::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, c
 			{
 				if (m_bVerbose)
 				{
-					printf("save: %s\n", a_sFileName.c_str());
+					UPrintf(USTR("save: %") PRIUS USTR("\n"), a_sFileName.c_str());
 				}
 				if (bMediaUnitSize)
 				{
@@ -328,11 +328,11 @@ bool CNcsd::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, c
 		{
 			if (a_nTypeId < 0 || a_nTypeId >= 8)
 			{
-				printf("INFO: %s is not exists, %s will not be create\n", a_sType.c_str(), a_sFileName.c_str());
+				UPrintf(USTR("INFO: %") PRIUS USTR(" is not exists, %") PRIUS USTR(" will not be create\n"), a_pType, a_sFileName.c_str());
 			}
 			else
 			{
-				printf("INFO: %s %d is not exists, %s will not be create\n", a_sType.c_str(), a_nTypeId, a_sFileName.c_str());
+				UPrintf(USTR("INFO: %") PRIUS USTR(" %d is not exists, %") PRIUS USTR(" will not be create\n"), a_pType, a_nTypeId, a_sFileName.c_str());
 			}
 		}
 	}
@@ -340,11 +340,11 @@ bool CNcsd::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, c
 	{
 		if (a_nTypeId < 0 || a_nTypeId >= 8)
 		{
-			printf("INFO: %s is not extract\n", a_sType.c_str());
+			UPrintf(USTR("INFO: %") PRIUS USTR(" is not extract\n"), a_pType);
 		}
 		else
 		{
-			printf("INFO: %s %d is not extract\n", a_sType.c_str(), a_nTypeId);
+			UPrintf(USTR("INFO: %") PRIUS USTR(" %d is not extract\n"), a_pType, a_nTypeId);
 		}
 	}
 	return bResult;
@@ -352,7 +352,7 @@ bool CNcsd::extractFile(const string& a_sFileName, n64 a_nOffset, n64 a_nSize, c
 
 bool CNcsd::createHeader()
 {
-	FILE* fp = Fopen(m_sHeaderFileName.c_str(), "rb");
+	FILE* fp = UFopen(m_sHeaderFileName.c_str(), USTR("rb"));
 	if (fp == nullptr)
 	{
 		return false;
@@ -362,12 +362,12 @@ bool CNcsd::createHeader()
 	if (nFileSize < sizeof(m_NcsdHeader) + sizeof(m_CardInfo))
 	{
 		fclose(fp);
-		printf("ERROR: ncsd header is too short\n\n");
+		UPrintf(USTR("ERROR: ncsd header is too short\n\n"));
 		return false;
 	}
 	if (m_bVerbose)
 	{
-		printf("load: %s\n", m_sHeaderFileName.c_str());
+		UPrintf(USTR("load: %") PRIUS USTR("\n"), m_sHeaderFileName.c_str());
 	}
 	Fseek(fp, 0, SEEK_SET);
 	fread(&m_NcsdHeader, sizeof(m_NcsdHeader), 1, fp);
@@ -383,7 +383,7 @@ bool CNcsd::createNcch(int a_nIndex)
 {
 	if (!m_mNcchFileName[a_nIndex].empty())
 	{
-		FILE* fp = Fopen(m_mNcchFileName[a_nIndex].c_str(), "rb");
+		FILE* fp = UFopen(m_mNcchFileName[a_nIndex].c_str(), USTR("rb"));
 		if (fp == nullptr)
 		{
 			clearNcch(a_nIndex);
@@ -391,7 +391,7 @@ bool CNcsd::createNcch(int a_nIndex)
 		}
 		if (m_bVerbose)
 		{
-			printf("load: %s\n", m_mNcchFileName[a_nIndex].c_str());
+			UPrintf(USTR("load: %") PRIUS USTR("\n"), m_mNcchFileName[a_nIndex].c_str());
 		}
 		Fseek(fp, 0, SEEK_END);
 		n64 nFileSize = Ftell(fp);

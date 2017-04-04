@@ -68,9 +68,9 @@ bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const UString& a_sXorFil
 	return true;
 }
 
-bool FEncryptAesCtrFile(const string& a_sDataFileName, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset)
+bool FEncryptAesCtrFile(const UString& a_sDataFileName, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset)
 {
-	FILE* fpData = Fopen(a_sDataFileName.c_str(), "rb+");
+	FILE* fpData = UFopen(a_sDataFileName.c_str(), USTR("rb+"));
 	if (fpData == nullptr)
 	{
 		return false;
@@ -80,7 +80,7 @@ bool FEncryptAesCtrFile(const string& a_sDataFileName, const CBigNum& a_Key, con
 	if (nDataSize < a_nDataOffset)
 	{
 		fclose(fpData);
-		printf("ERROR: data file %s size less than data offset\n\n", a_sDataFileName.c_str());
+		UPrintf(USTR("ERROR: data file %") PRIUS USTR(" size less than data offset\n\n"), a_sDataFileName.c_str());
 		return false;
 	}
 	if (a_bDataFileAll)
@@ -90,7 +90,7 @@ bool FEncryptAesCtrFile(const string& a_sDataFileName, const CBigNum& a_Key, con
 	if (nDataSize < a_nDataOffset + a_nDataSize)
 	{
 		fclose(fpData);
-		printf("ERROR: data file %s size less than data offset + data size\n\n", a_sDataFileName.c_str());
+		UPrintf(USTR("ERROR: data file %") PRIUS USTR(" size less than data offset + data size\n\n"), a_sDataFileName.c_str());
 		return false;
 	}
 	u8 uKey[16] = {};
@@ -127,9 +127,9 @@ bool FEncryptAesCtrFile(const string& a_sDataFileName, const CBigNum& a_Key, con
 	return true;
 }
 
-bool FEncryptXorFile(const string& a_sDataFileName, const UString& a_sXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset)
+bool FEncryptXorFile(const UString& a_sDataFileName, const UString& a_sXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset)
 {
-	FILE* fpData = Fopen(a_sDataFileName.c_str(), "rb+");
+	FILE* fpData = UFopen(a_sDataFileName.c_str(), USTR("rb+"));
 	if (fpData == nullptr)
 	{
 		return false;
@@ -139,7 +139,7 @@ bool FEncryptXorFile(const string& a_sDataFileName, const UString& a_sXorFileNam
 	if (nDataSize < a_nDataOffset)
 	{
 		fclose(fpData);
-		printf("ERROR: data file %s size less than data offset\n\n", a_sDataFileName.c_str());
+		UPrintf(USTR("ERROR: data file %") PRIUS USTR(" size less than data offset\n\n"), a_sDataFileName.c_str());
 		return false;
 	}
 	if (a_bDataFileAll)
@@ -149,7 +149,7 @@ bool FEncryptXorFile(const string& a_sDataFileName, const UString& a_sXorFileNam
 	if (nDataSize < a_nDataOffset + a_nDataSize)
 	{
 		fclose(fpData);
-		printf("ERROR: data file %s size less than data offset + data size\n\n", a_sDataFileName.c_str());
+		UPrintf(USTR("ERROR: data file %") PRIUS USTR(" size less than data offset + data size\n\n"), a_sDataFileName.c_str());
 		return false;
 	}
 	FILE* fpXor = UFopen(a_sXorFileName.c_str(), USTR("rb"));
