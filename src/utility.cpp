@@ -5,7 +5,7 @@ n64 Align(n64 a_nData, n64 a_nAlignment)
 	return (a_nData + a_nAlignment - 1) / a_nAlignment * a_nAlignment;
 }
 
-bool UMakeDir(const UString::value_type* a_pDirName)
+bool UMakeDir(const UChar* a_pDirName)
 {
 	if (UMkdir(a_pDirName) != 0)
 	{
@@ -17,7 +17,7 @@ bool UMakeDir(const UString::value_type* a_pDirName)
 	return true;
 }
 
-bool UGetFileSize(const UString::value_type* a_pFileName, n64& a_nFileSize)
+bool UGetFileSize(const UChar* a_pFileName, n64& a_nFileSize)
 {
 	Stat st;
 	if (UStat(a_pFileName, &st) != 0)
@@ -110,6 +110,32 @@ void PadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData)
 	delete[] pBuffer;
 }
 
+#if defined(SDW_MAIN)
+extern int UMain(int argc, UChar* argv[]);
+
+int main(int argc, char* argv[])
+{
+	SetLocale();
+	int nArgc = 0;
+	UChar** pArgv = nullptr;
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
+	pArgv = CommandLineToArgvW(GetCommandLineW(), &nArgc);
+	if (pArgv == nullptr)
+	{
+		return 1;
+	}
+#else
+	nArgc = argc;
+	pArgv = argv;
+#endif
+	int nResult = UMain(nArgc, pArgv);
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
+	LocalFree(pArgv);
+#endif
+	return nResult;
+}
+#endif
+
 const UString& UGetModuleFileName()
 {
 	const u32 uMaxPath = 4096;
@@ -186,6 +212,11 @@ void SetLocale()
 n32 SToN32(const string& a_sString, int a_nRadix /* = 10 */)
 {
 	return static_cast<n32>(strtol(a_sString.c_str(), nullptr, a_nRadix));
+}
+
+n32 SToN32(const wstring& a_sString, int a_nRadix /* = 10 */)
+{
+	return static_cast<n32>(wcstol(a_sString.c_str(), nullptr, a_nRadix));
 }
 
 #if (SDW_COMPILER == SDW_COMPILER_MSC && SDW_COMPILER_VERSION < 1600) || (SDW_PLATFORM == SDW_PLATFORM_WINDOWS && SDW_COMPILER != SDW_COMPILER_MSC)
@@ -304,10 +335,25 @@ wstring AToW(const string& a_sString)
 	delete[] pTemp;
 	return sString;
 }
+
+string WToA(const wstring& a_sString)
+{
+	int nLength = WideCharToMultiByte(CP_ACP, 0, a_sString.c_str(), -1, nullptr, 0, nullptr, nullptr);
+	char* pTemp = new char[nLength];
+	WideCharToMultiByte(CP_ACP, 0, a_sString.c_str(), -1, pTemp, nLength, nullptr, nullptr);
+	string sString = pTemp;
+	delete[] pTemp;
+	return sString;
+}
 #else
 wstring AToW(const string& a_sString)
 {
 	return U8ToW(a_sString);
+}
+
+string WToA(const wstring& a_sString)
+{
+	return WToU8(a_sString);
 }
 #endif
 

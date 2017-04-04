@@ -1,7 +1,7 @@
 AUTO_FILES("." "src" "\\.(cpp|h)$")
 include_directories(${DEP_INCLUDE_DIR})
 link_directories(${DEP_LIBRARY_DIR})
-add_definitions(-DCURL_STATICLIB)
+add_definitions(-DSDW_MAIN -DCURL_STATICLIB)
 if(MSVC)
   string(REPLACE "/MDd" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")

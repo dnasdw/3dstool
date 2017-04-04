@@ -14,92 +14,92 @@
 
 C3dsTool::SOption C3dsTool::s_Option[] =
 {
-	{ nullptr, 0, "action:" },
-	{ "extract", 'x', "extract the target file" },
-	{ "create", 'c', "create the target file" },
-	{ "encrypt", 'e', "encrypt the target file" },
-	{ "uncompress", 'u', "uncompress the target file" },
-	{ "compress", 'z', "compress the target file" },
-	{ "trim", 'r', "trim the cci file" },
-	{ "pad", 'p', "pad the cci file" },
-	{ "diff", 0, "create the patch file from the old file and the new file" },
-	{ "patch", 0, "apply the patch file to the target file" },
-	{ "sample", 0, "show the samples" },
-	{ "help", 'h', "show this help" },
-	{ nullptr, 0, "\ncommon:" },
-	{ "type", 't', "[[card|cci|3ds]|[exec|cxi]|[data|cfa]|exefs|romfs|banner]\n\t\tthe type of the file, optional" },
-	{ "file", 'f', "the target file, required" },
-	{ "verbose", 'v', "show the info" },
-	{ nullptr, 0, " extract/create:" },
-	{ nullptr, 0, "  cci/cxi/cfa/exefs:" },
-	{ "header", 0, "the header file of the target file" },
-	{ nullptr, 0, " encrypt:" },
-	{ "key0", 0, "short for --key 00000000000000000000000000000000" },
-	{ "key", 0, "the hex string of the key used by the AES-CTR encryption" },
-	{ "counter", 0, "the hex string of the counter used by the AES-CTR encryption" },
-	{ "xor", 0, "the xor data file used by the xor encryption" },
-	{ nullptr, 0, " compress:" },
-	{ "compress-align", 0, "[1|4|8|16|32]\n\t\tthe alignment of the compressed filesize, optional" },
-	{ nullptr, 0, "  uncompress:" },
-	{ "compress-type", 0, "[blz|lz(ex)|h4|h8|rl|yaz0]\n\t\tthe type of the compress" },
-	{ "compress-out", 0, "the output file of uncompressed or compressed" },
-	{ nullptr, 0, "  yaz0:" },
-	{ "yaz0-align", 0, "[0|128]\n\t\tthe alignment property of the yaz0 compressed file, optional" },
-	{ nullptr, 0, " diff:" },
-	{ "old", 0, "the old file" },
-	{ "new", 0, "the new file" },
-	{ nullptr, 0, "  patch:" },
-	{ "patch-file", 0, "the patch file" },
-	{ nullptr, 0, "\ncci:" },
-	{ nullptr, 0, " create:" },
-	{ "not-pad", 0, "do not add the pad data" },
-	{ nullptr, 0, "  extract:" },
-	{ "partition0", '0', "the cxi file of the cci file at partition 0" },
-	{ "partition1", '1', "the cfa file of the cci file at partition 1" },
-	{ "partition2", '2', "the cfa file of the cci file at partition 2" },
-	{ "partition3", '3', "the cfa file of the cci file at partition 3" },
-	{ "partition4", '4', "the cfa file of the cci file at partition 4" },
-	{ "partition5", '5', "the cfa file of the cci file at partition 5" },
-	{ "partition6", '6', "the cfa file of the cci file at partition 6" },
-	{ "partition7", '7', "the cfa file of the cci file at partition 7" },
-	{ nullptr, 0, " trim:" },
-	{ "trim-after-partition", 0, "[0~7], the index of the last reserve partition, optional" },
-	{ nullptr, 0, "\ncxi:" },
-	{ nullptr, 0, " create:" },
-	{ "not-update-exh-hash", 0, nullptr },
-	{ "not-update-extendedheader-hash", 0, "do not update the extendedheader hash" },
-	{ nullptr, 0, "  extract:" },
-	{ "exh", 0, nullptr },
-	{ "extendedheader", 0, "the extendedheader file of the cxi file" },
-	{ "logo", 0, nullptr },
-	{ "logoregion", 0, "the logoregion file of the cxi file" },
-	{ "plain", 0, nullptr },
-	{ "plainregion", 0, "the plainregion file of the cxi file" },
-	{ nullptr, 0, "   encrypt:" },
-	{ "exh-xor", 0, nullptr },
-	{ "extendedheader-xor", 0, "the xor data file used by encrypt the extendedheader of the cxi file" },
-	{ "exefs-top-xor", 0, "the xor data file used by encrypt the top section of the exefs of the cxi file" },
-	{ "exefs-top-auto-key", 0, "use the known key to encrypt the top section of the exefs of the cxi file" },
-	{ nullptr, 0, " cfa:" },
-	{ nullptr, 0, "  create:" },
-	{ "not-update-exefs-hash", 0, "do not update the exefs super block hash" },
-	{ "not-update-romfs-hash", 0, "do not update the romfs super block hash" },
-	{ nullptr, 0, "   extract:" },
-	{ "exefs", 0, "the exefs file of the cxi/cfa file" },
-	{ "romfs", 0, "the romfs file of the cxi/cfa file" },
-	{ nullptr, 0, "    encrypt:" },
-	{ "exefs-xor", 0, "the xor data file used by encrypt the exefs of the cxi/cfa file" },
-	{ "romfs-xor", 0, "the xor data file used by encrypt the romfs of the cxi/cfa file" },
-	{ "romfs-auto-key", 0, "use the known key to encrypt the romfs of the cxi/cfa file" },
-	{ nullptr, 0, "\nexefs:" },
-	{ nullptr, 0, " extract/create:" },
-	{ "exefs-dir", 0, "the exefs dir for the exefs file" },
-	{ nullptr, 0, "\nromfs:" },
-	{ nullptr, 0, " extract/create:" },
-	{ "romfs-dir", 0, "the romfs dir for the romfs file" },
-	{ nullptr, 0, "\nbanner:" },
-	{ nullptr, 0, " extract/create:" },
-	{ "banner-dir", 0, "the banner dir for the banner file" },
+	{ nullptr, 0, USTR("action:") },
+	{ USTR("extract"), USTR('x'), USTR("extract the target file") },
+	{ USTR("create"), USTR('c'), USTR("create the target file") },
+	{ USTR("encrypt"), USTR('e'), USTR("encrypt the target file") },
+	{ USTR("uncompress"), USTR('u'), USTR("uncompress the target file") },
+	{ USTR("compress"), USTR('z'), USTR("compress the target file") },
+	{ USTR("trim"), USTR('r'), USTR("trim the cci file") },
+	{ USTR("pad"), USTR('p'), USTR("pad the cci file") },
+	{ USTR("diff"), 0, USTR("create the patch file from the old file and the new file") },
+	{ USTR("patch"), 0, USTR("apply the patch file to the target file") },
+	{ USTR("sample"), 0, USTR("show the samples") },
+	{ USTR("help"), USTR('h'), USTR("show this help") },
+	{ nullptr, 0, USTR("\ncommon:") },
+	{ USTR("type"), USTR('t'), USTR("[[card|cci|3ds]|[exec|cxi]|[data|cfa]|exefs|romfs|banner]\n\t\tthe type of the file, optional") },
+	{ USTR("file"), USTR('f'), USTR("the target file, required") },
+	{ USTR("verbose"), USTR('v'), USTR("show the info") },
+	{ nullptr, 0, USTR(" extract/create:") },
+	{ nullptr, 0, USTR("  cci/cxi/cfa/exefs:") },
+	{ USTR("header"), 0, USTR("the header file of the target file") },
+	{ nullptr, 0, USTR(" encrypt:") },
+	{ USTR("key0"), 0, USTR("short for --key 00000000000000000000000000000000") },
+	{ USTR("key"), 0, USTR("the hex string of the key used by the AES-CTR encryption") },
+	{ USTR("counter"), 0, USTR("the hex string of the counter used by the AES-CTR encryption") },
+	{ USTR("xor"), 0, USTR("the xor data file used by the xor encryption") },
+	{ nullptr, 0, USTR(" compress:") },
+	{ USTR("compress-align"), 0, USTR("[1|4|8|16|32]\n\t\tthe alignment of the compressed filesize, optional") },
+	{ nullptr, 0, USTR("  uncompress:") },
+	{ USTR("compress-type"), 0, USTR("[blz|lz(ex)|h4|h8|rl|yaz0]\n\t\tthe type of the compress") },
+	{ USTR("compress-out"), 0, USTR("the output file of uncompressed or compressed") },
+	{ nullptr, 0, USTR("  yaz0:") },
+	{ USTR("yaz0-align"), 0, USTR("[0|128]\n\t\tthe alignment property of the yaz0 compressed file, optional") },
+	{ nullptr, 0, USTR(" diff:") },
+	{ USTR("old"), 0, USTR("the old file") },
+	{ USTR("new"), 0, USTR("the new file") },
+	{ nullptr, 0, USTR("  patch:") },
+	{ USTR("patch-file"), 0, USTR("the patch file") },
+	{ nullptr, 0, USTR("\ncci:") },
+	{ nullptr, 0, USTR(" create:") },
+	{ USTR("not-pad"), 0, USTR("do not add the pad data") },
+	{ nullptr, 0, USTR("  extract:") },
+	{ USTR("partition0"), USTR('0'), USTR("the cxi file of the cci file at partition 0") },
+	{ USTR("partition1"), USTR('1'), USTR("the cfa file of the cci file at partition 1") },
+	{ USTR("partition2"), USTR('2'), USTR("the cfa file of the cci file at partition 2") },
+	{ USTR("partition3"), USTR('3'), USTR("the cfa file of the cci file at partition 3") },
+	{ USTR("partition4"), USTR('4'), USTR("the cfa file of the cci file at partition 4") },
+	{ USTR("partition5"), USTR('5'), USTR("the cfa file of the cci file at partition 5") },
+	{ USTR("partition6"), USTR('6'), USTR("the cfa file of the cci file at partition 6") },
+	{ USTR("partition7"), USTR('7'), USTR("the cfa file of the cci file at partition 7") },
+	{ nullptr, 0, USTR(" trim:") },
+	{ USTR("trim-after-partition"), 0, USTR("[0~7], the index of the last reserve partition, optional") },
+	{ nullptr, 0, USTR("\ncxi:") },
+	{ nullptr, 0, USTR(" create:") },
+	{ USTR("not-update-exh-hash"), 0, nullptr },
+	{ USTR("not-update-extendedheader-hash"), 0, USTR("do not update the extendedheader hash") },
+	{ nullptr, 0, USTR("  extract:") },
+	{ USTR("exh"), 0, nullptr },
+	{ USTR("extendedheader"), 0, USTR("the extendedheader file of the cxi file") },
+	{ USTR("logo"), 0, nullptr },
+	{ USTR("logoregion"), 0, USTR("the logoregion file of the cxi file") },
+	{ USTR("plain"), 0, nullptr },
+	{ USTR("plainregion"), 0, USTR("the plainregion file of the cxi file") },
+	{ nullptr, 0, USTR("   encrypt:") },
+	{ USTR("exh-xor"), 0, nullptr },
+	{ USTR("extendedheader-xor"), 0, USTR("the xor data file used by encrypt the extendedheader of the cxi file") },
+	{ USTR("exefs-top-xor"), 0, USTR("the xor data file used by encrypt the top section of the exefs of the cxi file") },
+	{ USTR("exefs-top-auto-key"), 0, USTR("use the known key to encrypt the top section of the exefs of the cxi file") },
+	{ nullptr, 0, USTR(" cfa:") },
+	{ nullptr, 0, USTR("  create:") },
+	{ USTR("not-update-exefs-hash"), 0, USTR("do not update the exefs super block hash") },
+	{ USTR("not-update-romfs-hash"), 0, USTR("do not update the romfs super block hash") },
+	{ nullptr, 0, USTR("   extract:") },
+	{ USTR("exefs"), 0, USTR("the exefs file of the cxi/cfa file") },
+	{ USTR("romfs"), 0, USTR("the romfs file of the cxi/cfa file") },
+	{ nullptr, 0, USTR("    encrypt:") },
+	{ USTR("exefs-xor"), 0, USTR("the xor data file used by encrypt the exefs of the cxi/cfa file") },
+	{ USTR("romfs-xor"), 0, USTR("the xor data file used by encrypt the romfs of the cxi/cfa file") },
+	{ USTR("romfs-auto-key"), 0, USTR("use the known key to encrypt the romfs of the cxi/cfa file") },
+	{ nullptr, 0, USTR("\nexefs:") },
+	{ nullptr, 0, USTR(" extract/create:") },
+	{ USTR("exefs-dir"), 0, USTR("the exefs dir for the exefs file") },
+	{ nullptr, 0, USTR("\nromfs:") },
+	{ nullptr, 0, USTR(" extract/create:") },
+	{ USTR("romfs-dir"), 0, USTR("the romfs dir for the romfs file") },
+	{ nullptr, 0, USTR("\nbanner:") },
+	{ nullptr, 0, USTR(" extract/create:") },
+	{ USTR("banner-dir"), 0, USTR("the banner dir for the banner file") },
 	{ nullptr, 0, nullptr }
 };
 
@@ -128,7 +128,7 @@ C3dsTool::~C3dsTool()
 {
 }
 
-int C3dsTool::ParseOptions(int a_nArgc, char* a_pArgv[])
+int C3dsTool::ParseOptions(int a_nArgc, UChar* a_pArgv[])
 {
 	if (a_nArgc <= 1)
 	{
@@ -136,18 +136,18 @@ int C3dsTool::ParseOptions(int a_nArgc, char* a_pArgv[])
 	}
 	for (int i = 1; i < a_nArgc; i++)
 	{
-		int nArgpc = static_cast<int>(strlen(a_pArgv[i]));
+		int nArgpc = static_cast<int>(UCslen(a_pArgv[i]));
 		if (nArgpc == 0)
 		{
 			continue;
 		}
 		int nIndex = i;
-		if (a_pArgv[i][0] != '-')
+		if (a_pArgv[i][0] != USTR('-'))
 		{
-			printf("ERROR: illegal option\n\n");
+			UPrintf(USTR("ERROR: illegal option\n\n"));
 			return 1;
 		}
-		else if (nArgpc > 1 && a_pArgv[i][1] != '-')
+		else if (nArgpc > 1 && a_pArgv[i][1] != USTR('-'))
 		{
 			for (int j = 1; j < nArgpc; j++)
 			{
@@ -156,37 +156,37 @@ int C3dsTool::ParseOptions(int a_nArgc, char* a_pArgv[])
 				case kParseOptionReturnSuccess:
 					break;
 				case kParseOptionReturnIllegalOption:
-					printf("ERROR: illegal option\n\n");
+					UPrintf(USTR("ERROR: illegal option\n\n"));
 					return 1;
 				case kParseOptionReturnNoArgument:
-					printf("ERROR: no argument\n\n");
+					UPrintf(USTR("ERROR: no argument\n\n"));
 					return 1;
 				case kParseOptionReturnUnknownArgument:
-					printf("ERROR: unknown argument \"%s\"\n\n", m_sMessage.c_str());
+					UPrintf(USTR("ERROR: unknown argument \"%") PRIUS USTR("\"\n\n"), m_sMessage.c_str());
 					return 1;
 				case kParseOptionReturnOptionConflict:
-					printf("ERROR: option conflict\n\n");
+					UPrintf(USTR("ERROR: option conflict\n\n"));
 					return 1;
 				}
 			}
 		}
-		else if (nArgpc > 2 && a_pArgv[i][1] == '-')
+		else if (nArgpc > 2 && a_pArgv[i][1] == USTR('-'))
 		{
 			switch (parseOptions(a_pArgv[i] + 2, nIndex, a_nArgc, a_pArgv))
 			{
 			case kParseOptionReturnSuccess:
 				break;
 			case kParseOptionReturnIllegalOption:
-				printf("ERROR: illegal option\n\n");
+				UPrintf(USTR("ERROR: illegal option\n\n"));
 				return 1;
 			case kParseOptionReturnNoArgument:
-				printf("ERROR: no argument\n\n");
+				UPrintf(USTR("ERROR: no argument\n\n"));
 				return 1;
 			case kParseOptionReturnUnknownArgument:
-				printf("ERROR: unknown argument \"%s\"\n\n", m_sMessage.c_str());
+				UPrintf(USTR("ERROR: unknown argument \"%") PRIUS USTR("\"\n\n"), m_sMessage.c_str());
 				return 1;
 			case kParseOptionReturnOptionConflict:
-				printf("ERROR: option conflict\n\n");
+				UPrintf(USTR("ERROR: option conflict\n\n"));
 				return 1;
 			}
 		}
@@ -199,19 +199,19 @@ int C3dsTool::CheckOptions()
 {
 	if (m_eAction == kActionNone)
 	{
-		printf("ERROR: nothing to do\n\n");
+		UPrintf(USTR("ERROR: nothing to do\n\n"));
 		return 1;
 	}
 	if (m_eAction != kActionDiff && m_eAction != kActionSample && m_eAction != kActionHelp && m_sFileName.empty())
 	{
-		printf("ERROR: no --file option\n\n");
+		UPrintf(USTR("ERROR: no --file option\n\n"));
 		return 1;
 	}
 	if (m_eAction == kActionExtract)
 	{
 		if (!checkFileType())
 		{
-			printf("ERROR: %s\n\n", m_sMessage.c_str());
+			UPrintf(USTR("ERROR: %") PRIUS USTR("\n\n"), m_sMessage.c_str());
 			return 1;
 		}
 		switch (m_eFileType)
@@ -230,7 +230,7 @@ int C3dsTool::CheckOptions()
 				}
 				if (bEmpty)
 				{
-					printf("ERROR: nothing to be extract\n\n");
+					UPrintf(USTR("ERROR: nothing to be extract\n\n"));
 					return 1;
 				}
 			}
@@ -238,35 +238,35 @@ int C3dsTool::CheckOptions()
 		case kFileTypeCxi:
 			if (m_sHeaderFileName.empty() && m_sExtendedHeaderFileName.empty() && m_sLogoRegionFileName.empty() && m_sPlainRegionFileName.empty() && m_sExeFsFileName.empty() && m_sRomFsFileName.empty())
 			{
-				printf("ERROR: nothing to be extract\n\n");
+				UPrintf(USTR("ERROR: nothing to be extract\n\n"));
 				return 1;
 			}
 			break;
 		case kFileTypeCfa:
 			if (m_sHeaderFileName.empty() && m_sRomFsFileName.empty())
 			{
-				printf("ERROR: nothing to be extract\n\n");
+				UPrintf(USTR("ERROR: nothing to be extract\n\n"));
 				return 1;
 			}
 			break;
 		case kFileTypeExeFs:
 			if (m_sHeaderFileName.empty() && m_sExeFsDirName.empty())
 			{
-				printf("ERROR: nothing to be extract\n\n");
+				UPrintf(USTR("ERROR: nothing to be extract\n\n"));
 				return 1;
 			}
 			break;
 		case kFileTypeRomFs:
 			if (m_sRomFsDirName.empty())
 			{
-				printf("ERROR: no --romfs-dir option\n\n");
+				UPrintf(USTR("ERROR: no --romfs-dir option\n\n"));
 				return 1;
 			}
 			break;
 		case kFileTypeBanner:
 			if (m_sBannerDirName.empty())
 			{
-				printf("ERROR: no --banner-dir option\n\n");
+				UPrintf(USTR("ERROR: no --banner-dir option\n\n"));
 				return 1;
 			}
 			break;
@@ -278,7 +278,7 @@ int C3dsTool::CheckOptions()
 	{
 		if (m_eFileType == kFileTypeUnknown)
 		{
-			printf("ERROR: no --type option\n\n");
+			UPrintf(USTR("ERROR: no --type option\n\n"));
 			return 1;
 		}
 		else
@@ -287,7 +287,7 @@ int C3dsTool::CheckOptions()
 			{
 				if (m_sHeaderFileName.empty())
 				{
-					printf("ERROR: no --header option\n\n");
+					UPrintf(USTR("ERROR: no --header option\n\n"));
 					return 1;
 				}
 			}
@@ -295,7 +295,7 @@ int C3dsTool::CheckOptions()
 			{
 				if (m_mNcchFileName[0].empty())
 				{
-					printf("ERROR: no --partition0 option\n\n");
+					UPrintf(USTR("ERROR: no --partition0 option\n\n"));
 					return 1;
 				}
 			}
@@ -303,7 +303,7 @@ int C3dsTool::CheckOptions()
 			{
 				if (m_sExtendedHeaderFileName.empty() || m_sExeFsFileName.empty())
 				{
-					printf("ERROR: no --extendedheader or --exefs option\n\n");
+					UPrintf(USTR("ERROR: no --extendedheader or --exefs option\n\n"));
 					return 1;
 				}
 			}
@@ -311,7 +311,7 @@ int C3dsTool::CheckOptions()
 			{
 				if (m_sRomFsFileName.empty())
 				{
-					printf("ERROR: no --romfs option\n\n");
+					UPrintf(USTR("ERROR: no --romfs option\n\n"));
 					return 1;
 				}
 			}
@@ -319,7 +319,7 @@ int C3dsTool::CheckOptions()
 			{
 				if (m_sExeFsDirName.empty())
 				{
-					printf("ERROR: no --exefs-dir option\n\n");
+					UPrintf(USTR("ERROR: no --exefs-dir option\n\n"));
 					return 1;
 				}
 			}
@@ -327,7 +327,7 @@ int C3dsTool::CheckOptions()
 			{
 				if (m_sRomFsDirName.empty())
 				{
-					printf("ERROR: no --romfs-dir option\n\n");
+					UPrintf(USTR("ERROR: no --romfs-dir option\n\n"));
 					return 1;
 				}
 			}
@@ -335,7 +335,7 @@ int C3dsTool::CheckOptions()
 			{
 				if (m_sBannerDirName.empty())
 				{
-					printf("ERROR: no --banner-dir option\n\n");
+					UPrintf(USTR("ERROR: no --banner-dir option\n\n"));
 					return 1;
 				}
 			}
@@ -345,7 +345,7 @@ int C3dsTool::CheckOptions()
 	{
 		if (m_nEncryptMode == CNcch::kEncryptModeNone)
 		{
-			printf("ERROR: no key or xor data file\n\n");
+			UPrintf(USTR("ERROR: no key or xor data file\n\n"));
 			return 1;
 		}
 		else if (m_nEncryptMode == CNcch::kEncryptModeXor)
@@ -354,31 +354,31 @@ int C3dsTool::CheckOptions()
 			{
 				if (!m_sXorFileName.empty())
 				{
-					printf("ERROR: --xor can not with --extendedheader-xor or --exefs-xor or --romfs-xor\n\n");
+					UPrintf(USTR("ERROR: --xor can not with --extendedheader-xor or --exefs-xor or --romfs-xor\n\n"));
 					return 1;
 				}
 				if (CNcch::IsCxiFile(m_sFileName))
 				{
 					if (m_eFileType != kFileTypeUnknown && m_eFileType != kFileTypeCxi && m_bVerbose)
 					{
-						printf("INFO: ignore --type option\n");
+						UPrintf(USTR("INFO: ignore --type option\n"));
 					}
 				}
 				else if (CNcch::IsCfaFile(m_sFileName))
 				{
 					if (m_sRomFsXorFileName.empty())
 					{
-						printf("ERROR: no --romfs-xor option\n\n");
+						UPrintf(USTR("ERROR: no --romfs-xor option\n\n"));
 						return 1;
 					}
 					if (m_eFileType != kFileTypeUnknown && m_eFileType != kFileTypeCfa && m_bVerbose)
 					{
-						printf("INFO: ignore --type option\n");
+						UPrintf(USTR("INFO: ignore --type option\n"));
 					}
 				}
 				else
 				{
-					printf("ERROR: %s is not a ncch file\n\n", m_sFileName.c_str());
+					UPrintf(USTR("ERROR: %") PRIUS USTR(" is not a ncch file\n\n"), m_sFileName.c_str());
 					return 1;
 				}
 			}
@@ -388,7 +388,7 @@ int C3dsTool::CheckOptions()
 	{
 		if (m_eCompressType == kCompressTypeNone)
 		{
-			printf("ERROR: no --compress-type option\n\n");
+			UPrintf(USTR("ERROR: no --compress-type option\n\n"));
 			return 1;
 		}
 		if (m_sCompressOutFileName.empty())
@@ -400,29 +400,29 @@ int C3dsTool::CheckOptions()
 	{
 		if (!CNcsd::IsNcsdFile(m_sFileName))
 		{
-			printf("ERROR: %s is not a ncsd file\n\n", m_sFileName.c_str());
+			UPrintf(USTR("ERROR: %") PRIUS USTR(" is not a ncsd file\n\n"), m_sFileName.c_str());
 			return 1;
 		}
 		else if (m_eFileType != kFileTypeUnknown && m_eFileType != kFileTypeCci && m_bVerbose)
 		{
-			printf("INFO: ignore --type option\n");
+			UPrintf(USTR("INFO: ignore --type option\n"));
 		}
 	}
 	if (m_eAction == kActionDiff)
 	{
 		if (m_sOldFileName.empty())
 		{
-			printf("ERROR: no --old option\n\n");
+			UPrintf(USTR("ERROR: no --old option\n\n"));
 			return 1;
 		}
 		if (m_sNewFileName.empty())
 		{
-			printf("ERROR: no --new option\n\n");
+			UPrintf(USTR("ERROR: no --new option\n\n"));
 			return 1;
 		}
 		if (m_sPatchFileName.empty())
 		{
-			printf("ERROR: no --patch-file option\n\n");
+			UPrintf(USTR("ERROR: no --patch-file option\n\n"));
 			return 1;
 		}
 	}
@@ -430,7 +430,7 @@ int C3dsTool::CheckOptions()
 	{
 		if (m_sPatchFileName.empty())
 		{
-			printf("ERROR: no --patch-file option\n\n");
+			UPrintf(USTR("ERROR: no --patch-file option\n\n"));
 			return 1;
 		}
 	}
@@ -439,34 +439,34 @@ int C3dsTool::CheckOptions()
 
 int C3dsTool::Help()
 {
-	printf("3dstool %s by dnasdw\n\n", _3DSTOOL_VERSION);
-	printf("usage: 3dstool [option...] [option]...\n\n");
-	printf("option:\n");
+	UPrintf(USTR("3dstool %") PRIUS USTR(" by dnasdw\n\n"), AToU(_3DSTOOL_VERSION).c_str());
+	UPrintf(USTR("usage: 3dstool [option...] [option]...\n\n"));
+	UPrintf(USTR("option:\n"));
 	SOption* pOption = s_Option;
 	while (pOption->Name != nullptr || pOption->Doc != nullptr)
 	{
 		if (pOption->Name != nullptr)
 		{
-			printf("  ");
+			UPrintf(USTR("  "));
 			if (pOption->Key != 0)
 			{
-				printf("-%c,", pOption->Key);
+				UPrintf(USTR("-%c,"), pOption->Key);
 			}
 			else
 			{
-				printf("   ");
+				UPrintf(USTR("   "));
 			}
-			printf(" --%-8s", pOption->Name);
-			if (strlen(pOption->Name) >= 8 && pOption->Doc != nullptr)
+			UPrintf(USTR(" --%-8") PRIUS, pOption->Name);
+			if (UCslen(pOption->Name) >= 8 && pOption->Doc != nullptr)
 			{
-				printf("\n%16s", "");
+				UPrintf(USTR("\n%16") PRIUS, USTR(""));
 			}
 		}
 		if (pOption->Doc != nullptr)
 		{
-			printf("%s", pOption->Doc);
+			UPrintf(USTR("%") PRIUS, pOption->Doc);
 		}
-		printf("\n");
+		UPrintf(USTR("\n"));
 		pOption++;
 	}
 	return 0;
@@ -478,7 +478,7 @@ int C3dsTool::Action()
 	{
 		if (!extractFile())
 		{
-			printf("ERROR: extract file failed\n\n");
+			UPrintf(USTR("ERROR: extract file failed\n\n"));
 			return 1;
 		}
 	}
@@ -486,7 +486,7 @@ int C3dsTool::Action()
 	{
 		if (!createFile())
 		{
-			printf("ERROR: create file failed\n\n");
+			UPrintf(USTR("ERROR: create file failed\n\n"));
 			return 1;
 		}
 	}
@@ -494,7 +494,7 @@ int C3dsTool::Action()
 	{
 		if (!encryptFile())
 		{
-			printf("ERROR: encrypt file failed\n\n");
+			UPrintf(USTR("ERROR: encrypt file failed\n\n"));
 			return 1;
 		}
 	}
@@ -502,7 +502,7 @@ int C3dsTool::Action()
 	{
 		if (!uncompressFile())
 		{
-			printf("ERROR: uncompress file failed\n\n");
+			UPrintf(USTR("ERROR: uncompress file failed\n\n"));
 			return 1;
 		}
 	}
@@ -510,7 +510,7 @@ int C3dsTool::Action()
 	{
 		if (!compressFile())
 		{
-			printf("ERROR: compress file failed\n\n");
+			UPrintf(USTR("ERROR: compress file failed\n\n"));
 			return 1;
 		}
 	}
@@ -518,7 +518,7 @@ int C3dsTool::Action()
 	{
 		if (!trimFile())
 		{
-			printf("ERROR: trim file failed\n\n");
+			UPrintf(USTR("ERROR: trim file failed\n\n"));
 			return 1;
 		}
 	}
@@ -526,7 +526,7 @@ int C3dsTool::Action()
 	{
 		if (!padFile())
 		{
-			printf("ERROR: pad file failed\n\n");
+			UPrintf(USTR("ERROR: pad file failed\n\n"));
 			return 1;
 		}
 	}
@@ -534,7 +534,7 @@ int C3dsTool::Action()
 	{
 		if (!diffFile())
 		{
-			printf("ERROR: create patch file failed\n\n");
+			UPrintf(USTR("ERROR: create patch file failed\n\n"));
 			return 1;
 		}
 	}
@@ -542,7 +542,7 @@ int C3dsTool::Action()
 	{
 		if (!patchFile())
 		{
-			printf("ERROR: apply patch file failed\n\n");
+			UPrintf(USTR("ERROR: apply patch file failed\n\n"));
 			return 1;
 		}
 	}
@@ -557,9 +557,9 @@ int C3dsTool::Action()
 	return 0;
 }
 
-C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_nIndex, int a_nArgc, char* a_pArgv[])
+C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a_nIndex, int a_nArgc, UChar* a_pArgv[])
 {
-	if (strcmp(a_pName, "extract") == 0)
+	if (UCscmp(a_pName, USTR("extract")) == 0)
 	{
 		if (m_eAction == kActionNone || m_eAction == kActionUncompress)
 		{
@@ -570,7 +570,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnOptionConflict;
 		}
 	}
-	else if (strcmp(a_pName, "create") == 0)
+	else if (UCscmp(a_pName, USTR("create")) == 0)
 	{
 		if (m_eAction == kActionNone || m_eAction == kActionCompress)
 		{
@@ -581,7 +581,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnOptionConflict;
 		}
 	}
-	else if (strcmp(a_pName, "encrypt") == 0)
+	else if (UCscmp(a_pName, USTR("encrypt")) == 0)
 	{
 		if (m_eAction == kActionNone)
 		{
@@ -592,7 +592,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnOptionConflict;
 		}
 	}
-	else if (strcmp(a_pName, "uncompress") == 0)
+	else if (UCscmp(a_pName, USTR("uncompress")) == 0)
 	{
 		if (m_eAction == kActionNone)
 		{
@@ -604,7 +604,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_bUncompress = true;
 	}
-	else if (strcmp(a_pName, "compress") == 0)
+	else if (UCscmp(a_pName, USTR("compress")) == 0)
 	{
 		if (m_eAction == kActionNone)
 		{
@@ -616,7 +616,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_bCompress = true;
 	}
-	else if (strcmp(a_pName, "trim") == 0)
+	else if (UCscmp(a_pName, USTR("trim")) == 0)
 	{
 		if (m_eAction == kActionNone)
 		{
@@ -627,7 +627,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnOptionConflict;
 		}
 	}
-	else if (strcmp(a_pName, "pad") == 0)
+	else if (UCscmp(a_pName, USTR("pad")) == 0)
 	{
 		if (m_eAction == kActionNone)
 		{
@@ -638,7 +638,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnOptionConflict;
 		}
 	}
-	else if (strcmp(a_pName, "diff") == 0)
+	else if (UCscmp(a_pName, USTR("diff")) == 0)
 	{
 		if (m_eAction == kActionNone)
 		{
@@ -649,7 +649,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnOptionConflict;
 		}
 	}
-	else if (strcmp(a_pName, "patch") == 0)
+	else if (UCscmp(a_pName, USTR("patch")) == 0)
 	{
 		if (m_eAction == kActionNone)
 		{
@@ -660,7 +660,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnOptionConflict;
 		}
 	}
-	else if (strcmp(a_pName, "sample") == 0)
+	else if (UCscmp(a_pName, USTR("sample")) == 0)
 	{
 		if (m_eAction == kActionNone)
 		{
@@ -671,68 +671,68 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnOptionConflict;
 		}
 	}
-	else if (strcmp(a_pName, "help") == 0)
+	else if (UCscmp(a_pName, USTR("help")) == 0)
 	{
 		m_eAction = kActionHelp;
 	}
-	else if (strcmp(a_pName, "type") == 0)
+	else if (UCscmp(a_pName, USTR("type")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		string sType = a_pArgv[++a_nIndex];
-		if (sType == "card" || sType == "cci" || sType == "3ds")
+		UChar* pType = a_pArgv[++a_nIndex];
+		if (UCscmp(pType, USTR("card")) == 0 || UCscmp(pType, USTR("cci")) == 0 || UCscmp(pType, USTR("3ds")) == 0)
 		{
 			m_eFileType = kFileTypeCci;
 		}
-		else if (sType == "exec" || sType == "cxi")
+		else if (UCscmp(pType, USTR("exec")) == 0 || UCscmp(pType, USTR("cxi")) == 0)
 		{
 			m_eFileType = kFileTypeCxi;
 		}
-		else if (sType == "data" || sType == "cfa")
+		else if (UCscmp(pType, USTR("data")) == 0 || UCscmp(pType, USTR("cfa")) == 0)
 		{
 			m_eFileType = kFileTypeCfa;
 		}
-		else if (sType == "exefs")
+		else if (UCscmp(pType, USTR("exefs")) == 0)
 		{
 			m_eFileType = kFileTypeExeFs;
 		}
-		else if (sType == "romfs")
+		else if (UCscmp(pType, USTR("romfs")) == 0)
 		{
 			m_eFileType = kFileTypeRomFs;
 		}
-		else if (sType == "banner")
+		else if (UCscmp(pType, USTR("banner")) == 0)
 		{
 			m_eFileType = kFileTypeBanner;
 		}
 		else
 		{
-			m_sMessage = sType;
+			m_sMessage = pType;
 			return kParseOptionReturnUnknownArgument;
 		}
 	}
-	else if (strcmp(a_pName, "file") == 0)
+	else if (UCscmp(a_pName, USTR("file")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sFileName = a_pArgv[++a_nIndex];
+		m_sFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "verbose") == 0)
+	else if (UCscmp(a_pName, USTR("verbose")) == 0)
 	{
 		m_bVerbose = true;
 	}
-	else if (strcmp(a_pName, "header") == 0)
+	else if (UCscmp(a_pName, USTR("header")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sHeaderFileName = a_pArgv[++a_nIndex];
+		m_sHeaderFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "key0") == 0)
+	else if (UCscmp(a_pName, USTR("key0")) == 0)
 	{
 		if (m_nEncryptMode == CNcch::kEncryptModeNone)
 		{
@@ -744,7 +744,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_Key = 0;
 	}
-	else if (strcmp(a_pName, "key") == 0)
+	else if (UCscmp(a_pName, USTR("key")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
@@ -758,14 +758,14 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		string sKey = a_pArgv[++a_nIndex];
-		if (sKey.size() != 32 || sKey.find_first_not_of("0123456789ABCDEFabcdef") != string::npos)
+		UString sKey = a_pArgv[++a_nIndex];
+		if (sKey.size() != 32 || sKey.find_first_not_of(USTR("0123456789ABCDEFabcdef")) != string::npos)
 		{
 			return kParseOptionReturnUnknownArgument;
 		}
-		m_Key = sKey.c_str();
+		m_Key = UToA(sKey).c_str();
 	}
-	else if (strcmp(a_pName, "counter") == 0)
+	else if (UCscmp(a_pName, USTR("counter")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
@@ -779,15 +779,15 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		string sCounter = a_pArgv[++a_nIndex];
-		if (sCounter.size() != 32 || sCounter.find_first_not_of("0123456789ABCDEFabcdef") != string::npos)
+		UString sCounter = a_pArgv[++a_nIndex];
+		if (sCounter.size() != 32 || sCounter.find_first_not_of(USTR("0123456789ABCDEFabcdef")) != string::npos)
 		{
 			return kParseOptionReturnUnknownArgument;
 		}
-		m_Counter = sCounter.c_str();
+		m_Counter = UToA(sCounter).c_str();
 		m_bCounterValid = true;
 	}
-	else if (strcmp(a_pName, "xor") == 0)
+	else if (UCscmp(a_pName, USTR("xor")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
@@ -801,15 +801,15 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_sXorFileName = a_pArgv[++a_nIndex];
+		m_sXorFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "compress-align") == 0)
+	else if (UCscmp(a_pName, USTR("compress-align")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		string sCompressAlign = a_pArgv[++a_nIndex];
+		UString sCompressAlign = a_pArgv[++a_nIndex];
 		n32 nCompressAlign = SToN32(sCompressAlign);
 		if (nCompressAlign != 1 && nCompressAlign != 4 && nCompressAlign != 8 && nCompressAlign != 16 && nCompressAlign != 32)
 		{
@@ -818,62 +818,62 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_nCompressAlign = nCompressAlign;
 	}
-	else if (strcmp(a_pName, "compress-type") == 0)
+	else if (UCscmp(a_pName, USTR("compress-type")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		string sType = a_pArgv[++a_nIndex];
-		if (sType == "blz")
+		UChar* pType = a_pArgv[++a_nIndex];
+		if (UCscmp(pType, USTR("blz")) == 0)
 		{
 			m_eCompressType = kCompressTypeBlz;
 		}
-		else if (sType == "lz")
+		else if (UCscmp(pType, USTR("lz")) == 0)
 		{
 			m_eCompressType = kCompressTypeLz;
 		}
-		else if (sType == "lzex")
+		else if (UCscmp(pType, USTR("lzex")) == 0)
 		{
 			m_eCompressType = kCompressTypeLzEx;
 		}
-		else if (sType == "h4")
+		else if (UCscmp(pType, USTR("h4")) == 0)
 		{
 			m_eCompressType = kCompressTypeH4;
 		}
-		else if (sType == "h8")
+		else if (UCscmp(pType, USTR("h8")) == 0)
 		{
 			m_eCompressType = kCompressTypeH8;
 		}
-		else if (sType == "rl")
+		else if (UCscmp(pType, USTR("rl")) == 0)
 		{
 			m_eCompressType = kCompressTypeRl;
 		}
-		else if (sType == "yaz0")
+		else if (UCscmp(pType, USTR("yaz0")) == 0)
 		{
 			m_eCompressType = kCompressTypeYaz0;
 		}
 		else
 		{
-			m_sMessage = sType;
+			m_sMessage = pType;
 			return kParseOptionReturnUnknownArgument;
 		}
 	}
-	else if (strcmp(a_pName, "compress-out") == 0)
+	else if (UCscmp(a_pName, USTR("compress-out")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sCompressOutFileName = a_pArgv[++a_nIndex];
+		m_sCompressOutFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "yaz0-align") == 0)
+	else if (UCscmp(a_pName, USTR("yaz0-align")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		string sYaz0Align = a_pArgv[++a_nIndex];
+		UString sYaz0Align = a_pArgv[++a_nIndex];
 		n32 nYaz0Align = SToN32(sYaz0Align);
 		if (nYaz0Align != 0 && nYaz0Align != 128)
 		{
@@ -882,33 +882,33 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_nYaz0Align = nYaz0Align;
 	}
-	else if (strcmp(a_pName, "old") == 0)
+	else if (UCscmp(a_pName, USTR("old")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sOldFileName = a_pArgv[++a_nIndex];
+		m_sOldFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "new") == 0)
+	else if (UCscmp(a_pName, USTR("new")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sNewFileName = a_pArgv[++a_nIndex];
+		m_sNewFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "patch-file") == 0)
+	else if (UCscmp(a_pName, USTR("patch-file")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sPatchFileName = AToU(a_pArgv[++a_nIndex]);
+		m_sPatchFileName = a_pArgv[++a_nIndex];
 	}
-	else if (StartWith<string>(a_pName, "partition"))
+	else if (StartWith<UString>(a_pName, USTR("partition")))
 	{
-		int nIndex = SToN32(a_pName + strlen("partition"));
+		int nIndex = SToN32(a_pName + UCslen(USTR("partition")));
 		if (nIndex < 0 || nIndex >= 8)
 		{
 			return kParseOptionReturnIllegalOption;
@@ -917,13 +917,13 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_mNcchFileName[nIndex] = a_pArgv[++a_nIndex];
+		m_mNcchFileName[nIndex] = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "not-pad") == 0)
+	else if (UCscmp(a_pName, USTR("not-pad")) == 0)
 	{
 		m_bNotPad = true;
 	}
-	else if (strcmp(a_pName, "trim-after-partition") == 0)
+	else if (UCscmp(a_pName, USTR("trim-after-partition")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
@@ -935,75 +935,59 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 			return kParseOptionReturnIllegalOption;
 		}
 	}
-	else if (strcmp(a_pName, "not-update-extendedheader-hash") == 0 || strcmp(a_pName, "not-update-exh-hash") == 0)
+	else if (UCscmp(a_pName, USTR("not-update-extendedheader-hash")) == 0 || UCscmp(a_pName, USTR("not-update-exh-hash")) == 0)
 	{
 		m_bNotUpdateExtendedHeaderHash = true;
 	}
-	else if (strcmp(a_pName, "not-update-exefs-hash") == 0)
+	else if (UCscmp(a_pName, USTR("not-update-exefs-hash")) == 0)
 	{
 		m_bNotUpdateExeFsHash = true;
 	}
-	else if (strcmp(a_pName, "not-update-romfs-hash") == 0)
+	else if (UCscmp(a_pName, USTR("not-update-romfs-hash")) == 0)
 	{
 		m_bNotUpdateRomFsHash = true;
 	}
-	else if (strcmp(a_pName, "extendedheader") == 0 || strcmp(a_pName, "exh") == 0)
+	else if (UCscmp(a_pName, USTR("extendedheader")) == 0 || UCscmp(a_pName, USTR("exh")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sExtendedHeaderFileName = a_pArgv[++a_nIndex];
+		m_sExtendedHeaderFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "logoregion") == 0 || strcmp(a_pName, "logo") == 0)
+	else if (UCscmp(a_pName, USTR("logoregion")) == 0 || UCscmp(a_pName, USTR("logo")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sLogoRegionFileName = a_pArgv[++a_nIndex];
+		m_sLogoRegionFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "plainregion") == 0 || strcmp(a_pName, "plain") == 0)
+	else if (UCscmp(a_pName, USTR("plainregion")) == 0 || UCscmp(a_pName, USTR("plain")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sPlainRegionFileName = a_pArgv[++a_nIndex];
+		m_sPlainRegionFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "exefs") == 0)
+	else if (UCscmp(a_pName, USTR("exefs")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sExeFsFileName = a_pArgv[++a_nIndex];
+		m_sExeFsFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "romfs") == 0)
+	else if (UCscmp(a_pName, USTR("romfs")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sRomFsFileName = a_pArgv[++a_nIndex];
+		m_sRomFsFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "extendedheader-xor") == 0 || strcmp(a_pName, "exh-xor") == 0)
-	{
-		if (a_nIndex + 1 >= a_nArgc)
-		{
-			return kParseOptionReturnNoArgument;
-		}
-		if (m_nEncryptMode == CNcch::kEncryptModeNone)
-		{
-			m_nEncryptMode = CNcch::kEncryptModeXor;
-		}
-		else if (m_nEncryptMode != CNcch::kEncryptModeXor)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		m_sExtendedHeaderXorFileName = a_pArgv[++a_nIndex];
-	}
-	else if (strcmp(a_pName, "exefs-xor") == 0)
+	else if (UCscmp(a_pName, USTR("extendedheader-xor")) == 0 || UCscmp(a_pName, USTR("exh-xor")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
@@ -1017,9 +1001,25 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_sExeFsXorFileName = a_pArgv[++a_nIndex];
+		m_sExtendedHeaderXorFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "exefs-top-xor") == 0)
+	else if (UCscmp(a_pName, USTR("exefs-xor")) == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		if (m_nEncryptMode == CNcch::kEncryptModeNone)
+		{
+			m_nEncryptMode = CNcch::kEncryptModeXor;
+		}
+		else if (m_nEncryptMode != CNcch::kEncryptModeXor)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+		m_sExeFsXorFileName = UToA(a_pArgv[++a_nIndex]);
+	}
+	else if (UCscmp(a_pName, USTR("exefs-top-xor")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
@@ -1037,9 +1037,9 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_sExeFsTopXorFileName = a_pArgv[++a_nIndex];
+		m_sExeFsTopXorFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "romfs-xor") == 0)
+	else if (UCscmp(a_pName, USTR("romfs-xor")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
@@ -1057,9 +1057,9 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_sRomFsXorFileName = a_pArgv[++a_nIndex];
+		m_sRomFsXorFileName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "exefs-top-auto-key") == 0)
+	else if (UCscmp(a_pName, USTR("exefs-top-auto-key")) == 0)
 	{
 		if (m_nEncryptMode == CNcch::kEncryptModeNone)
 		{
@@ -1075,7 +1075,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_bExeFsTopAutoKey = true;
 	}
-	else if (strcmp(a_pName, "romfs-auto-key") == 0)
+	else if (UCscmp(a_pName, USTR("romfs-auto-key")) == 0)
 	{
 		if (m_nEncryptMode == CNcch::kEncryptModeNone)
 		{
@@ -1091,34 +1091,34 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const char* a_pName, int& a_
 		}
 		m_bRomFsAutoKey = true;
 	}
-	else if (strcmp(a_pName, "exefs-dir") == 0)
+	else if (UCscmp(a_pName, USTR("exefs-dir")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sExeFsDirName = a_pArgv[++a_nIndex];
+		m_sExeFsDirName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "romfs-dir") == 0)
+	else if (UCscmp(a_pName, USTR("romfs-dir")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sRomFsDirName = a_pArgv[++a_nIndex];
+		m_sRomFsDirName = UToA(a_pArgv[++a_nIndex]);
 	}
-	else if (strcmp(a_pName, "banner-dir") == 0)
+	else if (UCscmp(a_pName, USTR("banner-dir")) == 0)
 	{
 		if (a_nIndex + 1 > a_nArgc)
 		{
 			return kParseOptionReturnNoArgument;
 		}
-		m_sBannerDirName = a_pArgv[++a_nIndex];
+		m_sBannerDirName = UToA(a_pArgv[++a_nIndex]);
 	}
 	return kParseOptionReturnSuccess;
 }
 
-C3dsTool::EParseOptionReturn C3dsTool::parseOptions(int a_nKey, int& a_nIndex, int m_nArgc, char* a_pArgv[])
+C3dsTool::EParseOptionReturn C3dsTool::parseOptions(int a_nKey, int& a_nIndex, int m_nArgc, UChar* a_pArgv[])
 {
 	for (SOption* pOption = s_Option; pOption->Name != nullptr || pOption->Key != 0 || pOption->Doc != nullptr; pOption++)
 	{
@@ -1160,7 +1160,7 @@ bool C3dsTool::checkFileType()
 		}
 		else
 		{
-			m_sMessage = "unknown file type";
+			m_sMessage = USTR("unknown file type");
 			return false;
 		}
 	}
@@ -1192,7 +1192,7 @@ bool C3dsTool::checkFileType()
 		}
 		if (!bMatch)
 		{
-			m_sMessage = "the file type is mismatch";
+			m_sMessage = USTR("the file type is mismatch");
 			return false;
 		}
 	}
@@ -1495,13 +1495,13 @@ bool C3dsTool::uncompressFile()
 			}
 			else
 			{
-				printf("ERROR: uncompress error\n\n");
+				UPrintf(USTR("ERROR: uncompress error\n\n"));
 			}
 			delete[] pUncompressed;
 		}
 		else
 		{
-			printf("ERROR: get uncompressed size error\n\n");
+			UPrintf(USTR("ERROR: get uncompressed size error\n\n"));
 		}
 		delete[] pCompressed;
 	}
@@ -1582,7 +1582,7 @@ bool C3dsTool::compressFile()
 		}
 		else
 		{
-			printf("ERROR: compress error\n\n");
+			UPrintf(USTR("ERROR: compress error\n\n"));
 		}
 		delete[] pCompressed;
 		delete[] pUncompressed;
@@ -1631,119 +1631,119 @@ bool C3dsTool::patchFile()
 
 int C3dsTool::sample()
 {
-	printf("sample:\n");
-	printf("# extract cci\n");
-	printf("3dstool -xvt017f cci 0.cxi 1.cfa 7.cfa input.3ds --header ncsdheader.bin\n\n");
-	printf("# extract cxi without encryption\n");
-	printf("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin\n\n");
-	printf("# extract cxi with AES-CTR encryption\n");
-	printf("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --key 00000000000000000000000000000000\n\n");
-	printf("# extract cxi with xor encryption\n");
-	printf("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n");
-	printf("# extract cxi with 7.x xor encryption\n");
-	printf("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --exefs-top-xor 000400000XXXXX00.0.exefs_top.xor --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n");
-	printf("# extract cxi with 7.x auto encryption\n");
-	printf("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --exefs-top-auto-key --romfs-auto-key\n\n");
-	printf("# extract cfa without encryption\n");
-	printf("3dstool -xvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin\n\n");
-	printf("# extract cfa with AES-CTR encryption\n");
-	printf("3dstool -xvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --key 00000000000000000000000000000000\n\n");
-	printf("# extract cfa with xor encryption\n");
-	printf("3dstool -xvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --romfs-xor 000400000XXXXX00.1.romfs.xor\n\n");
-	printf("# extract exefs without Backward LZ77 uncompress\n");
-	printf("3dstool -xvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n");
-	printf("# extract exefs with Backward LZ77 uncompress\n");
-	printf("3dstool -xuvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n");
-	printf("# extract romfs\n");
-	printf("3dstool -xvtf romfs romfs.bin --romfs-dir romfs\n\n");
-	printf("# extract banner\n");
-	printf("3dstool -xvtf banner banner.bnr --banner-dir banner\n\n");
-	printf("# create cci with pad 0xFF\n");
-	printf("3dstool -cvt017f cci 0.cxi 1.cfa 7.cfa output.3ds --header ncsdheader.bin\n\n");
-	printf("# create cci without pad\n");
-	printf("3dstool -cvt017f cci 0.cxi 1.cfa 7.cfa output.3ds --header ncsdheader.bin --not-pad\n\n");
-	printf("# create cxi without encryption and calculate hash\n");
-	printf("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --not-update-exh-hash --not-update-exefs-hash --not-update-romfs-hash\n\n");
-	printf("# create cxi with AES-CTR encryption and calculate hash\n");
-	printf("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --key 00000000000000000000000000000000\n\n");
-	printf("# create cxi with xor encryption and calculate hash\n");
-	printf("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n");
-	printf("# create cxi with 7.x xor encryption and calculate hash\n");
-	printf("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --exefs-top-xor 000400000XXXXX00.0.exefs_top.xor --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n");
-	printf("# create cxi with 7.x auto encryption and calculate hash\n");
-	printf("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --exefs-top-auto-key --romfs-auto-key\n\n");
-	printf("# create cfa without encryption and calculate hash\n");
-	printf("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --not-update-romfs-hash\n\n");
-	printf("# create cfa with AES-CTR encryption and calculate hash\n");
-	printf("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --key 00000000000000000000000000000000\n\n");
-	printf("# create cfa with xor encryption and calculate hash\n");
-	printf("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n");
-	printf("# create exefs without Backward LZ77 compress\n");
-	printf("3dstool -cvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n");
-	printf("# create exefs with Backward LZ77 compress\n");
-	printf("3dstool -czvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n");
-	printf("# create romfs without reference\n");
-	printf("3dstool -cvtf romfs romfs.bin --romfs-dir romfs\n\n");
-	printf("# create romfs with reference\n");
-	printf("3dstool -cvtf romfs romfs.bin --romfs-dir romfs --romfs original_romfs.bin\n\n");
-	printf("# create banner\n");
-	printf("3dstool -cvtf banner banner.bnr --banner-dir banner\n\n");
-	printf("# encrypt file with AES-CTR encryption, standalone\n");
-	printf("3dstool -evf file.bin --key 00000000000000000000000000000000 --counter 00000000000000000000000000000000\n\n");
-	printf("# encrypt file with xor encryption, standalone\n");
-	printf("3dstool -evf file.bin --xor xor.bin\n\n");
-	printf("# uncompress file with Backward LZ77, standalone\n");
-	printf("3dstool -uvf code.bin --compress-type blz --compress-out code.bin\n\n");
-	printf("# compress file with Backward LZ77, standalone\n");
-	printf("3dstool -zvf code.bin --compress-type blz --compress-out code.bin\n\n");
-	printf("# uncompress file with LZ77, standalone\n");
-	printf("3dstool -uvf input.lz --compress-type lz --compress-out output.bin\n\n");
-	printf("# compress file with LZ77, standalone\n");
-	printf("3dstool -zvf input.bin --compress-type lz --compress-out output.lz\n\n");
-	printf("# compress file with LZ77 and align to 4 bytes, standalone\n");
-	printf("3dstool -zvf input.bin --compress-type lz --compress-out output.lz --compress-align 4\n\n");
-	printf("# uncompress file with LZ77Ex, standalone\n");
-	printf("3dstool -uvf logo.darc.lz --compress-type lzex --compress-out logo.darc\n\n");
-	printf("# compress file with LZ77Ex, standalone\n");
-	printf("3dstool -zvf logo.darc --compress-type lzex --compress-out logo.darc.lz\n\n");
-	printf("# uncompress file with Huffman 4bits, standalone\n");
-	printf("3dstool -uvf input.bin --compress-type h4 --compress-out output.bin\n\n");
-	printf("# compress file with Huffman 4bits, standalone\n");
-	printf("3dstool -zvf input.bin --compress-type h4 --compress-out output.bin\n\n");
-	printf("# uncompress file with Huffman 8bits, standalone\n");
-	printf("3dstool -uvf input.bin --compress-type h8 --compress-out output.bin\n\n");
-	printf("# compress file with Huffman 8bits, standalone\n");
-	printf("3dstool -zvf input.bin --compress-type h8 --compress-out output.bin\n\n");
-	printf("# uncompress file with RunLength, standalone\n");
-	printf("3dstool -uvf input.bin --compress-type rl --compress-out output.bin\n\n");
-	printf("# compress file with RunLength, standalone\n");
-	printf("3dstool -zvf input.bin --compress-type rl --compress-out output.bin\n\n");
-	printf("# uncompress file with Yaz0, standalone\n");
-	printf("3dstool -uvf input.szs --compress-type yaz0 --compress-out output.sarc\n\n");
-	printf("# compress file with Yaz0, standalone\n");
-	printf("3dstool -zvf input.sarc --compress-type yaz0 --compress-out output.szs\n\n");
-	printf("# compress file with Yaz0 and set the alignment property, standalone\n");
-	printf("3dstool -zvf input.sarc --compress-type yaz0 --compress-out output.szs --yaz0-align 128\n\n");
-	printf("# trim cci without pad\n");
-	printf("3dstool --trim -vtf cci input.3ds\n\n");
-	printf("# trim cci reserve partition 0~2\n");
-	printf("3dstool --trim -vtf cci input.3ds --trim-after-partition 2\n\n");
-	printf("# pad cci with 0xFF\n");
-	printf("3dstool --pad -vtf cci input.3ds\n\n");
-	printf("# create patch file without optimization\n");
-	printf("3dstool --diff -v --old old.bin --new new.bin --patch-file patch.3ps\n\n");
-	printf("# create patch file with cci optimization\n");
-	printf("3dstool --diff -vt cci --old old.3ds --new new.3ds --patch-file patch.3ps\n\n");
-	printf("# create patch file with cxi optimization\n");
-	printf("3dstool --diff -vt cxi --old old.cxi --new new.cxi --patch-file patch.3ps\n\n");
-	printf("# create patch file with cfa optimization\n");
-	printf("3dstool --diff -vt cfa --old old.cfa --new new.cfa --patch-file patch.3ps\n\n");
-	printf("# apply patch file\n");
-	printf("3dstool --patch -vf input.bin --patch-file patch.3ps\n\n");
+	UPrintf(USTR("sample:\n"));
+	UPrintf(USTR("# extract cci\n"));
+	UPrintf(USTR("3dstool -xvt017f cci 0.cxi 1.cfa 7.cfa input.3ds --header ncsdheader.bin\n\n"));
+	UPrintf(USTR("# extract cxi without encryption\n"));
+	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin\n\n"));
+	UPrintf(USTR("# extract cxi with AES-CTR encryption\n"));
+	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --key 00000000000000000000000000000000\n\n"));
+	UPrintf(USTR("# extract cxi with xor encryption\n"));
+	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n"));
+	UPrintf(USTR("# extract cxi with 7.x xor encryption\n"));
+	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --exefs-top-xor 000400000XXXXX00.0.exefs_top.xor --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n"));
+	UPrintf(USTR("# extract cxi with 7.x auto encryption\n"));
+	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --exefs-top-auto-key --romfs-auto-key\n\n"));
+	UPrintf(USTR("# extract cfa without encryption\n"));
+	UPrintf(USTR("3dstool -xvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin\n\n"));
+	UPrintf(USTR("# extract cfa with AES-CTR encryption\n"));
+	UPrintf(USTR("3dstool -xvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --key 00000000000000000000000000000000\n\n"));
+	UPrintf(USTR("# extract cfa with xor encryption\n"));
+	UPrintf(USTR("3dstool -xvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --romfs-xor 000400000XXXXX00.1.romfs.xor\n\n"));
+	UPrintf(USTR("# extract exefs without Backward LZ77 uncompress\n"));
+	UPrintf(USTR("3dstool -xvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n"));
+	UPrintf(USTR("# extract exefs with Backward LZ77 uncompress\n"));
+	UPrintf(USTR("3dstool -xuvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n"));
+	UPrintf(USTR("# extract romfs\n"));
+	UPrintf(USTR("3dstool -xvtf romfs romfs.bin --romfs-dir romfs\n\n"));
+	UPrintf(USTR("# extract banner\n"));
+	UPrintf(USTR("3dstool -xvtf banner banner.bnr --banner-dir banner\n\n"));
+	UPrintf(USTR("# create cci with pad 0xFF\n"));
+	UPrintf(USTR("3dstool -cvt017f cci 0.cxi 1.cfa 7.cfa output.3ds --header ncsdheader.bin\n\n"));
+	UPrintf(USTR("# create cci without pad\n"));
+	UPrintf(USTR("3dstool -cvt017f cci 0.cxi 1.cfa 7.cfa output.3ds --header ncsdheader.bin --not-pad\n\n"));
+	UPrintf(USTR("# create cxi without encryption and calculate hash\n"));
+	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --not-update-exh-hash --not-update-exefs-hash --not-update-romfs-hash\n\n"));
+	UPrintf(USTR("# create cxi with AES-CTR encryption and calculate hash\n"));
+	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --key 00000000000000000000000000000000\n\n"));
+	UPrintf(USTR("# create cxi with xor encryption and calculate hash\n"));
+	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n"));
+	UPrintf(USTR("# create cxi with 7.x xor encryption and calculate hash\n"));
+	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --exefs-top-xor 000400000XXXXX00.0.exefs_top.xor --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n"));
+	UPrintf(USTR("# create cxi with 7.x auto encryption and calculate hash\n"));
+	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --exefs-top-auto-key --romfs-auto-key\n\n"));
+	UPrintf(USTR("# create cfa without encryption and calculate hash\n"));
+	UPrintf(USTR("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --not-update-romfs-hash\n\n"));
+	UPrintf(USTR("# create cfa with AES-CTR encryption and calculate hash\n"));
+	UPrintf(USTR("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --key 00000000000000000000000000000000\n\n"));
+	UPrintf(USTR("# create cfa with xor encryption and calculate hash\n"));
+	UPrintf(USTR("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n"));
+	UPrintf(USTR("# create exefs without Backward LZ77 compress\n"));
+	UPrintf(USTR("3dstool -cvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n"));
+	UPrintf(USTR("# create exefs with Backward LZ77 compress\n"));
+	UPrintf(USTR("3dstool -czvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n"));
+	UPrintf(USTR("# create romfs without reference\n"));
+	UPrintf(USTR("3dstool -cvtf romfs romfs.bin --romfs-dir romfs\n\n"));
+	UPrintf(USTR("# create romfs with reference\n"));
+	UPrintf(USTR("3dstool -cvtf romfs romfs.bin --romfs-dir romfs --romfs original_romfs.bin\n\n"));
+	UPrintf(USTR("# create banner\n"));
+	UPrintf(USTR("3dstool -cvtf banner banner.bnr --banner-dir banner\n\n"));
+	UPrintf(USTR("# encrypt file with AES-CTR encryption, standalone\n"));
+	UPrintf(USTR("3dstool -evf file.bin --key 00000000000000000000000000000000 --counter 00000000000000000000000000000000\n\n"));
+	UPrintf(USTR("# encrypt file with xor encryption, standalone\n"));
+	UPrintf(USTR("3dstool -evf file.bin --xor xor.bin\n\n"));
+	UPrintf(USTR("# uncompress file with Backward LZ77, standalone\n"));
+	UPrintf(USTR("3dstool -uvf code.bin --compress-type blz --compress-out code.bin\n\n"));
+	UPrintf(USTR("# compress file with Backward LZ77, standalone\n"));
+	UPrintf(USTR("3dstool -zvf code.bin --compress-type blz --compress-out code.bin\n\n"));
+	UPrintf(USTR("# uncompress file with LZ77, standalone\n"));
+	UPrintf(USTR("3dstool -uvf input.lz --compress-type lz --compress-out output.bin\n\n"));
+	UPrintf(USTR("# compress file with LZ77, standalone\n"));
+	UPrintf(USTR("3dstool -zvf input.bin --compress-type lz --compress-out output.lz\n\n"));
+	UPrintf(USTR("# compress file with LZ77 and align to 4 bytes, standalone\n"));
+	UPrintf(USTR("3dstool -zvf input.bin --compress-type lz --compress-out output.lz --compress-align 4\n\n"));
+	UPrintf(USTR("# uncompress file with LZ77Ex, standalone\n"));
+	UPrintf(USTR("3dstool -uvf logo.darc.lz --compress-type lzex --compress-out logo.darc\n\n"));
+	UPrintf(USTR("# compress file with LZ77Ex, standalone\n"));
+	UPrintf(USTR("3dstool -zvf logo.darc --compress-type lzex --compress-out logo.darc.lz\n\n"));
+	UPrintf(USTR("# uncompress file with Huffman 4bits, standalone\n"));
+	UPrintf(USTR("3dstool -uvf input.bin --compress-type h4 --compress-out output.bin\n\n"));
+	UPrintf(USTR("# compress file with Huffman 4bits, standalone\n"));
+	UPrintf(USTR("3dstool -zvf input.bin --compress-type h4 --compress-out output.bin\n\n"));
+	UPrintf(USTR("# uncompress file with Huffman 8bits, standalone\n"));
+	UPrintf(USTR("3dstool -uvf input.bin --compress-type h8 --compress-out output.bin\n\n"));
+	UPrintf(USTR("# compress file with Huffman 8bits, standalone\n"));
+	UPrintf(USTR("3dstool -zvf input.bin --compress-type h8 --compress-out output.bin\n\n"));
+	UPrintf(USTR("# uncompress file with RunLength, standalone\n"));
+	UPrintf(USTR("3dstool -uvf input.bin --compress-type rl --compress-out output.bin\n\n"));
+	UPrintf(USTR("# compress file with RunLength, standalone\n"));
+	UPrintf(USTR("3dstool -zvf input.bin --compress-type rl --compress-out output.bin\n\n"));
+	UPrintf(USTR("# uncompress file with Yaz0, standalone\n"));
+	UPrintf(USTR("3dstool -uvf input.szs --compress-type yaz0 --compress-out output.sarc\n\n"));
+	UPrintf(USTR("# compress file with Yaz0, standalone\n"));
+	UPrintf(USTR("3dstool -zvf input.sarc --compress-type yaz0 --compress-out output.szs\n\n"));
+	UPrintf(USTR("# compress file with Yaz0 and set the alignment property, standalone\n"));
+	UPrintf(USTR("3dstool -zvf input.sarc --compress-type yaz0 --compress-out output.szs --yaz0-align 128\n\n"));
+	UPrintf(USTR("# trim cci without pad\n"));
+	UPrintf(USTR("3dstool --trim -vtf cci input.3ds\n\n"));
+	UPrintf(USTR("# trim cci reserve partition 0~2\n"));
+	UPrintf(USTR("3dstool --trim -vtf cci input.3ds --trim-after-partition 2\n\n"));
+	UPrintf(USTR("# pad cci with 0xFF\n"));
+	UPrintf(USTR("3dstool --pad -vtf cci input.3ds\n\n"));
+	UPrintf(USTR("# create patch file without optimization\n"));
+	UPrintf(USTR("3dstool --diff -v --old old.bin --new new.bin --patch-file patch.3ps\n\n"));
+	UPrintf(USTR("# create patch file with cci optimization\n"));
+	UPrintf(USTR("3dstool --diff -vt cci --old old.3ds --new new.3ds --patch-file patch.3ps\n\n"));
+	UPrintf(USTR("# create patch file with cxi optimization\n"));
+	UPrintf(USTR("3dstool --diff -vt cxi --old old.cxi --new new.cxi --patch-file patch.3ps\n\n"));
+	UPrintf(USTR("# create patch file with cfa optimization\n"));
+	UPrintf(USTR("3dstool --diff -vt cfa --old old.cfa --new new.cfa --patch-file patch.3ps\n\n"));
+	UPrintf(USTR("# apply patch file\n"));
+	UPrintf(USTR("3dstool --patch -vf input.bin --patch-file patch.3ps\n\n"));
 	return 0;
 }
 
-int main(int argc, char* argv[])
+int UMain(int argc, UChar* argv[])
 {
 	SetLocale();
 	C3dsTool tool;

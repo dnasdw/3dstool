@@ -53,20 +53,20 @@ public:
 	};
 	struct SOption
 	{
-		const char* Name;
+		const UChar* Name;
 		int Key;
-		const char* Doc;
+		const UChar* Doc;
 	};
 	C3dsTool();
 	~C3dsTool();
-	int ParseOptions(int a_nArgc, char* a_pArgv[]);
+	int ParseOptions(int a_nArgc, UChar* a_pArgv[]);
 	int CheckOptions();
 	int Help();
 	int Action();
 	static SOption s_Option[];
 private:
-	EParseOptionReturn parseOptions(const char* a_pName, int& a_nIndex, int a_nArgc, char* a_pArgv[]);
-	EParseOptionReturn parseOptions(int a_nKey, int& a_nIndex, int a_nArgc, char* a_pArgv[]);
+	EParseOptionReturn parseOptions(const UChar* a_pName, int& a_nIndex, int a_nArgc, UChar* a_pArgv[]);
+	EParseOptionReturn parseOptions(int a_nKey, int& a_nIndex, int a_nArgc, UChar* a_pArgv[]);
 	bool checkFileType();
 	bool extractFile();
 	bool createFile();
@@ -117,7 +117,7 @@ private:
 	bool m_bCounterValid;
 	bool m_bUncompress;
 	bool m_bCompress;
-	string m_sMessage;
+	UString m_sMessage;
 };
 
 #endif	// _3DSTOOL_H_

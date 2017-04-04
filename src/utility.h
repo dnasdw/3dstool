@@ -50,6 +50,9 @@
 #include <Windows.h>
 #include <direct.h>
 #include <io.h>
+#if defined(SDW_MAIN)
+#include <shellapi.h>
+#endif
 #else
 #if SDW_PLATFORM == SDW_PLATFORM_MACOS
 #include <mach-o/dyld.h>
@@ -176,23 +179,17 @@ typedef u16string U16String;
 typedef wchar_t Char16_t;
 typedef wstring U16String;
 #endif
+typedef wchar_t UChar;
 typedef wstring UString;
 typedef wregex URegex;
 typedef struct _stat64 Stat;
-#define USTR(x) L##x
-#define PRIUS USTR("ls")
-#define UPrintf wprintf
-#define UStat _wstat64
 #else
 typedef char16_t Char16_t;
 typedef u16string U16String;
+typedef char UChar;
 typedef string UString;
 typedef regex URegex;
 typedef struct stat Stat;
-#define USTR(x) x
-#define PRIUS USTR("s")
-#define UPrintf printf
-#define UStat stat
 #endif
 
 n64 Align(n64 a_nData, n64 a_nAlignment);
@@ -213,7 +210,7 @@ n64 Align(n64 a_nData, n64 a_nAlignment);
 #define UMkdir Mkdir
 #endif
 
-bool UMakeDir(const UString::value_type* a_pDirName);
+bool UMakeDir(const UChar* a_pDirName);
 
 #if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
 #define Chsize _chsize_s
@@ -231,7 +228,7 @@ bool UMakeDir(const UString::value_type* a_pDirName);
 #define Lseek lseek
 #endif
 
-bool UGetFileSize(const UString::value_type* a_pFileName, n64& a_nFileSize);
+bool UGetFileSize(const UChar* a_pFileName, n64& a_nFileSize);
 
 FILE* Fopen(const char* a_pFileName, const char* a_pMode, bool a_bVerbose = true);
 
@@ -245,13 +242,38 @@ void CopyFile(FILE* a_fpDest, FILE* a_fpSrc, n64 a_nSrcOffset, n64 a_nSize);
 
 void PadFile(FILE* a_fpFile, n64 a_nPadSize, u8 a_uPadData);
 
+#if !defined(SDW_MAIN)
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
+#define UMain wmain
+#else
+#define UMain main
+#endif
+#endif
+
 const UString& UGetModuleFileName();
 
 const UString& UGetModuleDirName();
 
+#if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
+#define USTR(x) L##x
+#define PRIUS USTR("ls")
+#define UCscmp wcscmp
+#define UCslen wcslen
+#define UPrintf wprintf
+#define UStat _wstat64
+#else
+#define USTR(x) x
+#define PRIUS USTR("s")
+#define UCscmp strcmp
+#define UCslen strlen
+#define UPrintf printf
+#define UStat stat
+#endif
+
 void SetLocale();
 
 n32 SToN32(const string& a_sString, int a_nRadix = 10);
+n32 SToN32(const wstring& a_sString, int a_nRadix = 10);
 
 #if (SDW_COMPILER == SDW_COMPILER_GNUC && SDW_COMPILER_VERSION < 50400) || SDW_PLATFORM == SDW_PLATFORM_CYGWIN || (SDW_PLATFORM != SDW_PLATFORM_WINDOWS && defined(SDW_XCONVERT))
 template<typename TSrc, typename TDest>
@@ -303,15 +325,18 @@ wstring U16ToW(const U16String& a_sString);
 U16String U8ToU16(const string& a_sString);
 U16String WToU16(const wstring& a_sString);
 wstring AToW(const string& a_sString);
+string WToA(const wstring& a_sString);
 
 #if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
 #define U16ToU(x) U16ToW(x)
 #define UToU16(x) WToU16(x)
 #define AToU(x) AToW(x)
+#define UToA(x) WToA(x)
 #else
 #define U16ToU(x) U16ToU8(x)
 #define UToU16(x) U8ToU16(x)
 #define AToU(x) string(x)
+#define UToA(x) string(x)
 #endif
 
 string FormatV(const char* a_szFormat, va_list a_vaList);
