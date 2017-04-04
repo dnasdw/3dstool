@@ -321,7 +321,7 @@ bool CPatch::createNcsdPatchFile()
 				{
 					continue;
 				}
-				printf("INFO: create patch from partition %d\n", i);
+				UPrintf(USTR("INFO: create patch from partition %d\n"), i);
 				if (nOffsetNew != nOffsetOld)
 				{
 					if (nSizeOld != 0 && nSizeNew != 0)
@@ -341,7 +341,7 @@ bool CPatch::createNcsdPatchFile()
 			}
 		}
 	}
-	printf("INFO: create patch from ncsd header\n");
+	UPrintf(USTR("INFO: create patch from ncsd header\n"));
 	createPatchFile(0, sizeof(SNcsdHeader) + sizeof(CardInfoHeaderStruct), 0, sizeof(SNcsdHeader) + sizeof(CardInfoHeaderStruct));
 	if (pOffsetAndSizeNew[14] + pOffsetAndSizeNew[15] < pOffsetAndSizeOld[14] + pOffsetAndSizeOld[15])
 	{
@@ -352,7 +352,7 @@ bool CPatch::createNcsdPatchFile()
 
 bool CPatch::createNcchPatchFile(C3dsTool::EFileType a_eFileType, n64 a_nOffsetOld, n64 a_nOffsetNew, bool a_bCreateCheck)
 {
-	static const char* c_pPartName[5] = { "extendedheader", "logoregion", "plainregion", "exefs", "romfs" };
+	static const UChar* c_pPartName[5] = { USTR("extendedheader"), USTR("logoregion"), USTR("plainregion"), USTR("exefs"), USTR("romfs") };
 	CNcch ncchOld;
 	ncchOld.SetFileType(a_eFileType);
 	ncchOld.SetFilePtr(m_fpOld);
@@ -387,7 +387,7 @@ bool CPatch::createNcchPatchFile(C3dsTool::EFileType a_eFileType, n64 a_nOffsetO
 				{
 					continue;
 				}
-				printf("INFO: create patch from %s\n", c_pPartName[i]);
+				UPrintf(USTR("INFO: create patch from %") PRIUS USTR("\n"), c_pPartName[i]);
 				if (nOffsetNew != nOffsetOld)
 				{
 					if (nSizeOld != 0 && nSizeNew != 0)
@@ -411,7 +411,7 @@ bool CPatch::createNcchPatchFile(C3dsTool::EFileType a_eFileType, n64 a_nOffsetO
 			}
 		}
 	}
-	printf("INFO: create patch from ncch header\n");
+	UPrintf(USTR("INFO: create patch from ncch header\n"));
 	createPatchFile(a_nOffsetOld, sizeof(SNcchHeader), a_nOffsetNew, sizeof(SNcchHeader));
 	return true;
 }

@@ -143,8 +143,8 @@ private:
 	void clearExeFs();
 	void clearRomFs();
 	void alignFileSize(n64 a_nAlignment);
-	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const string& a_sType);
-	bool encryptXorFile(const UString& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const string& a_sType);
+	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const UChar* a_pType);
+	bool encryptXorFile(const UString& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const UChar* a_pType);
 	static size_t onDownload(char* a_pData, size_t a_uSize, size_t a_uNmemb, void* a_pUserData);
 	static const CBigNum s_Slot0x18KeyX;
 	static const CBigNum s_Slot0x1BKeyX;

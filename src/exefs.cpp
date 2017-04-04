@@ -11,9 +11,9 @@ CExeFs::CExeFs()
 	, m_fpExeFs(nullptr)
 {
 	memset(&m_ExeFsSuperBlock, 0, sizeof(m_ExeFsSuperBlock));
-	m_mPath["banner"] = USTR("banner.bnr");
-	m_mPath["icon"] = USTR("icon.icn");
-	m_mPath["logo"] = USTR("logo.darc.lz");
+	m_mPath[USTR("banner")] = USTR("banner.bnr");
+	m_mPath[USTR("icon")] = USTR("icon.icn");
+	m_mPath[USTR("logo")] = USTR("logo.darc.lz");
 }
 
 CExeFs::~CExeFs()
@@ -156,11 +156,11 @@ bool CExeFs::extractSection(int a_nIndex)
 {
 	bool bResult = true;
 	UString sPath;
-	string sName = reinterpret_cast<const char*>(m_ExeFsSuperBlock.m_Header[a_nIndex].name);
+	UString sName = AToU(reinterpret_cast<const char*>(m_ExeFsSuperBlock.m_Header[a_nIndex].name));
 	if (!sName.empty())
 	{
 		bool bTopSection = false;
-		unordered_map<string, UString>::const_iterator it = m_mPath.find(sName);
+		unordered_map<UString, UString>::const_iterator it = m_mPath.find(sName);
 		if (it == m_mPath.end())
 		{
 			if (a_nIndex == 0)
@@ -172,9 +172,9 @@ bool CExeFs::extractSection(int a_nIndex)
 			{
 				if (m_bVerbose)
 				{
-					printf("INFO: unknown entry name %s\n", sName.c_str());
+					UPrintf(USTR("INFO: unknown entry name %") PRIUS USTR("\n"), sName.c_str());
 				}
-				sPath = m_sExeFsDirName + USTR("/") + AToU(sName) + USTR(".bin");
+				sPath = m_sExeFsDirName + USTR("/") + sName + USTR(".bin");
 			}
 		}
 		else
@@ -210,13 +210,13 @@ bool CExeFs::extractSection(int a_nIndex)
 					}
 					else
 					{
-						printf("ERROR: uncompress error\n\n");
+						UPrintf(USTR("ERROR: uncompress error\n\n"));
 					}
 					delete[] pUncompressed;
 				}
 				else
 				{
-					printf("ERROR: get uncompressed size error\n\n");
+					UPrintf(USTR("ERROR: get uncompressed size error\n\n"));
 				}
 				delete[] pCompressed;
 			}
@@ -260,11 +260,11 @@ bool CExeFs::createSection(int a_nIndex)
 {
 	bool bResult = true;
 	UString sPath;
-	string sName = reinterpret_cast<const char*>(m_ExeFsSuperBlock.m_Header[a_nIndex].name);
+	UString sName = AToU(reinterpret_cast<const char*>(m_ExeFsSuperBlock.m_Header[a_nIndex].name));
 	if (!sName.empty())
 	{
 		bool bTopSection = false;
-		unordered_map<string, UString>::const_iterator it = m_mPath.find(sName);
+		unordered_map<UString, UString>::const_iterator it = m_mPath.find(sName);
 		if (it == m_mPath.end())
 		{
 			if (a_nIndex == 0)
@@ -276,9 +276,9 @@ bool CExeFs::createSection(int a_nIndex)
 			{
 				if (m_bVerbose)
 				{
-					printf("INFO: unknown entry name %s\n", sName.c_str());
+					UPrintf(USTR("INFO: unknown entry name %") PRIUS USTR("\n"), sName.c_str());
 				}
-				sPath = m_sExeFsDirName + USTR("/") + AToU(sName) + USTR(".bin");
+				sPath = m_sExeFsDirName + USTR("/") + sName + USTR(".bin");
 			}
 		}
 		else

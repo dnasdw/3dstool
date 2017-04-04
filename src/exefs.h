@@ -49,7 +49,7 @@ private:
 	bool m_bCompress;
 	FILE* m_fpExeFs;
 	ExeFsSuperBlock m_ExeFsSuperBlock;
-	unordered_map<string, UString> m_mPath;
+	unordered_map<UString, UString> m_mPath;
 };
 
 #endif	// EXEFS_H_
