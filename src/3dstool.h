@@ -86,7 +86,7 @@ private:
 	int m_nEncryptMode;
 	CBigNum m_Key;
 	CBigNum m_Counter;
-	string m_sXorFileName;
+	UString m_sXorFileName;
 	n32 m_nCompressAlign;
 	ECompressType m_eCompressType;
 	string m_sCompressOutFileName;
@@ -105,10 +105,10 @@ private:
 	string m_sPlainRegionFileName;
 	string m_sExeFsFileName;
 	string m_sRomFsFileName;
-	string m_sExtendedHeaderXorFileName;
-	string m_sExeFsXorFileName;
-	string m_sExeFsTopXorFileName;
-	string m_sRomFsXorFileName;
+	UString m_sExtendedHeaderXorFileName;
+	UString m_sExeFsXorFileName;
+	UString m_sExeFsTopXorFileName;
+	UString m_sRomFsXorFileName;
 	bool m_bExeFsTopAutoKey;
 	bool m_bRomFsAutoKey;
 	UString m_sExeFsDirName;

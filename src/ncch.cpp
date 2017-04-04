@@ -104,22 +104,22 @@ void CNcch::SetRomFsFileName(const string& a_sRomFsFileName)
 	m_sRomFsFileName = a_sRomFsFileName;
 }
 
-void CNcch::SetExtendedHeaderXorFileName(const string& a_sExtendedHeaderXorFileName)
+void CNcch::SetExtendedHeaderXorFileName(const UString& a_sExtendedHeaderXorFileName)
 {
 	m_sExtendedHeaderXorFileName = a_sExtendedHeaderXorFileName;
 }
 
-void CNcch::SetExeFsXorFileName(const string& a_sExeFsXorFileName)
+void CNcch::SetExeFsXorFileName(const UString& a_sExeFsXorFileName)
 {
 	m_sExeFsXorFileName = a_sExeFsXorFileName;
 }
 
-void CNcch::SetExeFsTopXorFileName(const string& a_sExeFsTopXorFileName)
+void CNcch::SetExeFsTopXorFileName(const UString& a_sExeFsTopXorFileName)
 {
 	m_sExeFsTopXorFileName = a_sExeFsTopXorFileName;
 }
 
-void CNcch::SetRomFsXorFileName(const string& a_sRomFsXorFileName)
+void CNcch::SetRomFsXorFileName(const UString& a_sRomFsXorFileName)
 {
 	m_sRomFsXorFileName = a_sRomFsXorFileName;
 }
@@ -1187,7 +1187,7 @@ bool CNcch::encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, cons
 	return bResult;
 }
 
-bool CNcch::encryptXorFile(const string& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const string& a_sType)
+bool CNcch::encryptXorFile(const UString& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const string& a_sType)
 {
 	bool bResult = true;
 	if (!a_sXorFileName.empty())

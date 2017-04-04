@@ -801,7 +801,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_sXorFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sXorFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("compress-align")) == 0)
 	{
@@ -1001,7 +1001,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_sExtendedHeaderXorFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sExtendedHeaderXorFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("exefs-xor")) == 0)
 	{
@@ -1017,7 +1017,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_sExeFsXorFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sExeFsXorFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("exefs-top-xor")) == 0)
 	{
@@ -1037,7 +1037,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_sExeFsTopXorFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sExeFsTopXorFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("romfs-xor")) == 0)
 	{
@@ -1057,7 +1057,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_sRomFsXorFileName = UToA(a_pArgv[++a_nIndex]);
+		m_sRomFsXorFileName = a_pArgv[++a_nIndex];
 	}
 	else if (UCscmp(a_pName, USTR("exefs-top-auto-key")) == 0)
 	{

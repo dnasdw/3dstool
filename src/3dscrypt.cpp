@@ -27,9 +27,9 @@ void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const CBigNum& a_Key,
 	delete[] pInBuffer;
 }
 
-bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const string& a_sXorFileName, n64 a_nOffset, n64 a_nSize)
+bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const UString& a_sXorFileName, n64 a_nOffset, n64 a_nSize)
 {
-	FILE* fpXor = Fopen(a_sXorFileName.c_str(), "rb");
+	FILE* fpXor = UFopen(a_sXorFileName.c_str(), USTR("rb"));
 	if (fpXor == nullptr)
 	{
 		return false;
@@ -39,7 +39,7 @@ bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const string& a_sXorFile
 	if (nXorSize < a_nSize)
 	{
 		fclose(fpXor);
-		printf("ERROR: xor file %s size less than data size\n\n", a_sXorFileName.c_str());
+		UPrintf(USTR("ERROR: xor file %") PRIUS USTR(" size less than data size\n\n"), a_sXorFileName.c_str());
 		return false;
 	}
 	Fseek(fpXor, 0, SEEK_SET);
@@ -127,7 +127,7 @@ bool FEncryptAesCtrFile(const string& a_sDataFileName, const CBigNum& a_Key, con
 	return true;
 }
 
-bool FEncryptXorFile(const string& a_sDataFileName, const string& a_sXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset)
+bool FEncryptXorFile(const string& a_sDataFileName, const UString& a_sXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset)
 {
 	FILE* fpData = Fopen(a_sDataFileName.c_str(), "rb+");
 	if (fpData == nullptr)
@@ -152,7 +152,7 @@ bool FEncryptXorFile(const string& a_sDataFileName, const string& a_sXorFileName
 		printf("ERROR: data file %s size less than data offset + data size\n\n", a_sDataFileName.c_str());
 		return false;
 	}
-	FILE* fpXor = Fopen(a_sXorFileName.c_str(), "rb");
+	FILE* fpXor = UFopen(a_sXorFileName.c_str(), USTR("rb"));
 	if (fpXor == nullptr)
 	{
 		fclose(fpData);
@@ -164,7 +164,7 @@ bool FEncryptXorFile(const string& a_sDataFileName, const string& a_sXorFileName
 	{
 		fclose(fpXor);
 		fclose(fpData);
-		printf("ERROR: xor file %s size less than data size\n\n", a_sXorFileName.c_str());
+		UPrintf(USTR("ERROR: xor file %") PRIUS USTR(" size less than data size\n\n"), a_sXorFileName.c_str());
 		return false;
 	}
 	Fseek(fpXor, a_nXorOffset, SEEK_SET);
@@ -233,9 +233,9 @@ void FEncryptAesCtrData(void* a_pData, const CBigNum& a_Key, const CBigNum& a_Co
 	}
 }
 
-bool FEncryptXorData(void* a_pData, const string& a_sXorFileName, n64 a_nDataSize, n64 a_nXorOffset)
+bool FEncryptXorData(void* a_pData, const UString& a_sXorFileName, n64 a_nDataSize, n64 a_nXorOffset)
 {
-	FILE* fpXor = Fopen(a_sXorFileName.c_str(), "rb");
+	FILE* fpXor = UFopen(a_sXorFileName.c_str(), USTR("rb"));
 	if (fpXor == nullptr)
 	{
 		return false;
@@ -245,7 +245,7 @@ bool FEncryptXorData(void* a_pData, const string& a_sXorFileName, n64 a_nDataSiz
 	if (nXorSize - a_nXorOffset < a_nDataSize)
 	{
 		fclose(fpXor);
-		printf("ERROR: xor file %s size less than data size\n\n", a_sXorFileName.c_str());
+		UPrintf(USTR("ERROR: xor file %") PRIUS USTR(" size less than data size\n\n"), a_sXorFileName.c_str());
 		return false;
 	}
 	Fseek(fpXor, a_nXorOffset, SEEK_SET);

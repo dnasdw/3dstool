@@ -105,10 +105,10 @@ public:
 	void SetPlainRegionFileName(const string& a_sPlainRegionFileName);
 	void SetExeFsFileName(const string& a_sExeFsFileName);
 	void SetRomFsFileName(const string& a_sRomFsFileName);
-	void SetExtendedHeaderXorFileName(const string& a_sExtendedHeaderXorFileName);
-	void SetExeFsXorFileName(const string& a_sExeFsXorFileName);
-	void SetExeFsTopXorFileName(const string& a_sExeFsTopXorFileName);
-	void SetRomFsXorFileName(const string& a_sRomFsXorFileName);
+	void SetExtendedHeaderXorFileName(const UString& a_sExtendedHeaderXorFileName);
+	void SetExeFsXorFileName(const UString& a_sExeFsXorFileName);
+	void SetExeFsTopXorFileName(const UString& a_sExeFsTopXorFileName);
+	void SetRomFsXorFileName(const UString& a_sRomFsXorFileName);
 	void SetExeFsTopAutoKey(bool a_bExeFsTopAutoKey);
 	void SetRomFsAutoKey(bool a_bRomFsAutoKey);
 	void SetFilePtr(FILE* a_fpNcch);
@@ -144,7 +144,7 @@ private:
 	void clearRomFs();
 	void alignFileSize(n64 a_nAlignment);
 	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const string& a_sType);
-	bool encryptXorFile(const string& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const string& a_sType);
+	bool encryptXorFile(const UString& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const string& a_sType);
 	static size_t onDownload(char* a_pData, size_t a_uSize, size_t a_uNmemb, void* a_pUserData);
 	static const CBigNum s_Slot0x18KeyX;
 	static const CBigNum s_Slot0x1BKeyX;
@@ -163,10 +163,10 @@ private:
 	string m_sPlainRegionFileName;
 	string m_sExeFsFileName;
 	string m_sRomFsFileName;
-	string m_sExtendedHeaderXorFileName;
-	string m_sExeFsXorFileName;
-	string m_sExeFsTopXorFileName;
-	string m_sRomFsXorFileName;
+	UString m_sExtendedHeaderXorFileName;
+	UString m_sExeFsXorFileName;
+	UString m_sExeFsTopXorFileName;
+	UString m_sRomFsXorFileName;
 	bool m_bExeFsTopAutoKey;
 	bool m_bRomFsAutoKey;
 	FILE* m_fpNcch;
@@ -177,7 +177,7 @@ private:
 	bool m_bAlignToBlockSize;
 	string m_sExtKey;
 	CBigNum m_Counter;
-	string m_sXorFileName;
+	UString m_sXorFileName;
 };
 
 #endif	// NCCH_H_
