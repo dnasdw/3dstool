@@ -281,7 +281,7 @@ void CRomFs::buildIgnoreList()
 		pTxt[uSize] = '\0';
 		string sTxt(pTxt);
 		delete[] pTxt;
-		vector<string> vTxt = SplitOf<string>(sTxt, "\r\n");
+		vector<string> vTxt = SplitOf(sTxt, "\r\n");
 		vector<URegex>* pIgnoreList = &m_vIgnoreList;
 		for (vector<string>::const_iterator it = vTxt.begin(); it != vTxt.end(); ++it)
 		{
@@ -313,7 +313,7 @@ void CRomFs::buildIgnoreList()
 					}
 					catch (regex_error& e)
 					{
-						printf("ERROR: %s\n\n", e.what());
+						UPrintf(USTR("ERROR: %") PRIUS USTR("\n\n"), AToU(e.what()).c_str());
 					}
 				}
 			}

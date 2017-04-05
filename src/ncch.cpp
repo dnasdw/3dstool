@@ -581,7 +581,7 @@ void CNcch::calculateKey()
 			pTxt[uSize] = '\0';
 			string sTxt(pTxt);
 			delete[] pTxt;
-			vector<string> vTxt = SplitOf<string>(sTxt, "\r\n");
+			vector<string> vTxt = SplitOf(sTxt, "\r\n");
 			for (vector<string>::const_iterator it = vTxt.begin(); it != vTxt.end(); ++it)
 			{
 				sTxt = Trim(*it);
@@ -592,12 +592,12 @@ void CNcch::calculateKey()
 					{
 						if (!mExtKey.insert(make_pair(vExtKey[0], vExtKey[1])).second)
 						{
-							printf("INFO: multiple ext key for %s\n", vExtKey[0].c_str());
+							UPrintf(USTR("INFO: multiple ext key for %") PRIUS USTR("\n"), AToU(vExtKey[0]).c_str());
 						}
 					}
 					else
 					{
-						printf("INFO: unknown ext key record %s\n", sTxt.c_str());
+						UPrintf(USTR("INFO: unknown ext key record %") PRIUS USTR("\n"), AToU(sTxt).c_str());
 					}
 				}
 			}
@@ -627,7 +627,7 @@ void CNcch::calculateKey()
 				CURLcode code = curl_easy_perform(pCURL);
 				if (code != CURLE_OK)
 				{
-					printf("INFO: curl_easy_perform() failed: %s\n", curl_easy_strerror(code));
+					UPrintf(USTR("INFO: curl_easy_perform() failed: %") PRIUS USTR("\n"), AToU(curl_easy_strerror(code)).c_str());
 					curl_easy_cleanup(pCURL);
 					curl_global_cleanup();
 					return;
@@ -654,7 +654,7 @@ void CNcch::calculateKey()
 		}
 		if (m_sExtKey.size() != 32 || m_sExtKey.find_first_not_of("0123456789ABCDEFabcdef") != string::npos)
 		{
-			printf("ERROR: can not find ext key for %s\n\n", sProgramId.c_str());
+			UPrintf(USTR("ERROR: can not find ext key for %") PRIUS USTR("\n\n"), AToU(sProgramId).c_str());
 			return;
 		}
 		string sExtKeyWithProgramId = m_sExtKey;
@@ -672,7 +672,7 @@ void CNcch::calculateKey()
 		{
 			if (pReserved0[i] != uSHA256[i])
 			{
-				printf("ERROR: ext key verification failed\n\n");
+				UPrintf(USTR("ERROR: ext key verification failed\n\n"));
 				return;
 			}
 		}

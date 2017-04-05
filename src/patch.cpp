@@ -165,7 +165,7 @@ bool CPatch::ApplyPatchFile()
 	{
 		fclose(m_fpPatch);
 		fclose(m_fpOld);
-		printf("ERROR: not support patch file version %" PRIu8 ".%" PRIu8 ".%" PRIu8 "\n\n", m_3dsPatchSystemHeader.VersionMajor, m_3dsPatchSystemHeader.VersionMinor, m_3dsPatchSystemHeader.VersionPatchLevel);
+		UPrintf(USTR("ERROR: not support patch file version %") PRIUS USTR(".%") PRIUS USTR(".%") PRIUS USTR("\n\n"), AToU(Format("%" PRIu8, m_3dsPatchSystemHeader.VersionMajor)).c_str(), AToU(Format("%" PRIu8, m_3dsPatchSystemHeader.VersionMinor)).c_str(), AToU(Format("%" PRIu8, m_3dsPatchSystemHeader.VersionPatchLevel)).c_str());
 		return false;
 	}
 	if (m_bVerbose)
@@ -268,7 +268,7 @@ bool CPatch::ApplyPatchFile()
 		}
 		else
 		{
-			printf("ERROR: unknown patch command %02" PRIX8 "\n\n", uPatchCommand);
+			UPrintf(USTR("ERROR: unknown patch command %") PRIUS USTR("\n\n"), AToU(Format("%02" PRIX8, uPatchCommand)).c_str());
 			break;
 		}
 	} while (true);

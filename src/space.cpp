@@ -27,7 +27,7 @@ bool CSpace::AddSpace(n64 a_nOffset, n64 a_nSize)
 		SBuffer& buffer = *it;
 		if ((nTop >= buffer.Top && nTop < buffer.Bottom) || (nBottom > buffer.Top && nBottom <= buffer.Bottom))
 		{
-			printf("ERROR: [0x%" PRIX64 ", 0x%" PRIX64 ") [0x%" PRIX64 ", 0x%" PRIX64 ") overlap\n\n", nTop, nBottom, buffer.Top, buffer.Bottom);
+			UPrintf(USTR("ERROR: [%") PRIUS USTR(", %") PRIUS USTR(") [%") PRIUS USTR(", %") PRIUS USTR(") overlap\n\n"), AToU(Format("0x%" PRIX64, nTop)).c_str(), AToU(Format("0x%" PRIX64, nBottom)).c_str(), AToU(Format("0x%" PRIX64, buffer.Top)).c_str(), AToU(Format("0x%" PRIX64, buffer.Bottom)).c_str());
 			return false;
 		}
 		if (nBottom < buffer.Top)
