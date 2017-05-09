@@ -227,7 +227,7 @@ void FEncryptAesCtrData(void* a_pData, const CBigNum& a_Key, const CBigNum& a_Co
 			a_nDataSize -= nSize - a_nXorOffset;
 			if (a_nDataSize > 0)
 			{
-				AES_ctr128_encrypt(reinterpret_cast<u8*>(a_pData)+(nSize - a_nXorOffset), reinterpret_cast<u8*>(a_pData)+(nSize - a_nXorOffset), static_cast<size_t>(a_nDataSize), &key, uCounter, uEcountBuf, &uNum);
+				AES_ctr128_encrypt(reinterpret_cast<u8*>(a_pData) + (nSize - a_nXorOffset), reinterpret_cast<u8*>(a_pData) + (nSize - a_nXorOffset), static_cast<size_t>(a_nDataSize), &key, uCounter, uEcountBuf, &uNum);
 			}
 		}
 	}
@@ -256,19 +256,19 @@ bool FEncryptXorData(void* a_pData, const UString& a_sXorFileName, n64 a_nDataSi
 	{
 		n64 nSize = a_nDataSize > nBufferSize ? nBufferSize : a_nDataSize;
 		fread(pXorBuffer, 1, static_cast<size_t>(nSize), fpXor);
-		u64* pDataBuffer64 = reinterpret_cast<u64*>(static_cast<u8*>(a_pData)+nIndex * nBufferSize);
-		u64* pXorBuffer64 = reinterpret_cast<u64*>(pXorBuffer);
-		n64 nXorCount = nSize / 8;
+		u32* pDataBuffer32 = reinterpret_cast<u32*>(static_cast<u8*>(a_pData) + nIndex * nBufferSize);
+		u32* pXorBuffer32 = reinterpret_cast<u32*>(pXorBuffer);
+		n64 nXorCount = nSize / 4;
 		for (n64 i = 0; i < nXorCount; i++)
 		{
-			*pDataBuffer64++ ^= *pXorBuffer64++;
+			*pDataBuffer32++ ^= *pXorBuffer32++;
 		}
-		int nRemain = nSize % 8;
+		int nRemain = nSize % 4;
 		if (nRemain != 0)
 		{
-			u8* pDataBuffer8 = reinterpret_cast<u8*>(pDataBuffer64);
-			u8* pXorBuffer8 = reinterpret_cast<u8*>(pXorBuffer64);
-			for (n64 i = 0; i < nRemain; i++)
+			u8* pDataBuffer8 = reinterpret_cast<u8*>(pDataBuffer32);
+			u8* pXorBuffer8 = reinterpret_cast<u8*>(pXorBuffer32);
+			for (int i = 0; i < nRemain; i++)
 			{
 				*pDataBuffer8++ ^= *pXorBuffer8++;
 			}
