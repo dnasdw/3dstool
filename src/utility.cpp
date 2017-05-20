@@ -357,19 +357,19 @@ string WToA(const wstring& a_sString)
 }
 #endif
 
-static const int s_nFormatBufferSize = 4096;
-
 string FormatV(const char* a_szFormat, va_list a_vaList)
 {
-	static char c_szBuffer[s_nFormatBufferSize] = {};
-	vsnprintf(c_szBuffer, s_nFormatBufferSize, a_szFormat, a_vaList);
+	static const int c_nFormatBufferSize = 0x100000;
+	static char c_szBuffer[c_nFormatBufferSize] = {};
+	vsnprintf(c_szBuffer, c_nFormatBufferSize, a_szFormat, a_vaList);
 	return c_szBuffer;
 }
 
 wstring FormatV(const wchar_t* a_szFormat, va_list a_vaList)
 {
-	static wchar_t c_szBuffer[s_nFormatBufferSize] = {};
-	vswprintf(c_szBuffer, s_nFormatBufferSize, a_szFormat, a_vaList);
+	static const int c_nFormatBufferSize = 0x100000;
+	static wchar_t c_szBuffer[c_nFormatBufferSize] = {};
+	vswprintf(c_szBuffer, c_nFormatBufferSize, a_szFormat, a_vaList);
 	return c_szBuffer;
 }
 
