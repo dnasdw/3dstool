@@ -109,6 +109,8 @@ public:
 	void SetExeFsXorFileName(const UString& a_sExeFsXorFileName);
 	void SetExeFsTopXorFileName(const UString& a_sExeFsTopXorFileName);
 	void SetRomFsXorFileName(const UString& a_sRomFsXorFileName);
+	void SetExtendedHeaderAutoKey(bool a_bExtendedHeaderAutoKey);
+	void SetExeFsAutoKey(bool a_bExeFsAutoKey);
 	void SetExeFsTopAutoKey(bool a_bExeFsTopAutoKey);
 	void SetRomFsAutoKey(bool a_bRomFsAutoKey);
 	void SetFilePtr(FILE* a_fpNcch);
@@ -149,12 +151,13 @@ private:
 	static const CBigNum s_Slot0x18KeyX;
 	static const CBigNum s_Slot0x1BKeyX;
 	static const CBigNum s_Slot0x25KeyX;
+	static const CBigNum s_Slot0x2CKeyX;
 	C3dsTool::EFileType m_eFileType;
 	UString m_sFileName;
 	bool m_bVerbose;
 	UString m_sHeaderFileName;
 	int m_nEncryptMode;
-	CBigNum m_Key;
+	CBigNum m_Key[2];
 	bool m_bNotUpdateExtendedHeaderHash;
 	bool m_bNotUpdateExeFsHash;
 	bool m_bNotUpdateRomFsHash;
@@ -167,6 +170,8 @@ private:
 	UString m_sExeFsXorFileName;
 	UString m_sExeFsTopXorFileName;
 	UString m_sRomFsXorFileName;
+	bool m_bExtendedHeaderAutoKey;
+	bool m_bExeFsAutoKey;
 	bool m_bExeFsTopAutoKey;
 	bool m_bRomFsAutoKey;
 	FILE* m_fpNcch;
@@ -176,6 +181,7 @@ private:
 	n64 m_nOffsetAndSize[kOffsetSizeIndexCount * 2];
 	bool m_bAlignToBlockSize;
 	string m_sExtKey;
+	int m_nKeyIndex;
 	CBigNum m_Counter;
 	UString m_sXorFileName;
 };

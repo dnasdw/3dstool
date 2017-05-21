@@ -109,6 +109,8 @@ private:
 	UString m_sExeFsXorFileName;
 	UString m_sExeFsTopXorFileName;
 	UString m_sRomFsXorFileName;
+	bool m_bExtendedHeaderAutoKey;
+	bool m_bExeFsAutoKey;
 	bool m_bExeFsTopAutoKey;
 	bool m_bRomFsAutoKey;
 	UString m_sExeFsDirName;

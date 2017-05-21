@@ -11,6 +11,7 @@ const int CNcch::s_nBlockSize = 0x1000;
 const CBigNum CNcch::s_Slot0x18KeyX = "82E9C9BEBFB8BDB875ECC0A07D474374";
 const CBigNum CNcch::s_Slot0x1BKeyX = "45AD04953992C7C893724A9A7BCE6182";
 const CBigNum CNcch::s_Slot0x25KeyX = "CEE7D8AB30C00DAE850EF5E382AC5AF3";
+const CBigNum CNcch::s_Slot0x2CKeyX = "B98E95CECA3E4D171F76A94DE934C053";
 
 CNcch::CNcch()
 	: m_eFileType(C3dsTool::kFileTypeUnknown)
@@ -19,12 +20,15 @@ CNcch::CNcch()
 	, m_bNotUpdateExtendedHeaderHash(false)
 	, m_bNotUpdateExeFsHash(false)
 	, m_bNotUpdateRomFsHash(false)
+	, m_bExtendedHeaderAutoKey(false)
+	, m_bExeFsAutoKey(false)
 	, m_bExeFsTopAutoKey(false)
 	, m_bRomFsAutoKey(false)
 	, m_fpNcch(nullptr)
 	, m_nOffset(0)
 	, m_nMediaUnitSize(1 << 9)
 	, m_bAlignToBlockSize(false)
+	, m_nKeyIndex(0)
 {
 	memset(&m_NcchHeader, 0, sizeof(m_NcchHeader));
 	memset(m_nOffsetAndSize, 0, sizeof(m_nOffsetAndSize));
@@ -61,7 +65,7 @@ void CNcch::SetEncryptMode(int a_nEncryptMode)
 
 void CNcch::SetKey(const CBigNum& a_Key)
 {
-	m_Key = a_Key;
+	m_Key[0] = a_Key;
 }
 
 void CNcch::SetNotUpdateExtendedHeaderHash(bool a_bNotUpdateExtendedHeaderHash)
@@ -124,6 +128,16 @@ void CNcch::SetRomFsXorFileName(const UString& a_sRomFsXorFileName)
 	m_sRomFsXorFileName = a_sRomFsXorFileName;
 }
 
+void CNcch::SetExtendedHeaderAutoKey(bool a_bExtendedHeaderAutoKey)
+{
+	m_bExtendedHeaderAutoKey = a_bExtendedHeaderAutoKey;
+}
+
+void CNcch::SetExeFsAutoKey(bool a_bExeFsAutoKey)
+{
+	m_bExeFsAutoKey = a_bExeFsAutoKey;
+}
+
 void CNcch::SetExeFsTopAutoKey(bool a_bExeFsTopAutoKey)
 {
 	m_bExeFsTopAutoKey = a_bExeFsTopAutoKey;
@@ -170,9 +184,19 @@ bool CNcch::ExtractFile()
 	{
 		bResult = false;
 	}
+	m_nKeyIndex = 0;
 	calculateCounter(kAesCtrTypeExtendedHeader);
 	m_sXorFileName = m_sExtendedHeaderXorFileName;
-	if (!extractFile(m_sExtendedHeaderFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], false, USTR("extendedheader")))
+	if (m_bExtendedHeaderAutoKey)
+	{
+		m_nEncryptMode = kEncryptModeAesCtr;
+		if (!extractFile(m_sExtendedHeaderFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], false, USTR("extendedheader")))
+		{
+			bResult = false;
+		}
+		m_nEncryptMode = kEncryptModeXor;
+	}
+	else if (!extractFile(m_sExtendedHeaderFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], false, USTR("extendedheader")))
 	{
 		bResult = false;
 	}
@@ -185,7 +209,7 @@ bool CNcch::ExtractFile()
 		bResult = false;
 	}
 	calculateCounter(kAesCtrTypeExeFs);
-	if (!m_sExeFsXorFileName.empty() && (!m_sExeFsTopXorFileName.empty() || m_bExeFsTopAutoKey) && m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] != 0)
+	if ((!m_sExeFsXorFileName.empty() || m_bExeFsAutoKey) && (!m_sExeFsTopXorFileName.empty() || m_bExeFsTopAutoKey) && m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] != 0)
 	{
 		Fseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
 		ExeFsSuperBlock exeFsSuperBlock;
@@ -196,26 +220,41 @@ bool CNcch::ExtractFile()
 		bool bEncryptResult = true;
 		if (!CExeFs::IsExeFsSuperBlock(exeFsSuperBlock))
 		{
-			bEncryptResult = FEncryptXorData(&exeFsSuperBlock, m_sExeFsXorFileName, sizeof(exeFsSuperBlock), 0);
+			if (m_bExeFsAutoKey)
+			{
+				FEncryptAesCtrData(&exeFsSuperBlock, m_Key[0], m_Counter, sizeof(exeFsSuperBlock), 0);
+			}
+			else
+			{
+				bEncryptResult = FEncryptXorData(&exeFsSuperBlock, m_sExeFsXorFileName, sizeof(exeFsSuperBlock), 0);
+			}
 		}
 		if (bEncryptResult)
 		{
 			n64 nXorOffset = 0;
-			if (!FEncryptXorData(pExeFs + nXorOffset, m_sExeFsXorFileName, sizeof(exeFsSuperBlock), nXorOffset))
+			if (m_bExeFsAutoKey)
+			{
+				FEncryptAesCtrData(pExeFs + nXorOffset, m_Key[0], m_Counter, sizeof(exeFsSuperBlock), nXorOffset);
+			}
+			else if (!FEncryptXorData(pExeFs + nXorOffset, m_sExeFsXorFileName, sizeof(exeFsSuperBlock), nXorOffset))
 			{
 				bEncryptResult = false;
 			}
 			nXorOffset += sizeof(exeFsSuperBlock);
 			if (m_bExeFsTopAutoKey)
 			{
-				FEncryptAesCtrData(pExeFs + nXorOffset, m_Key, m_Counter, exeFsSuperBlock.m_Header[0].size, nXorOffset);
+				FEncryptAesCtrData(pExeFs + nXorOffset, m_Key[1], m_Counter, exeFsSuperBlock.m_Header[0].size, nXorOffset);
 			}
 			else if (!FEncryptXorData(pExeFs + nXorOffset, m_sExeFsTopXorFileName, exeFsSuperBlock.m_Header[0].size, nXorOffset))
 			{
 				bEncryptResult = false;
 			}
 			nXorOffset += exeFsSuperBlock.m_Header[0].size;
-			if (!FEncryptXorData(pExeFs + nXorOffset, m_sExeFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] - nXorOffset, nXorOffset))
+			if (m_bExeFsAutoKey)
+			{
+				FEncryptAesCtrData(pExeFs + nXorOffset, m_Key[0], m_Counter, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] - nXorOffset, nXorOffset);
+			}
+			else if (!FEncryptXorData(pExeFs + nXorOffset, m_sExeFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] - nXorOffset, nXorOffset))
 			{
 				bEncryptResult = false;
 			}
@@ -248,11 +287,21 @@ bool CNcch::ExtractFile()
 	else
 	{
 		m_sXorFileName = m_sExeFsXorFileName;
-		if (!extractFile(m_sExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], false, USTR("exefs")))
+		if (m_bExeFsAutoKey)
+		{
+			m_nEncryptMode = kEncryptModeAesCtr;
+			if (!extractFile(m_sExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], false, USTR("exefs")))
+			{
+				bResult = false;
+			}
+			m_nEncryptMode = kEncryptModeXor;
+		}
+		else if (!extractFile(m_sExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], false, USTR("exefs")))
 		{
 			bResult = false;
 		}
 	}
+	m_nKeyIndex = m_NcchHeader.Ncch.Flags[Encrypt7x] == 0 ? 0 : 1;
 	calculateCounter(kAesCtrTypeRomFs);
 	m_sXorFileName = m_sRomFsXorFileName;
 	if (m_bRomFsAutoKey)
@@ -334,6 +383,7 @@ bool CNcch::EncryptFile()
 	calculateKey();
 	if (m_nEncryptMode == kEncryptModeAesCtr)
 	{
+		m_nKeyIndex = 0;
 		calculateCounter(kAesCtrTypeExtendedHeader);
 		if (!encryptAesCtrFile(m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], 0, USTR("extendedheader")))
 		{
@@ -352,13 +402,31 @@ bool CNcch::EncryptFile()
 	}
 	else if (m_nEncryptMode == kEncryptModeXor)
 	{
-		if (!encryptXorFile(m_sExtendedHeaderXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], 0, USTR("extendedheader")))
+		calculateCounter(kAesCtrTypeExtendedHeader);
+		if (m_bExtendedHeaderAutoKey)
+		{
+			m_nKeyIndex = 0;
+			if (!encryptAesCtrFile(m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], 0, USTR("extendedheader")))
+			{
+				bResult = false;
+			}
+		}
+		else if (!encryptXorFile(m_sExtendedHeaderXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2], m_nOffsetAndSize[kOffsetSizeIndexExtendedHeader * 2 + 1], 0, USTR("extendedheader")))
 		{
 			bResult = false;
 		}
+		calculateCounter(kAesCtrTypeExeFs);
 		if (m_sExeFsTopXorFileName.empty() && !m_bExeFsTopAutoKey)
 		{
-			if (!encryptXorFile(m_sExeFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], 0, USTR("exefs")))
+			if (m_bExeFsAutoKey)
+			{
+				m_nKeyIndex = 0;
+				if (!encryptAesCtrFile(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], 0, USTR("exefs")))
+				{
+					bResult = false;
+				}
+			}
+			else if (!encryptXorFile(m_sExeFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], 0, USTR("exefs")))
 			{
 				bResult = false;
 			}
@@ -379,7 +447,14 @@ bool CNcch::EncryptFile()
 				bool bEncryptResult = true;
 				if (!CExeFs::IsExeFsSuperBlock(exeFsSuperBlock))
 				{
-					bEncryptResult = FEncryptXorData(&exeFsSuperBlock, m_sExeFsXorFileName, sizeof(exeFsSuperBlock), 0);
+					if (m_bExeFsAutoKey)
+					{
+						FEncryptAesCtrData(&exeFsSuperBlock, m_Key[0], m_Counter, sizeof(exeFsSuperBlock), 0);
+					}
+					else
+					{
+						bEncryptResult = FEncryptXorData(&exeFsSuperBlock, m_sExeFsXorFileName, sizeof(exeFsSuperBlock), 0);
+					}
 				}
 				if (!bEncryptResult)
 				{
@@ -388,13 +463,22 @@ bool CNcch::EncryptFile()
 				else
 				{
 					n64 nXorOffset = 0;
-					if (!encryptXorFile(m_sExeFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2] + nXorOffset, sizeof(exeFsSuperBlock), nXorOffset, USTR("exefs super block")))
+					if (m_bExeFsAutoKey)
+					{
+						m_nKeyIndex = 0;
+						if (!encryptAesCtrFile(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2] + nXorOffset, sizeof(exeFsSuperBlock), nXorOffset, USTR("exefs super block")))
+						{
+							bResult = false;
+						}
+					}
+					else if (!encryptXorFile(m_sExeFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2] + nXorOffset, sizeof(exeFsSuperBlock), nXorOffset, USTR("exefs super block")))
 					{
 						bResult = false;
 					}
 					nXorOffset += sizeof(exeFsSuperBlock);
 					if (m_bExeFsTopAutoKey)
 					{
+						m_nKeyIndex = 1;
 						if (!encryptAesCtrFile(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2] + nXorOffset, exeFsSuperBlock.m_Header[0].size, nXorOffset, USTR("exefs top section")))
 						{
 							bResult = false;
@@ -405,15 +489,25 @@ bool CNcch::EncryptFile()
 						bResult = false;
 					}
 					nXorOffset += exeFsSuperBlock.m_Header[0].size;
-					if (!encryptXorFile(m_sExeFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2] + nXorOffset, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] - nXorOffset, nXorOffset, USTR("exefs other section")))
+					if (m_bExeFsAutoKey)
+					{
+						m_nKeyIndex = 0;
+						if (!encryptAesCtrFile(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2] + nXorOffset, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] - nXorOffset, nXorOffset, USTR("exefs other section")))
+						{
+							bResult = false;
+						}
+					}
+					else if (!encryptXorFile(m_sExeFsXorFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2] + nXorOffset, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] - nXorOffset, nXorOffset, USTR("exefs other section")))
 					{
 						bResult = false;
 					}
 				}
 			}
 		}
+		calculateCounter(kAesCtrTypeRomFs);
 		if (m_bRomFsAutoKey)
 		{
+			m_nKeyIndex = m_NcchHeader.Ncch.Flags[Encrypt7x] == 0 ? 0 : 1;
 			if (!encryptAesCtrFile(m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], 0, USTR("romfs")))
 			{
 				bResult = false;
@@ -544,21 +638,22 @@ void CNcch::calculateAlignment()
 
 void CNcch::calculateKey()
 {
-	m_Key = 0;
-	CBigNum keyX;
+	m_Key[0] = 0;
+	m_Key[1] = 0;
+	CBigNum keyX[2] = { s_Slot0x2CKeyX, s_Slot0x2CKeyX };
 	switch (m_NcchHeader.Ncch.Flags[Encrypt7x])
 	{
 	case 0x01:
-		keyX = s_Slot0x25KeyX;
+		keyX[1] = s_Slot0x25KeyX;
 		break;
 	case 0x0A:
-		keyX = s_Slot0x18KeyX;
+		keyX[1] = s_Slot0x18KeyX;
 		break;
 	case 0x0B:
-		keyX = s_Slot0x1BKeyX;
+		keyX[1] = s_Slot0x1BKeyX;
 		break;
 	default:
-		return;
+		break;;
 	}
 	string sKeyY;
 	for (int i = 0; i < 16; i++)
@@ -687,7 +782,8 @@ void CNcch::calculateKey()
 		}
 	}
 	CBigNum keyY = sKeyY.c_str();
-	m_Key = ((keyX.Crol(2, 128) ^ keyY) + "1FF9E9AAC5FE0408024591DC5D52768A").Crol(87, 128);
+	m_Key[0] = ((keyX[0].Crol(2, 128) ^ keyY) + "1FF9E9AAC5FE0408024591DC5D52768A").Crol(87, 128);
+	m_Key[1] = ((keyX[1].Crol(2, 128) ^ keyY) + "1FF9E9AAC5FE0408024591DC5D52768A").Crol(87, 128);
 }
 
 void CNcch::calculateCounter(EAesCtrType a_eAesCtrType)
@@ -712,22 +808,24 @@ void CNcch::calculateCounter(EAesCtrType a_eAesCtrType)
 		{
 			sCounter += Format("%02X", pPartitionId[i]);
 		}
-		n64 nSize = 0;
+		m_Counter = sCounter.c_str();
+		m_Counter <<= 64;
+		n64 nOffset = 0;
 		switch (a_eAesCtrType)
 		{
 		case kAesCtrTypeExtendedHeader:
-			nSize = sizeof(m_NcchHeader);
+			nOffset = sizeof(m_NcchHeader);
 			break;
 		case kAesCtrTypeExeFs:
-			nSize = m_NcchHeader.Ncch.ExeFsOffset * m_nMediaUnitSize;
+			nOffset = m_NcchHeader.Ncch.ExeFsOffset * m_nMediaUnitSize;
 			break;
 		case kAesCtrTypeRomFs:
-			nSize = m_NcchHeader.Ncch.RomFsOffset * m_nMediaUnitSize;
+			nOffset = m_NcchHeader.Ncch.RomFsOffset * m_nMediaUnitSize;
 			break;
 		default:
 			break;
 		}
-		sCounter += static_cast<u32>(nSize);
+		m_Counter += static_cast<u32>(nOffset);
 	}
 }
 
@@ -755,7 +853,7 @@ bool CNcch::extractFile(const UString& a_sFileName, n64 a_nOffset, n64 a_nSize, 
 				}
 				else if (m_nEncryptMode == kEncryptModeAesCtr)
 				{
-					FEncryptAesCtrCopyFile(fp, m_fpNcch, m_Key, m_Counter, a_nOffset, a_nSize);
+					FEncryptAesCtrCopyFile(fp, m_fpNcch, m_Key[m_nKeyIndex], m_Counter, a_nOffset, a_nSize);
 				}
 				else if (m_nEncryptMode == kEncryptModeXor)
 				{
@@ -801,7 +899,7 @@ bool CNcch::createHeader()
 	if (m_nEncryptMode == kEncryptModeAesCtr)
 	{
 		static const CBigNum c_FiexedCryptoKey = 0;
-		if (m_Key == c_FiexedCryptoKey)
+		if (m_Key[0] == c_FiexedCryptoKey)
 		{
 			m_NcchHeader.Ncch.Flags[Encrypt7x] = 0;
 			m_NcchHeader.Ncch.Flags[Flag] &= ~(1 << NoEncrypto);
@@ -844,20 +942,27 @@ bool CNcch::createExtendedHeader()
 			SHA256(pBuffer, m_NcchHeader.Ncch.ExtendedHeaderSize, m_NcchHeader.Ncch.ExtendedHeaderHash);
 		}
 		delete[] pBuffer;
-		if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_sExtendedHeaderXorFileName.empty()))
+		calculateCounter(kAesCtrTypeExtendedHeader);
+		if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_sExtendedHeaderXorFileName.empty() && !m_bExeFsAutoKey))
 		{
 			CopyFile(m_fpNcch, fp, 0, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended));
 		}
 		else if (m_nEncryptMode == kEncryptModeAesCtr)
 		{
-			calculateCounter(kAesCtrTypeExtendedHeader);
-			FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key, m_Counter, 0, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended));
+			FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key[0], m_Counter, 0, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended));
 		}
-		else if (m_nEncryptMode == kEncryptModeXor && !FEncryptXorCopyFile(m_fpNcch, fp, m_sExtendedHeaderXorFileName, 0, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended)))
+		else if (m_nEncryptMode == kEncryptModeXor)
 		{
-			fclose(fp);
-			clearExtendedHeader();
-			return false;
+			if (m_bExeFsAutoKey)
+			{
+				FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key[0], m_Counter, 0, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended));
+			}
+			else if (!FEncryptXorCopyFile(m_fpNcch, fp, m_sExtendedHeaderXorFileName, 0, sizeof(NcchExtendedHeader) + sizeof(NcchAccessControlExtended)))
+			{
+				fclose(fp);
+				clearExtendedHeader();
+				return false;
+			}
 		}
 		fclose(fp);
 	}
@@ -973,7 +1078,7 @@ bool CNcch::createExeFs()
 			SHA256(pBuffer, static_cast<size_t>(nSuperBlockSize), m_NcchHeader.Ncch.ExeFsSuperBlockHash);
 		}
 		calculateCounter(kAesCtrTypeExeFs);
-		if (!m_sExeFsXorFileName.empty() && (!m_sExeFsTopXorFileName.empty() || m_bExeFsTopAutoKey))
+		if ((!m_sExeFsXorFileName.empty() || m_bExeFsAutoKey) && (!m_sExeFsTopXorFileName.empty() || m_bExeFsTopAutoKey))
 		{
 			Fseek(fp, 0, SEEK_SET);
 			u8* pExeFs = new u8[static_cast<size_t>(nFileSize)];
@@ -982,30 +1087,46 @@ bool CNcch::createExeFs()
 			bool bEncryptResult = true;
 			if (!CExeFs::IsExeFsSuperBlock(exeFsSuperBlock))
 			{
-				bEncryptResult = FEncryptXorData(&exeFsSuperBlock, m_sExeFsXorFileName, sizeof(exeFsSuperBlock), 0);
+				if (m_bExeFsAutoKey)
+				{
+					FEncryptAesCtrData(&exeFsSuperBlock, m_Key[0], m_Counter, sizeof(exeFsSuperBlock), 0);
+				}
+				else
+				{
+					bEncryptResult = FEncryptXorData(&exeFsSuperBlock, m_sExeFsXorFileName, sizeof(exeFsSuperBlock), 0);
+				}
 			}
 			if (bEncryptResult)
 			{
 				n64 nXorOffset = 0;
-				if (!FEncryptXorData(pExeFs + nXorOffset, m_sExeFsXorFileName, sizeof(exeFsSuperBlock), nXorOffset))
+				if (m_bExeFsAutoKey)
+				{
+					FEncryptAesCtrData(pExeFs + nXorOffset, m_Key[0], m_Counter, sizeof(exeFsSuperBlock), nXorOffset);
+				}
+				else if (!FEncryptXorData(pExeFs + nXorOffset, m_sExeFsXorFileName, sizeof(exeFsSuperBlock), nXorOffset))
 				{
 					bEncryptResult = false;
 				}
 				nXorOffset += sizeof(exeFsSuperBlock);
 				if (m_bExeFsTopAutoKey)
 				{
-					FEncryptAesCtrData(pExeFs + nXorOffset, m_Key, m_Counter, exeFsSuperBlock.m_Header[0].size, nXorOffset);
+					FEncryptAesCtrData(pExeFs + nXorOffset, m_Key[1], m_Counter, exeFsSuperBlock.m_Header[0].size, nXorOffset);
 				}
 				else if (!FEncryptXorData(pExeFs + nXorOffset, m_sExeFsTopXorFileName, exeFsSuperBlock.m_Header[0].size, nXorOffset))
 				{
 					bEncryptResult = false;
 				}
 				nXorOffset += exeFsSuperBlock.m_Header[0].size;
-				if (!FEncryptXorData(pExeFs + nXorOffset, m_sExeFsXorFileName, nFileSize - nXorOffset, nXorOffset))
+				if (m_bExeFsAutoKey)
+				{
+					FEncryptAesCtrData(pExeFs + nXorOffset, m_Key[0], m_Counter, nFileSize - nXorOffset, nXorOffset);
+				}
+				else if (!FEncryptXorData(pExeFs + nXorOffset, m_sExeFsXorFileName, nFileSize - nXorOffset, nXorOffset))
 				{
 					bEncryptResult = false;
 				}
 			}
+			delete[] pBuffer;
 			if (bEncryptResult)
 			{
 				fwrite(pExeFs, 1, static_cast<size_t>(nFileSize), m_fpNcch);
@@ -1013,7 +1134,6 @@ bool CNcch::createExeFs()
 			else
 			{
 				delete[] pExeFs;
-				delete[] pBuffer;
 				CopyFile(m_fpNcch, fp, 0, nFileSize);
 				fclose(fp);
 				return false;
@@ -1023,19 +1143,26 @@ bool CNcch::createExeFs()
 		else
 		{
 			delete[] pBuffer;
-			if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_sExeFsXorFileName.empty()))
+			if (m_nEncryptMode == kEncryptModeNone || (m_nEncryptMode == kEncryptModeXor && m_sExeFsXorFileName.empty() && !m_bExeFsAutoKey))
 			{
 				CopyFile(m_fpNcch, fp, 0, nFileSize);
 			}
 			else if (m_nEncryptMode == kEncryptModeAesCtr)
 			{
-				FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key, m_Counter, 0, nFileSize);
+				FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key[0], m_Counter, 0, nFileSize);
 			}
-			else if (m_nEncryptMode == kEncryptModeXor && !FEncryptXorCopyFile(m_fpNcch, fp, m_sExeFsXorFileName, 0, nFileSize))
+			else if (m_nEncryptMode == kEncryptModeXor)
 			{
-				fclose(fp);
-				clearExeFs();
-				return false;
+				if (m_bExeFsAutoKey)
+				{
+					FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key[0], m_Counter, 0, nFileSize);
+				}
+				else if (!FEncryptXorCopyFile(m_fpNcch, fp, m_sExeFsXorFileName, 0, nFileSize))
+				{
+					fclose(fp);
+					clearExeFs();
+					return false;
+				}
 			}
 		}
 		fclose(fp);
@@ -1106,13 +1233,13 @@ bool CNcch::createRomFs()
 		}
 		else if (m_nEncryptMode == kEncryptModeAesCtr)
 		{
-			FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key, m_Counter, 0, nFileSize);
+			FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key[0], m_Counter, 0, nFileSize);
 		}
 		else if (m_nEncryptMode == kEncryptModeXor)
 		{
 			if (m_bRomFsAutoKey)
 			{
-				FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key, m_Counter, 0, nFileSize);
+				FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key[m_NcchHeader.Ncch.Flags[Encrypt7x] == 0 ? 0 : 1], m_Counter, 0, nFileSize);
 			}
 			else if (!FEncryptXorCopyFile(m_fpNcch, fp, m_sRomFsXorFileName, 0, nFileSize))
 			{
@@ -1178,7 +1305,7 @@ bool CNcch::encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, cons
 	bool bResult = true;
 	if (a_nSize != 0)
 	{
-		bResult = FEncryptAesCtrFile(m_sFileName, m_Key, m_Counter, a_nOffset, a_nSize, false, a_nXorOffset);
+		bResult = FEncryptAesCtrFile(m_sFileName, m_Key[m_nKeyIndex], m_Counter, a_nOffset, a_nSize, false, a_nXorOffset);
 	}
 	else if (m_bVerbose)
 	{
