@@ -766,6 +766,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		UString sKey = a_pArgv[++a_nIndex];
 		if (sKey.size() != 32 || sKey.find_first_not_of(USTR("0123456789ABCDEFabcdef")) != UString::npos)
 		{
+			m_sMessage = sKey;
 			return kParseOptionReturnUnknownArgument;
 		}
 		m_Key = UToA(sKey).c_str();
@@ -787,6 +788,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		UString sCounter = a_pArgv[++a_nIndex];
 		if (sCounter.size() != 32 || sCounter.find_first_not_of(USTR("0123456789ABCDEFabcdef")) != UString::npos)
 		{
+			m_sMessage = sCounter;
 			return kParseOptionReturnUnknownArgument;
 		}
 		m_Counter = UToA(sCounter).c_str();
@@ -1817,7 +1819,6 @@ int C3dsTool::sample()
 
 int UMain(int argc, UChar* argv[])
 {
-	SetLocale();
 	C3dsTool tool;
 	if (tool.ParseOptions(argc, argv) != 0)
 	{

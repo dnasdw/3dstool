@@ -301,7 +301,7 @@ bool CNcch::ExtractFile()
 			bResult = false;
 		}
 	}
-	m_nKeyIndex = m_NcchHeader.Ncch.Flags[Encrypt7x] == 0 ? 0 : 1;
+	m_nKeyIndex = 1;
 	calculateCounter(kAesCtrTypeRomFs);
 	m_sXorFileName = m_sRomFsXorFileName;
 	if (m_bRomFsAutoKey)
@@ -507,7 +507,7 @@ bool CNcch::EncryptFile()
 		calculateCounter(kAesCtrTypeRomFs);
 		if (m_bRomFsAutoKey)
 		{
-			m_nKeyIndex = m_NcchHeader.Ncch.Flags[Encrypt7x] == 0 ? 0 : 1;
+			m_nKeyIndex = 1;
 			if (!encryptAesCtrFile(m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2], m_nOffsetAndSize[kOffsetSizeIndexRomFs * 2 + 1], 0, USTR("romfs")))
 			{
 				bResult = false;
@@ -660,6 +660,7 @@ void CNcch::calculateKey()
 	{
 		sKeyY += Format("%02X", m_NcchHeader.RSASignature[i]);
 	}
+	CBigNum keyY[2] = { sKeyY.c_str() };
 	if ((m_NcchHeader.Ncch.Flags[Flag] & 0x20) != 0)
 	{
 		map<string, string> mExtKey;
@@ -781,9 +782,9 @@ void CNcch::calculateKey()
 			sKeyY += Format("%02X", uSHA256[i]);
 		}
 	}
-	CBigNum keyY = sKeyY.c_str();
-	m_Key[0] = ((keyX[0].Crol(2, 128) ^ keyY) + "1FF9E9AAC5FE0408024591DC5D52768A").Crol(87, 128);
-	m_Key[1] = ((keyX[1].Crol(2, 128) ^ keyY) + "1FF9E9AAC5FE0408024591DC5D52768A").Crol(87, 128);
+	keyY[1] = sKeyY.c_str();
+	m_Key[0] = ((keyX[0].Crol(2, 128) ^ keyY[0]) + "1FF9E9AAC5FE0408024591DC5D52768A").Crol(87, 128);
+	m_Key[1] = ((keyX[1].Crol(2, 128) ^ keyY[1]) + "1FF9E9AAC5FE0408024591DC5D52768A").Crol(87, 128);
 }
 
 void CNcch::calculateCounter(EAesCtrType a_eAesCtrType)
@@ -1239,7 +1240,7 @@ bool CNcch::createRomFs()
 		{
 			if (m_bRomFsAutoKey)
 			{
-				FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key[m_NcchHeader.Ncch.Flags[Encrypt7x] == 0 ? 0 : 1], m_Counter, 0, nFileSize);
+				FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key[1], m_Counter, 0, nFileSize);
 			}
 			else if (!FEncryptXorCopyFile(m_fpNcch, fp, m_sRomFsXorFileName, 0, nFileSize))
 			{

@@ -252,14 +252,12 @@ void CRomFs::readEntry(SExtractStackElement& a_Element)
 
 void CRomFs::setupCreate()
 {
-	memset(&m_RomFsHeader, 0, sizeof(m_RomFsHeader));
 	m_RomFsHeader.Signature = s_uSignature;
 	m_RomFsHeader.Id = 0x10000;
 	m_RomFsHeader.Level1.BlockSize = s_nBlockSizePower;
 	m_RomFsHeader.Level2.BlockSize = s_nBlockSizePower;
 	m_RomFsHeader.Level3.BlockSize = s_nBlockSizePower;
 	m_RomFsHeader.Size = sizeof(m_RomFsHeader);
-	memset(&m_RomFsMetaInfo, 0, sizeof(m_RomFsMetaInfo));
 	m_RomFsMetaInfo.Size = sizeof(m_RomFsMetaInfo);
 	m_RomFsMetaInfo.Section[kSectionTypeDirHash].Offset = static_cast<u32>(Align(m_RomFsMetaInfo.Size, s_nEntryNameAlignment));
 }
@@ -398,7 +396,7 @@ bool CRomFs::createEntryList()
 		{
 			do
 			{
-				if (matchInIgnoreList(m_vCreateDir[current.EntryOffset].Path.substr(m_sRomFsDirName.size()) + USTR("/") + ffd.cFileName))
+				if (matchInIgnoreList(m_vCreateDir[current.EntryOffset].Path.substr(m_sRomFsDirName.size()) + L"/" + ffd.cFileName))
 				{
 					continue;
 				}
@@ -433,23 +431,23 @@ bool CRomFs::createEntryList()
 			dirent* pDirent = nullptr;
 			while ((pDirent = readdir(pDir)) != nullptr)
 			{
-				if (matchInIgnoreList(m_vCreateDir[current.EntryOffset].Path.substr(m_sRomFsDirName.size()) + USTR("/") + pDirent->d_name))
+				if (matchInIgnoreList(m_vCreateDir[current.EntryOffset].Path.substr(m_sRomFsDirName.size()) + "/" + pDirent->d_name))
 				{
 					continue;
 				}
-				string nameUpper = pDirent->d_name;
-				transform(nameUpper.begin(), nameUpper.end(), nameUpper.begin(), ::toupper);
+				string sNameUpper = pDirent->d_name;
+				transform(sNameUpper.begin(), sNameUpper.end(), sNameUpper.begin(), ::toupper);
 				if (pDirent->d_type == DT_REG)
 				{
-					mFile.insert(make_pair(nameUpper, pDirent->d_name));
+					mFile.insert(make_pair(sNameUpper, pDirent->d_name));
 				}
 				else if (pDirent->d_type == DT_DIR && strcmp(pDirent->d_name, ".") != 0 && strcmp(pDirent->d_name, "..") != 0)
 				{
-					mDir.insert(make_pair(nameUpper, pDirent->d_name));
+					mDir.insert(make_pair(sNameUpper, pDirent->d_name));
 				}
 			}
 			closedir(pDir);
-			for (auto it = mDir.begin(); it != mDir.end(); ++it)
+			for (map<string, string>::const_iterator it = mDir.begin(); it != mDir.end(); ++it)
 			{
 				if (m_vCreateDir[current.EntryOffset].Entry.Dir.ChildDirOffset == s_nInvalidOffset)
 				{
@@ -458,7 +456,7 @@ bool CRomFs::createEntryList()
 				current.ChildOffset.push_back(static_cast<int>(m_vCreateDir.size()));
 				pushDirEntry(it->second, current.EntryOffset);
 			}
-			for (auto it = mFile.begin(); it != mFile.end(); ++it)
+			for (map<string, string>::const_iterator it = mFile.begin(); it != mFile.end(); ++it)
 			{
 				if (m_vCreateDir[current.EntryOffset].Entry.Dir.ChildFileOffset == s_nInvalidOffset)
 				{
@@ -620,16 +618,6 @@ u32 CRomFs::computeBucketCount(u32 a_uEntries)
 		}
 	}
 	return uBucket;
-}
-
-u32 CRomFs::hash(n32 a_nParentOffset, U16String& a_sEntryName)
-{
-	u32 uHash = a_nParentOffset ^ 123456789;
-	for (int i = 0; i < static_cast<int>(a_sEntryName.size()); i++)
-	{
-		uHash = ((uHash >> 5) | (uHash << 27)) ^ a_sEntryName[i];
-	}
-	return uHash;
 }
 
 void CRomFs::redirectOffset()
@@ -1034,4 +1022,14 @@ void CRomFs::alignBuffer(int a_nLevel, int a_nAlignment)
 {
 	m_LevelBuffer[a_nLevel].DataPos = static_cast<int>(Align(m_LevelBuffer[a_nLevel].DataPos, a_nAlignment));
 	writeBuffer(a_nLevel, nullptr, 0);
+}
+
+u32 CRomFs::hash(n32 a_nParentOffset, U16String& a_sEntryName)
+{
+	u32 uHash = a_nParentOffset ^ 123456789;
+	for (int i = 0; i < static_cast<int>(a_sEntryName.size()); i++)
+	{
+		uHash = ((uHash >> 5) | (uHash << 27)) ^ a_sEntryName[i];
+	}
+	return uHash;
 }

@@ -151,7 +151,6 @@ private:
 	void subDirOffset(n32& a_nOffset, int a_nIndex);
 	void createHash();
 	u32 computeBucketCount(u32 a_uEntries);
-	u32 hash(n32 a_nParentOffset, U16String& a_sEntryName);
 	void redirectOffset();
 	void redirectOffset(n32& a_nOffset, bool a_bIsDir);
 	void createMetaInfo();
@@ -165,6 +164,7 @@ private:
 	void writeBuffer(int a_nLevel, const void* a_pSrc, n64 a_nSize);
 	bool writeBufferFromFile(int a_nLevel, const UString& a_sPath, n64 a_nSize);
 	void alignBuffer(int a_nLevel, int a_nAlignment);
+	static u32 hash(n32 a_nParentOffset, U16String& a_sEntryName);
 	UString m_sFileName;
 	bool m_bVerbose;
 	UString m_sRomFsDirName;
