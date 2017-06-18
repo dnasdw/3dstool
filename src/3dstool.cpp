@@ -10,6 +10,7 @@
 #include "patch.h"
 #include "romfs.h"
 #include "runlength.h"
+#include "url_manager.h"
 #include "yaz0.h"
 
 C3dsTool::SOption C3dsTool::s_Option[] =
@@ -24,6 +25,7 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ USTR("pad"), USTR('p'), USTR("pad the cci file") },
 	{ USTR("diff"), 0, USTR("create the patch file from the old file and the new file") },
 	{ USTR("patch"), 0, USTR("apply the patch file to the target file") },
+	{ USTR("download"), USTR('d'), USTR("download ext key") },
 	{ USTR("sample"), 0, USTR("show the samples") },
 	{ USTR("help"), USTR('h'), USTR("show this help") },
 	{ nullptr, 0, USTR("\ncommon:") },
@@ -50,6 +52,9 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ USTR("new"), 0, USTR("the new file") },
 	{ nullptr, 0, USTR("  patch:") },
 	{ USTR("patch-file"), 0, USTR("the patch file") },
+	{ nullptr, 0, USTR(" download:") },
+	{ USTR("download-begin"), 0, USTR("[0-9A-Fa-f]{1,5}\n\t\tthe begin unique id of download range") },
+	{ USTR("download-end"), 0, USTR("[0-9A-Fa-f]{1,5}\n\t\tthe end unique id of download range") },
 	{ nullptr, 0, USTR("\ncci:") },
 	{ nullptr, 0, USTR(" create:") },
 	{ USTR("not-pad"), 0, USTR("do not add the pad data") },
@@ -114,6 +119,8 @@ C3dsTool::C3dsTool()
 	, m_nCompressAlign(1)
 	, m_eCompressType(kCompressTypeNone)
 	, m_nYaz0Align(0)
+	, m_nDownloadBegin(-1)
+	, m_nDownloadEnd(-1)
 	, m_bNotPad(false)
 	, m_nLastPartitionIndex(7)
 	, m_bNotUpdateExtendedHeaderHash(false)
@@ -127,10 +134,12 @@ C3dsTool::C3dsTool()
 	, m_bUncompress(false)
 	, m_bCompress(false)
 {
+	CUrlManager::Initialize();
 }
 
 C3dsTool::~C3dsTool()
 {
+	CUrlManager::Finalize();
 }
 
 int C3dsTool::ParseOptions(int a_nArgc, UChar* a_pArgv[])
@@ -207,7 +216,7 @@ int C3dsTool::CheckOptions()
 		UPrintf(USTR("ERROR: nothing to do\n\n"));
 		return 1;
 	}
-	if (m_eAction != kActionDiff && m_eAction != kActionSample && m_eAction != kActionHelp && m_sFileName.empty())
+	if (m_eAction != kActionDiff && m_eAction != kActionDownload && m_eAction != kActionSample && m_eAction != kActionHelp && m_sFileName.empty())
 	{
 		UPrintf(USTR("ERROR: no --file option\n\n"));
 		return 1;
@@ -439,6 +448,14 @@ int C3dsTool::CheckOptions()
 			return 1;
 		}
 	}
+	if (m_eAction == kActionDownload)
+	{
+		if (m_nDownloadBegin < 0 && m_nDownloadEnd < 0)
+		{
+			UPrintf(USTR("ERROR: no --download-begin or --download-end option\n\n"));
+			return 1;
+		}
+	}
 	return 0;
 }
 
@@ -548,6 +565,14 @@ int C3dsTool::Action()
 		if (!patchFile())
 		{
 			UPrintf(USTR("ERROR: apply patch file failed\n\n"));
+			return 1;
+		}
+	}
+	if (m_eAction == kActionDownload)
+	{
+		if (!download())
+		{
+			UPrintf(USTR("ERROR: download failed\n\n"));
 			return 1;
 		}
 	}
@@ -661,6 +686,17 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 			m_eAction = kActionPatch;
 		}
 		else if (m_eAction != kActionPatch && m_eAction != kActionHelp)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+	}
+	else if (UCscmp(a_pName, USTR("download")) == 0)
+	{
+		if (m_eAction == kActionNone)
+		{
+			m_eAction = kActionDownload;
+		}
+		else if (m_eAction != kActionDownload && m_eAction != kActionHelp)
 		{
 			return kParseOptionReturnOptionConflict;
 		}
@@ -912,6 +948,36 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 			return kParseOptionReturnNoArgument;
 		}
 		m_sPatchFileName = a_pArgv[++a_nIndex];
+	}
+	else if (UCscmp(a_pName, USTR("download-begin")) == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		UString sDownloadBegin = a_pArgv[++a_nIndex];
+		static URegex uniqueId(USTR("[0-9A-Fa-f]{1,5}"), regex_constants::ECMAScript | regex_constants::icase);
+		if (!regex_match(sDownloadBegin, uniqueId))
+		{
+			m_sMessage = sDownloadBegin;
+			return kParseOptionReturnUnknownArgument;
+		}
+		m_nDownloadBegin = SToN32(sDownloadBegin, 16);
+	}
+	else if (UCscmp(a_pName, USTR("download-end")) == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		UString sDownloadEnd = a_pArgv[++a_nIndex];
+		static URegex uniqueId(USTR("[0-9A-Fa-f]{1,5}"), regex_constants::ECMAScript | regex_constants::icase);
+		if (!regex_match(sDownloadEnd, uniqueId))
+		{
+			m_sMessage = sDownloadEnd;
+			return kParseOptionReturnUnknownArgument;
+		}
+		m_nDownloadEnd = SToN32(sDownloadEnd, 16);
 	}
 	else if (StartWith<UString>(a_pName, USTR("partition")))
 	{
@@ -1685,6 +1751,25 @@ bool C3dsTool::patchFile()
 	return patch.ApplyPatchFile();
 }
 
+bool C3dsTool::download()
+{
+	if (m_nDownloadBegin > m_nDownloadEnd)
+	{
+		n32 nTemp = m_nDownloadBegin;
+		m_nDownloadBegin = m_nDownloadEnd;
+		m_nDownloadEnd = nTemp;
+	}
+	if (m_nDownloadBegin < 0)
+	{
+		m_nDownloadBegin = m_nDownloadEnd;
+	}
+	CNcch ncch;
+	ncch.SetVerbose(m_bVerbose);
+	ncch.SetDownloadBegin(m_nDownloadBegin);
+	ncch.SetDownloadEnd(m_nDownloadEnd);
+	return ncch.Download();
+}
+
 int C3dsTool::sample()
 {
 	UPrintf(USTR("sample:\n"));
@@ -1814,6 +1899,8 @@ int C3dsTool::sample()
 	UPrintf(USTR("3dstool --diff -vt cfa --old old.cfa --new new.cfa --patch-file patch.3ps\n\n"));
 	UPrintf(USTR("# apply patch file\n"));
 	UPrintf(USTR("3dstool --patch -vf input.bin --patch-file patch.3ps\n\n"));
+	UPrintf(USTR("# download ext key\n"));
+	UPrintf(USTR("3dstool -dv --download-begin 00000 --download-end 02FFF\n\n"));
 	return 0;
 }
 

@@ -4,6 +4,8 @@
 #include "utility.h"
 #include "3dstool.h"
 
+class CUrl;
+
 #include SDW_MSC_PUSH_PACKED
 struct NcchCommonHeaderStruct
 {
@@ -97,6 +99,8 @@ public:
 	void SetHeaderFileName(const UString& a_sHeaderFileName);
 	void SetEncryptMode(int a_nEncryptMode);
 	void SetKey(const CBigNum& a_Key);
+	void SetDownloadBegin(n32 a_nDownloadBegin);
+	void SetDownloadEnd(n32 a_nDownloadEnd);
 	void SetNotUpdateExtendedHeaderHash(bool a_bNotUpdateExtendedHeaderHash);
 	void SetNotUpdateExeFsHash(bool a_bNotUpdateExeFsHash);
 	void SetNotUpdateRomFsHash(bool a_bNotUpdateRomFsHash);
@@ -120,17 +124,19 @@ public:
 	bool ExtractFile();
 	bool CreateFile();
 	bool EncryptFile();
+	bool Download(bool a_bReadExtKey = true);
 	void Analyze();
 	static bool IsCxiFile(const UString& a_sFileName);
 	static bool IsCfaFile(const UString& a_sFileName);
 	static const u32 s_uSignature;
 	static const int s_nBlockSize;
 private:
-	string& getExtKey();
 	void calculateMediaUnitSize();
 	void calculateOffsetSize();
 	void calculateAlignment();
 	void calculateKey();
+	void readExtKey();
+	bool writeExtKey();
 	void calculateCounter(EAesCtrType a_eAesCtrType);
 	bool extractFile(const UString& a_sFileName, n64 a_nOffset, n64 a_nSize, bool a_bPlainData, const UChar* a_pType);
 	bool createHeader();
@@ -147,7 +153,7 @@ private:
 	void alignFileSize(n64 a_nAlignment);
 	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const UChar* a_pType);
 	bool encryptXorFile(const UString& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const UChar* a_pType);
-	static size_t onDownload(char* a_pData, size_t a_uSize, size_t a_uNmemb, void* a_pUserData);
+	void onHttpsGetExtKey(CUrl* a_pUrl, void* a_pUserData);
 	static const CBigNum s_Slot0x18KeyX;
 	static const CBigNum s_Slot0x1BKeyX;
 	static const CBigNum s_Slot0x25KeyX;
@@ -158,6 +164,8 @@ private:
 	UString m_sHeaderFileName;
 	int m_nEncryptMode;
 	CBigNum m_Key[2];
+	n32 m_nDownloadBegin;
+	n32 m_nDownloadEnd;
 	bool m_bNotUpdateExtendedHeaderHash;
 	bool m_bNotUpdateExeFsHash;
 	bool m_bNotUpdateRomFsHash;
@@ -180,7 +188,7 @@ private:
 	n64 m_nMediaUnitSize;
 	n64 m_nOffsetAndSize[kOffsetSizeIndexCount * 2];
 	bool m_bAlignToBlockSize;
-	string m_sExtKey;
+	map<string, string> m_mExtKey;
 	int m_nKeyIndex;
 	CBigNum m_Counter;
 	UString m_sXorFileName;

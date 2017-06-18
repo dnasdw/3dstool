@@ -144,6 +144,7 @@ typedef unsigned long long uint64_t;
 #include <stack>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 using namespace std;
@@ -193,6 +194,8 @@ typedef struct stat Stat;
 #endif
 
 n64 Align(n64 a_nData, n64 a_nAlignment);
+
+#define SDW_PURE = 0
 
 #define SDW_ARRAY_COUNT(a) (sizeof(a) / sizeof(a[0]))
 

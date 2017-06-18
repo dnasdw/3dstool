@@ -3,6 +3,7 @@
 #include "exefs.h"
 #include "extendedheader.h"
 #include "romfs.h"
+#include "url_manager.h"
 #include <curl/curl.h>
 #include <openssl/sha.h>
 
@@ -17,6 +18,8 @@ CNcch::CNcch()
 	: m_eFileType(C3dsTool::kFileTypeUnknown)
 	, m_bVerbose(false)
 	, m_nEncryptMode(kEncryptModeNone)
+	, m_nDownloadBegin(-1)
+	, m_nDownloadEnd(-1)
 	, m_bNotUpdateExtendedHeaderHash(false)
 	, m_bNotUpdateExeFsHash(false)
 	, m_bNotUpdateRomFsHash(false)
@@ -66,6 +69,16 @@ void CNcch::SetEncryptMode(int a_nEncryptMode)
 void CNcch::SetKey(const CBigNum& a_Key)
 {
 	m_Key[0] = a_Key;
+}
+
+void CNcch::SetDownloadBegin(n32 a_nDownloadBegin)
+{
+	m_nDownloadBegin = a_nDownloadBegin;
+}
+
+void CNcch::SetDownloadEnd(n32 a_nDownloadEnd)
+{
+	m_nDownloadEnd = a_nDownloadEnd;
 }
 
 void CNcch::SetNotUpdateExtendedHeaderHash(bool a_bNotUpdateExtendedHeaderHash)
@@ -521,6 +534,54 @@ bool CNcch::EncryptFile()
 	return true;
 }
 
+bool CNcch::Download(bool a_bReadExtKey /* = true */)
+{
+	if (a_bReadExtKey)
+	{
+		readExtKey();
+	}
+	CUrlManager urlManager;
+	u32 uCount = m_nDownloadEnd - m_nDownloadBegin + 1;
+	u32 uDownloadCount = 0;
+	u32 uTotalLoadCount = 0;
+	u32 uLoadCount = 0;
+	while (uDownloadCount != uCount)
+	{
+		while (uTotalLoadCount != uCount && uLoadCount < 256)
+		{
+			size_t uUserData = m_nDownloadBegin + uTotalLoadCount;
+			CUrl* pUrl = urlManager.HttpsGet(Format("https://kagiya-ctr.cdn.nintendo.net/title/0x000400000%05X00/ext_key?country=JP", m_nDownloadBegin + uTotalLoadCount), *this, &CNcch::onHttpsGetExtKey, reinterpret_cast<void*>(uUserData));
+			if (pUrl == nullptr)
+			{
+				urlManager.Cleanup();
+				return false;
+			}
+			uTotalLoadCount++;
+			uLoadCount++;
+		}
+		while (urlManager.GetCount() != 0)
+		{
+			u32 uCount0 = urlManager.GetCount();
+			urlManager.Perform();
+			u32 uCount1 = urlManager.GetCount();
+			if (uCount1 != uCount0)
+			{
+				uDownloadCount += uCount0 - uCount1;
+				uLoadCount -= uCount0 - uCount1;
+				if (m_bVerbose)
+				{
+					UPrintf(USTR("download: %u/%u/%u\n"), uDownloadCount, uTotalLoadCount, uCount);
+				}
+				if (uTotalLoadCount != uCount)
+				{
+					break;
+				}
+			}
+		}
+	}
+	return writeExtKey();
+}
+
 void CNcch::Analyze()
 {
 	if (m_fpNcch != nullptr)
@@ -607,11 +668,6 @@ bool CNcch::IsCfaFile(const UString& a_sFileName)
 	return bIsCfaFile;
 }
 
-string& CNcch::getExtKey()
-{
-	return m_sExtKey;
-}
-
 void CNcch::calculateMediaUnitSize()
 {
 	m_nMediaUnitSize = 1LL << (m_NcchHeader.Ncch.Flags[SizeType] + 9);
@@ -661,99 +717,43 @@ void CNcch::calculateKey()
 		sKeyY += Format("%02X", m_NcchHeader.RSASignature[i]);
 	}
 	CBigNum keyY[2] = { sKeyY.c_str() };
-	if ((m_NcchHeader.Ncch.Flags[Flag] & 0x20) != 0)
+	while ((m_NcchHeader.Ncch.Flags[Flag] & 0x20) != 0)
 	{
-		map<string, string> mExtKey;
-		UString sExtKeyPath = UGetModuleDirName() + USTR("/ext_key.txt");
-		FILE* fp = UFopen(sExtKeyPath.c_str(), USTR("rb"));
-		if (fp != nullptr)
-		{
-			Fseek(fp, 0, SEEK_END);
-			u32 uSize = static_cast<u32>(Ftell(fp));
-			Fseek(fp, 0, SEEK_SET);
-			char* pTxt = new char[uSize + 1];
-			fread(pTxt, 1, uSize, fp);
-			fclose(fp);
-			pTxt[uSize] = '\0';
-			string sTxt(pTxt);
-			delete[] pTxt;
-			vector<string> vTxt = SplitOf(sTxt, "\r\n");
-			for (vector<string>::const_iterator it = vTxt.begin(); it != vTxt.end(); ++it)
-			{
-				sTxt = Trim(*it);
-				if (!sTxt.empty() && !StartWith(sTxt, "//"))
-				{
-					vector<string> vExtKey = Split(sTxt, " ");
-					if (vExtKey.size() == 2)
-					{
-						if (!mExtKey.insert(make_pair(vExtKey[0], vExtKey[1])).second)
-						{
-							UPrintf(USTR("INFO: multiple ext key for %") PRIUS USTR("\n"), AToU(vExtKey[0]).c_str());
-						}
-					}
-					else
-					{
-						UPrintf(USTR("INFO: unknown ext key record %") PRIUS USTR("\n"), AToU(sTxt).c_str());
-					}
-				}
-			}
-		}
+		readExtKey();
 		u8* pProgramId = reinterpret_cast<u8*>(&m_NcchHeader.Ncch.ProgramId);
 		string sProgramId;
 		for (int i = 0; i < 8; i++)
 		{
 			sProgramId += Format("%02X", pProgramId[7 - i]);
 		}
-		map<string, string>::const_iterator it = mExtKey.find(sProgramId);
-		if (it != mExtKey.end())
+		string sExtKey;
+		map<string, string>::const_iterator it = m_mExtKey.find(sProgramId);
+		if (it != m_mExtKey.end())
 		{
-			m_sExtKey = it->second;
+			sExtKey = it->second;
 		}
 		else
 		{
-			curl_global_init(CURL_GLOBAL_DEFAULT);
-			CURL* pCURL = curl_easy_init();
-			if (pCURL != nullptr)
+			m_nDownloadBegin = SToN32(sProgramId.substr(9, 5), 16);
+			m_nDownloadEnd = m_nDownloadBegin;
+			if (!Download(false))
 			{
-				curl_easy_setopt(pCURL, CURLOPT_URL, Format("https://kagiya-ctr.cdn.nintendo.net/title/0x%s/ext_key?country=JP", sProgramId.c_str()).c_str());
-				curl_easy_setopt(pCURL, CURLOPT_SSL_VERIFYPEER, 0L);
-				curl_easy_setopt(pCURL, CURLOPT_SSL_VERIFYHOST, 0L);
-				curl_easy_setopt(pCURL, CURLOPT_WRITEFUNCTION, &CNcch::onDownload);
-				curl_easy_setopt(pCURL, CURLOPT_WRITEDATA, this);
-				CURLcode code = curl_easy_perform(pCURL);
-				if (code != CURLE_OK)
-				{
-					UPrintf(USTR("INFO: curl_easy_perform() failed: %") PRIUS USTR("\n"), AToU(curl_easy_strerror(code)).c_str());
-					curl_easy_cleanup(pCURL);
-					curl_global_cleanup();
-					return;
-				}
-				curl_easy_cleanup(pCURL);
+				UPrintf(USTR("INFO: download failed\n"));
 			}
-			curl_global_cleanup();
-			string sExtKey = m_sExtKey;
-			m_sExtKey.clear();
-			for (int i = 0; i < static_cast<int>(sExtKey.size()); i++)
+			it = m_mExtKey.find(sProgramId);
+			if (it == m_mExtKey.end())
 			{
-				m_sExtKey += Format("%02X", static_cast<u8>(sExtKey[i]));
+				UPrintf(USTR("ERROR: can not find ext key for %") PRIUS USTR("\n\n"), AToU(sProgramId).c_str());
+				break;
 			}
-			mExtKey.insert(make_pair(sProgramId, m_sExtKey));
-			fp = UFopen(sExtKeyPath.c_str(), USTR("wb"));
-			if (fp != nullptr)
-			{
-				for (map<string, string>::const_iterator it = mExtKey.begin(); it != mExtKey.end(); ++it)
-				{
-					fprintf(fp, "%s %s\r\n", it->first.c_str(), it->second.c_str());
-				}
-				fclose(fp);
-			}
+			sExtKey = it->second;
 		}
-		if (m_sExtKey.size() != 32 || m_sExtKey.find_first_not_of("0123456789ABCDEFabcdef") != string::npos)
+		if (sExtKey.size() != 32 || sExtKey.find_first_not_of("0123456789ABCDEFabcdef") != string::npos)
 		{
 			UPrintf(USTR("ERROR: can not find ext key for %") PRIUS USTR("\n\n"), AToU(sProgramId).c_str());
-			return;
+			break;
 		}
-		string sExtKeyWithProgramId = m_sExtKey;
+		string sExtKeyWithProgramId = sExtKey;
 		for (int i = 0; i < 8; i++)
 		{
 			sExtKeyWithProgramId += Format("%02X", pProgramId[i]);
@@ -772,7 +772,7 @@ void CNcch::calculateKey()
 				return;
 			}
 		}
-		sKeyY += m_sExtKey;
+		sKeyY += sExtKey;
 		bigNum = sKeyY.c_str();
 		bigNum.GetBytes(uBytes, 32);
 		SHA256(uBytes, 32, uSHA256);
@@ -781,10 +781,65 @@ void CNcch::calculateKey()
 		{
 			sKeyY += Format("%02X", uSHA256[i]);
 		}
+		break;
 	}
 	keyY[1] = sKeyY.c_str();
 	m_Key[0] = ((keyX[0].Crol(2, 128) ^ keyY[0]) + "1FF9E9AAC5FE0408024591DC5D52768A").Crol(87, 128);
 	m_Key[1] = ((keyX[1].Crol(2, 128) ^ keyY[1]) + "1FF9E9AAC5FE0408024591DC5D52768A").Crol(87, 128);
+}
+
+void CNcch::readExtKey()
+{
+	UString sExtKeyPath = UGetModuleDirName() + USTR("/ext_key.txt");
+	FILE* fp = UFopen(sExtKeyPath.c_str(), USTR("rb"));
+	if (fp != nullptr)
+	{
+		Fseek(fp, 0, SEEK_END);
+		u32 uSize = static_cast<u32>(Ftell(fp));
+		Fseek(fp, 0, SEEK_SET);
+		char* pTxt = new char[uSize + 1];
+		fread(pTxt, 1, uSize, fp);
+		fclose(fp);
+		pTxt[uSize] = '\0';
+		string sTxt(pTxt);
+		delete[] pTxt;
+		vector<string> vTxt = SplitOf(sTxt, "\r\n");
+		for (vector<string>::const_iterator it = vTxt.begin(); it != vTxt.end(); ++it)
+		{
+			sTxt = Trim(*it);
+			if (!sTxt.empty() && !StartWith(sTxt, "//"))
+			{
+				vector<string> vExtKey = Split(sTxt, " ");
+				if (vExtKey.size() == 2)
+				{
+					if (!m_mExtKey.insert(make_pair(vExtKey[0], vExtKey[1])).second)
+					{
+						UPrintf(USTR("INFO: multiple ext key for %") PRIUS USTR("\n"), AToU(vExtKey[0]).c_str());
+					}
+				}
+				else
+				{
+					UPrintf(USTR("INFO: unknown ext key record %") PRIUS USTR("\n"), AToU(sTxt).c_str());
+				}
+			}
+		}
+	}
+}
+
+bool CNcch::writeExtKey()
+{
+	UString sExtKeyPath = UGetModuleDirName() + USTR("/ext_key.txt");
+	FILE* fp = UFopen(sExtKeyPath.c_str(), USTR("wb"));
+	if (fp == nullptr)
+	{
+		return false;
+	}
+	for (map<string, string>::const_iterator it = m_mExtKey.begin(); it != m_mExtKey.end(); ++it)
+	{
+		fprintf(fp, "%s %s\r\n", it->first.c_str(), it->second.c_str());
+	}
+	fclose(fp);
+	return true;
 }
 
 void CNcch::calculateCounter(EAesCtrType a_eAesCtrType)
@@ -1336,14 +1391,26 @@ bool CNcch::encryptXorFile(const UString& a_sXorFileName, n64 a_nOffset, n64 a_n
 	return bResult;
 }
 
-size_t CNcch::onDownload(char* a_pData, size_t a_uSize, size_t a_uNmemb, void* a_pUserData)
+void CNcch::onHttpsGetExtKey(CUrl* a_pUrl, void* a_pUserData)
 {
-	size_t uSize = a_uSize * a_uNmemb;
-	CNcch* pNcch = reinterpret_cast<CNcch*>(a_pUserData);
-	if (pNcch != nullptr)
+	size_t uUserData = reinterpret_cast<size_t>(a_pUserData);
+	u32 uUniqueId = static_cast<u32>(uUserData);
+	if (a_pUrl != nullptr)
 	{
-		string& sExtKey = pNcch->getExtKey();
-		sExtKey.append(a_pData, uSize);
+		const string& sData = a_pUrl->GetData();
+		if (!sData.empty())
+		{
+			string sExtKey;
+			for (int i = 0; i < static_cast<int>(sData.size()); i++)
+			{
+				sExtKey += Format("%02X", static_cast<u8>(sData[i]));
+			}
+			string sProgramId = Format("000400000%05X00", uUniqueId);
+			m_mExtKey.insert(make_pair(sProgramId, sExtKey));
+			if (m_bVerbose)
+			{
+				UPrintf(USTR("download: %") PRIUS USTR(" %") PRIUS USTR("\n"), AToU(sProgramId).c_str(), AToU(sExtKey).c_str());
+			}
+		}
 	}
-	return uSize;
 }

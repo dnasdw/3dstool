@@ -27,6 +27,7 @@ public:
 		kActionPad,
 		kActionDiff,
 		kActionPatch,
+		kActionDownload,
 		kActionSample,
 		kActionHelp
 	};
@@ -77,6 +78,7 @@ private:
 	bool padFile();
 	bool diffFile();
 	bool patchFile();
+	bool download();
 	int sample();
 	EAction m_eAction;
 	EFileType m_eFileType;
@@ -94,6 +96,8 @@ private:
 	UString m_sOldFileName;
 	UString m_sNewFileName;
 	UString m_sPatchFileName;
+	n32 m_nDownloadBegin;
+	n32 m_nDownloadEnd;
 	map<int, UString> m_mNcchFileName;
 	bool m_bNotPad;
 	int m_nLastPartitionIndex;
