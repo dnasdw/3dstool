@@ -694,6 +694,10 @@ void CNcch::calculateAlignment()
 
 void CNcch::calculateKey()
 {
+	if (m_nEncryptMode != kEncryptModeXor)
+	{
+		return;
+	}
 	m_Key[0] = 0;
 	m_Key[1] = 0;
 	CBigNum keyX[2] = { s_Slot0x2CKeyX, s_Slot0x2CKeyX };

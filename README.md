@@ -30,6 +30,7 @@ An all-in-one tool for extracting/creating 3ds roms.
 - v1.0.23 @ 2017.05.09 - Fix runtime error
 - v1.0.24 @ 2017.05.21 - Support auto encryption
 - v1.0.25 @ 2017.06.18 - Fix auto encryption bug and add download
+- v1.0.26 @ 2017.06.20 - Fix auto encryption bug
 
 ## Platforms
 
