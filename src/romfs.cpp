@@ -435,15 +435,19 @@ bool CRomFs::createEntryList()
 				{
 					continue;
 				}
-				string sNameUpper = pDirent->d_name;
+				string sName = pDirent->d_name;
+#if SDW_PLATFORM == SDW_PLATFORM_MACOS
+				sName = TSToS<string, string>(sName, "UTF-8-MAC", "UTF-8");
+#endif
+				string sNameUpper = sName;
 				transform(sNameUpper.begin(), sNameUpper.end(), sNameUpper.begin(), ::toupper);
 				if (pDirent->d_type == DT_REG)
 				{
-					mFile.insert(make_pair(sNameUpper, pDirent->d_name));
+					mFile.insert(make_pair(sNameUpper, sName));
 				}
 				else if (pDirent->d_type == DT_DIR && strcmp(pDirent->d_name, ".") != 0 && strcmp(pDirent->d_name, "..") != 0)
 				{
-					mDir.insert(make_pair(sNameUpper, pDirent->d_name));
+					mDir.insert(make_pair(sNameUpper, sName));
 				}
 			}
 			closedir(pDir);
