@@ -53,9 +53,9 @@ struct ARM11SystemLocalCapabilityFlags
 {
 	u32 CoreVersion;
 	u8 Reserved[2];
-	u8 IdealProcessor : 2,
-	AffinityMask : 2,
-	SystemMode : 4;
+	u8 IdealProcessor : 2;
+	u8 AffinityMask : 2;
+	u8 SystemMode : 4;
 	u8 MainThreadPriority;
 } SDW_GNUC_PACKED;
 

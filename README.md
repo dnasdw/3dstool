@@ -4,6 +4,10 @@ An all-in-one tool for extracting/creating 3ds roms.
 
 ## History
 
+- v1.1.0 @ 2018.01.03 - A new beginning
+
+### v1.0
+
 - v1.0.0 @ 2014.12.07 - The very first release
 - v1.0.1 @ 2014.12.09 - Make compatible with Windows XP
 - v1.0.2 @ 2014.12.25 - Support diff and patch
