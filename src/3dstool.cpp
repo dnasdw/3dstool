@@ -2,6 +2,7 @@
 #include "3dscrypt.h"
 #include "backwardlz77.h"
 #include "banner.h"
+#include "code.h"
 #include "exefs.h"
 #include "huffman.h"
 #include "lz77.h"
@@ -25,6 +26,7 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ USTR("pad"), USTR('p'), USTR("pad the cci file") },
 	{ USTR("diff"), 0, USTR("create the patch file from the old file and the new file") },
 	{ USTR("patch"), 0, USTR("apply the patch file to the target file") },
+	{ USTR("lock"), 0, USTR("modify some function in the code file") },
 	{ USTR("download"), USTR('d'), USTR("download ext key") },
 	{ USTR("sample"), 0, USTR("show the samples") },
 	{ USTR("help"), USTR('h'), USTR("show this help") },
@@ -108,6 +110,10 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ nullptr, 0, USTR("\nbanner:") },
 	{ nullptr, 0, USTR(" extract/create:") },
 	{ USTR("banner-dir"), 0, USTR("the banner dir for the banner file") },
+	{ nullptr, 0, USTR("\ncode:") },
+	{ nullptr, 0, USTR(" lock:") },
+	{ USTR("region"), 0, USTR("[JPN|USA|EUR|AUS|CHN|KOR|TWN]") },
+	{ USTR("language"), 0, USTR("[JP|EN|FR|GE|IT|SP|CN|KR|DU|PO|RU|TW]") },
 	{ nullptr, 0, nullptr }
 };
 
@@ -119,6 +125,8 @@ C3dsTool::C3dsTool()
 	, m_nCompressAlign(1)
 	, m_eCompressType(kCompressTypeNone)
 	, m_nYaz0Align(0)
+	, m_nRegionCode(-1)
+	, m_nLanguageCode(-1)
 	, m_nDownloadBegin(-1)
 	, m_nDownloadEnd(-1)
 	, m_bNotPad(false)
@@ -448,6 +456,14 @@ int C3dsTool::CheckOptions()
 			return 1;
 		}
 	}
+	if (m_eAction == kActionLock)
+	{
+		if (m_nRegionCode < 0 && m_nLanguageCode < 0)
+		{
+			UPrintf(USTR("ERROR: no --region or --language option\n\n"));
+			return 1;
+		}
+	}
 	if (m_eAction == kActionDownload)
 	{
 		if (m_nDownloadBegin < 0 && m_nDownloadEnd < 0)
@@ -565,6 +581,14 @@ int C3dsTool::Action()
 		if (!patchFile())
 		{
 			UPrintf(USTR("ERROR: apply patch file failed\n\n"));
+			return 1;
+		}
+	}
+	if (m_eAction == kActionLock)
+	{
+		if (!lock())
+		{
+			UPrintf(USTR("ERROR: modify function failed\n\n"));
 			return 1;
 		}
 	}
@@ -686,6 +710,17 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 			m_eAction = kActionPatch;
 		}
 		else if (m_eAction != kActionPatch && m_eAction != kActionHelp)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+	}
+	else if (UCscmp(a_pName, USTR("lock")) == 0)
+	{
+		if (m_eAction == kActionNone)
+		{
+			m_eAction = kActionLock;
+		}
+		else if (m_eAction != kActionLock && m_eAction != kActionHelp)
 		{
 			return kParseOptionReturnOptionConflict;
 		}
@@ -1228,6 +1263,108 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		}
 		m_sBannerDirName = a_pArgv[++a_nIndex];
 	}
+	else if (UCscmp(a_pName, USTR("region")) == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		UChar* pRegion = a_pArgv[++a_nIndex];
+		if (UCscmp(pRegion, USTR("JPN")) == 0)
+		{
+			m_nRegionCode = 0;
+		}
+		else if (UCscmp(pRegion, USTR("USA")) == 0)
+		{
+			m_nRegionCode = 1;
+		}
+		else if (UCscmp(pRegion, USTR("EUR")) == 0)
+		{
+			m_nRegionCode = 2;
+		}
+		else if (UCscmp(pRegion, USTR("AUS")) == 0)
+		{
+			m_nRegionCode = 3;
+		}
+		else if (UCscmp(pRegion, USTR("CHN")) == 0)
+		{
+			m_nRegionCode = 4;
+		}
+		else if (UCscmp(pRegion, USTR("KOR")) == 0)
+		{
+			m_nRegionCode = 5;
+		}
+		else if (UCscmp(pRegion, USTR("TWN")) == 0)
+		{
+			m_nRegionCode = 6;
+		}
+		else
+		{
+			m_sMessage = pRegion;
+			return kParseOptionReturnUnknownArgument;
+		}
+	}
+	else if (UCscmp(a_pName, USTR("language")) == 0)
+	{
+		if (a_nIndex + 1 >= a_nArgc)
+		{
+			return kParseOptionReturnNoArgument;
+		}
+		UChar* pLanguage = a_pArgv[++a_nIndex];
+		if (UCscmp(pLanguage, USTR("JP")) == 0)
+		{
+			m_nLanguageCode = 0;
+		}
+		else if (UCscmp(pLanguage, USTR("EN")) == 0)
+		{
+			m_nLanguageCode = 1;
+		}
+		else if (UCscmp(pLanguage, USTR("FR")) == 0)
+		{
+			m_nLanguageCode = 2;
+		}
+		else if (UCscmp(pLanguage, USTR("GE")) == 0)
+		{
+			m_nLanguageCode = 3;
+		}
+		else if (UCscmp(pLanguage, USTR("IT")) == 0)
+		{
+			m_nLanguageCode = 4;
+		}
+		else if (UCscmp(pLanguage, USTR("SP")) == 0)
+		{
+			m_nLanguageCode = 5;
+		}
+		else if (UCscmp(pLanguage, USTR("CN")) == 0)
+		{
+			m_nLanguageCode = 6;
+		}
+		else if (UCscmp(pLanguage, USTR("KR")) == 0)
+		{
+			m_nLanguageCode = 7;
+		}
+		else if (UCscmp(pLanguage, USTR("DU")) == 0)
+		{
+			m_nLanguageCode = 8;
+		}
+		else if (UCscmp(pLanguage, USTR("PO")) == 0)
+		{
+			m_nLanguageCode = 9;
+		}
+		else if (UCscmp(pLanguage, USTR("RU")) == 0)
+		{
+			m_nLanguageCode = 10;
+		}
+		else if (UCscmp(pLanguage, USTR("TW")) == 0)
+		{
+			m_nLanguageCode = 11;
+		}
+		else
+		{
+			m_sMessage = pLanguage;
+			return kParseOptionReturnUnknownArgument;
+		}
+	}
 	return kParseOptionReturnSuccess;
 }
 
@@ -1751,6 +1888,16 @@ bool C3dsTool::patchFile()
 	return patch.ApplyPatchFile();
 }
 
+bool C3dsTool::lock()
+{
+	CCode code;
+	code.SetFileName(m_sFileName);
+	code.SetVerbose(m_bVerbose);
+	code.SetRegionCode(m_nRegionCode);
+	code.SetLanguageCode(m_nLanguageCode);
+	return code.Lock();
+}
+
 bool C3dsTool::download()
 {
 	if (m_nDownloadBegin > m_nDownloadEnd)
@@ -1899,6 +2046,8 @@ int C3dsTool::sample()
 	UPrintf(USTR("3dstool --diff -vt cfa --old old.cfa --new new.cfa --patch-file patch.3ps\n\n"));
 	UPrintf(USTR("# apply patch file\n"));
 	UPrintf(USTR("3dstool --patch -vf input.bin --patch-file patch.3ps\n\n"));
+	UPrintf(USTR("# lock region JPN and lock language JP\n"));
+	UPrintf(USTR("3dstool --lock -vf code.bin --region JPN --language JP\n\n"));
 	UPrintf(USTR("# download ext key\n"));
 	UPrintf(USTR("3dstool -dv --download-begin 00000 --download-end 02FFF\n\n"));
 	return 0;

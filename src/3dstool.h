@@ -27,6 +27,7 @@ public:
 		kActionPad,
 		kActionDiff,
 		kActionPatch,
+		kActionLock,
 		kActionDownload,
 		kActionSample,
 		kActionHelp
@@ -78,6 +79,7 @@ private:
 	bool padFile();
 	bool diffFile();
 	bool patchFile();
+	bool lock();
 	bool download();
 	int sample();
 	EAction m_eAction;
@@ -96,6 +98,8 @@ private:
 	UString m_sOldFileName;
 	UString m_sNewFileName;
 	UString m_sPatchFileName;
+	n32 m_nRegionCode;
+	n32 m_nLanguageCode;
 	n32 m_nDownloadBegin;
 	n32 m_nDownloadEnd;
 	map<int, UString> m_mNcchFileName;
