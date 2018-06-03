@@ -24,6 +24,7 @@ CNcch::CNcch()
 	: m_eFileType(C3dsTool::kFileTypeUnknown)
 	, m_bVerbose(false)
 	, m_nEncryptMode(kEncryptModeNone)
+	, m_bRemoveExtKey(true)
 	, m_bDev(false)
 	, m_nDownloadBegin(-1)
 	, m_nDownloadEnd(-1)
@@ -64,6 +65,11 @@ void CNcch::SetHeaderFileName(const UString& a_sHeaderFileName)
 void CNcch::SetEncryptMode(int a_nEncryptMode)
 {
 	m_nEncryptMode = a_nEncryptMode;
+}
+
+void CNcch::SetRemoveExtKey(bool a_bRemoveExtKey)
+{
+	m_bRemoveExtKey = a_bRemoveExtKey;
 }
 
 void CNcch::SetDev(bool a_bDev)
@@ -711,6 +717,10 @@ bool CNcch::createHeader()
 	{
 		m_NcchHeader.Ncch.Flags[Flag] &= ~SDW_BIT32(NoEncrypto);
 		m_NcchHeader.Ncch.Flags[Flag] &= ~SDW_BIT32(FixedCryptoKey);
+		if (m_bRemoveExtKey)
+		{
+			m_NcchHeader.Ncch.Flags[Flag] &= ~SDW_BIT32(kFlagExtKey);
+		}
 	}
 	fwrite(&m_NcchHeader, sizeof(m_NcchHeader), 1, m_fpNcch);
 	return true;

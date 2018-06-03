@@ -91,6 +91,7 @@ private:
 	CBigNum m_Key;
 	CBigNum m_Counter;
 	UString m_sXorFileName;
+	bool m_bRemoveExtKey;
 	bool m_bDev;
 	n32 m_nCompressAlign;
 	ECompressType m_eCompressType;

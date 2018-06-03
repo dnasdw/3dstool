@@ -109,6 +109,7 @@ public:
 	void SetVerbose(bool a_bVerbose);
 	void SetHeaderFileName(const UString& a_sHeaderFileName);
 	void SetEncryptMode(int a_nEncryptMode);
+	void SetRemoveExtKey(bool a_bRemoveExtKey);
 	void SetDev(bool a_bDev);
 	void SetDownloadBegin(n32 a_nDownloadBegin);
 	void SetDownloadEnd(n32 a_nDownloadEnd);
@@ -166,6 +167,7 @@ private:
 	bool m_bVerbose;
 	UString m_sHeaderFileName;
 	int m_nEncryptMode;
+	bool m_bRemoveExtKey;
 	bool m_bDev;
 	CBigNum m_Key[kEncryptKeyIndexCount];
 	n32 m_nDownloadBegin;

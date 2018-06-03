@@ -4,6 +4,10 @@ An all-in-one tool for extracting/creating 3ds roms.
 
 ## History
 
+- v1.2.0 @ 2018.06.03 - Support auto encryption fully
+
+### v1.1
+
 - v1.1.0 @ 2018.01.03 - A new beginning
 - v1.1.1 @ 2018.01.21 - Lock region and language
 

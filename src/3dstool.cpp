@@ -38,7 +38,9 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ nullptr, 0, USTR("  cci/cxi/cfa/exefs:") },
 	{ USTR("header"), 0, USTR("the header file of the target file") },
 	{ nullptr, 0, USTR(" create:") },
-	{ nullptr, 0, USTR("  cxi/cfa:") },
+	{ nullptr, 0, USTR("  cxi:") },
+	{ USTR("not-remove-ext-key"), 0, USTR("not remove ext key") },
+	{ nullptr, 0, USTR("   cfa:") },
 	{ USTR("not-encrypt"), 0, USTR("not encrypt, modify the flag only") },
 	{ USTR("fixed-key"), 0, USTR("AES-CTR encryption using fixedkey") },
 	{ nullptr, 0, USTR("  extract:") },
@@ -110,6 +112,7 @@ C3dsTool::C3dsTool()
 	, m_eFileType(kFileTypeUnknown)
 	, m_bVerbose(false)
 	, m_nEncryptMode(CNcch::kEncryptModeNone)
+	, m_bRemoveExtKey(true)
 	, m_bDev(false)
 	, m_nCompressAlign(1)
 	, m_eCompressType(kCompressTypeNone)
@@ -796,6 +799,18 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		}
 		m_sHeaderFileName = a_pArgv[++a_nIndex];
 	}
+	else if (UCscmp(a_pName, USTR("not-remove-ext-key")) == 0)
+	{
+		if (m_nEncryptMode == CNcch::kEncryptModeNone)
+		{
+			m_nEncryptMode = CNcch::kEncryptModeAuto;
+		}
+		else if (m_nEncryptMode != CNcch::kEncryptModeAuto)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+		m_bRemoveExtKey = false;
+	}
 	else if (UCscmp(a_pName, USTR("not-encrypt")) == 0)
 	{
 		if (m_nEncryptMode == CNcch::kEncryptModeNone)
@@ -1406,6 +1421,7 @@ bool C3dsTool::createFile()
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
+			ncch.SetRemoveExtKey(m_bRemoveExtKey);
 			ncch.SetDev(m_bDev);
 			ncch.SetExtendedHeaderFileName(m_sExtendedHeaderFileName);
 			ncch.SetLogoRegionFileName(m_sLogoRegionFileName);
@@ -1422,6 +1438,7 @@ bool C3dsTool::createFile()
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
+			ncch.SetRemoveExtKey(false);
 			ncch.SetDev(m_bDev);
 			ncch.SetExeFsFileName(m_sExeFsFileName);
 			ncch.SetRomFsFileName(m_sRomFsFileName);
@@ -1750,6 +1767,8 @@ int C3dsTool::sample()
 	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --fixed-key\n\n"));
 	UPrintf(USTR("# create cxi with auto encryption for dev\n"));
 	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --dev\n\n"));
+	UPrintf(USTR("# create cxi with auto encryption for retail, not remove ext key\n"));
+	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --not-remove-ext-key\n\n"));
 	UPrintf(USTR("# create cxi with auto encryption for retail\n"));
 	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin\n\n"));
 	UPrintf(USTR("# create cfa without encryption\n"));
