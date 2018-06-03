@@ -37,8 +37,14 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ nullptr, 0, USTR(" extract/create:") },
 	{ nullptr, 0, USTR("  cci/cxi/cfa/exefs:") },
 	{ USTR("header"), 0, USTR("the header file of the target file") },
+	{ nullptr, 0, USTR(" create:") },
+	{ nullptr, 0, USTR("  cxi/cfa:") },
+	{ USTR("not-encrypt"), 0, USTR("not encrypt, modify the flag only") },
+	{ USTR("fixed-key"), 0, USTR("AES-CTR encryption using fixedkey") },
+	{ nullptr, 0, USTR("  extract:") },
+	{ nullptr, 0, USTR("   cxi/cfa:") },
+	{ USTR("dev"), 0, USTR("auto encryption for dev") },
 	{ nullptr, 0, USTR(" encrypt:") },
-	{ USTR("key0"), 0, USTR("short for --key 00000000000000000000000000000000") },
 	{ USTR("key"), 0, USTR("the hex string of the key used by the AES-CTR encryption") },
 	{ USTR("counter"), 0, USTR("the hex string of the counter used by the AES-CTR encryption") },
 	{ USTR("xor"), 0, USTR("the xor data file used by the xor encryption") },
@@ -72,35 +78,17 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ nullptr, 0, USTR(" trim:") },
 	{ USTR("trim-after-partition"), 0, USTR("[0~7], the index of the last reserve partition, optional") },
 	{ nullptr, 0, USTR("\ncxi:") },
-	{ nullptr, 0, USTR(" create:") },
-	{ USTR("not-update-exh-hash"), 0, nullptr },
-	{ USTR("not-update-extendedheader-hash"), 0, USTR("do not update the extendedheader hash") },
-	{ nullptr, 0, USTR("  extract:") },
+	{ nullptr, 0, USTR(" extract/create:") },
 	{ USTR("exh"), 0, nullptr },
 	{ USTR("extendedheader"), 0, USTR("the extendedheader file of the cxi file") },
 	{ USTR("logo"), 0, nullptr },
 	{ USTR("logoregion"), 0, USTR("the logoregion file of the cxi file") },
 	{ USTR("plain"), 0, nullptr },
 	{ USTR("plainregion"), 0, USTR("the plainregion file of the cxi file") },
-	{ nullptr, 0, USTR("   encrypt:") },
-	{ USTR("exh-xor"), 0, nullptr },
-	{ USTR("extendedheader-xor"), 0, USTR("the xor data file used by encrypt the extendedheader of the cxi file") },
-	{ USTR("exh-auto-key"), 0, nullptr },
-	{ USTR("extendedheader-auto-key"), 0, USTR("use the known key to encrypt the extendedheader of the cxi file") },
-	{ USTR("exefs-top-xor"), 0, USTR("the xor data file used by encrypt the top section of the exefs of the cxi file") },
-	{ USTR("exefs-top-auto-key"), 0, USTR("use the known key to encrypt the top section of the exefs of the cxi file") },
 	{ nullptr, 0, USTR(" cfa:") },
-	{ nullptr, 0, USTR("  create:") },
-	{ USTR("not-update-exefs-hash"), 0, USTR("do not update the exefs super block hash") },
-	{ USTR("not-update-romfs-hash"), 0, USTR("do not update the romfs super block hash") },
-	{ nullptr, 0, USTR("   extract:") },
+	{ nullptr, 0, USTR("  extract/create:") },
 	{ USTR("exefs"), 0, USTR("the exefs file of the cxi/cfa file") },
 	{ USTR("romfs"), 0, USTR("the romfs file of the cxi/cfa file") },
-	{ nullptr, 0, USTR("    encrypt:") },
-	{ USTR("exefs-xor"), 0, USTR("the xor data file used by encrypt the exefs of the cxi/cfa file") },
-	{ USTR("exefs-auto-key"), 0, USTR("use the known key to encrypt the exefs of the cxi/cfa file") },
-	{ USTR("romfs-xor"), 0, USTR("the xor data file used by encrypt the romfs of the cxi/cfa file") },
-	{ USTR("romfs-auto-key"), 0, USTR("use the known key to encrypt the romfs of the cxi/cfa file") },
 	{ nullptr, 0, USTR("\nexefs:") },
 	{ nullptr, 0, USTR(" extract/create:") },
 	{ USTR("exefs-dir"), 0, USTR("the exefs dir for the exefs file") },
@@ -122,6 +110,7 @@ C3dsTool::C3dsTool()
 	, m_eFileType(kFileTypeUnknown)
 	, m_bVerbose(false)
 	, m_nEncryptMode(CNcch::kEncryptModeNone)
+	, m_bDev(false)
 	, m_nCompressAlign(1)
 	, m_eCompressType(kCompressTypeNone)
 	, m_nYaz0Align(0)
@@ -131,13 +120,7 @@ C3dsTool::C3dsTool()
 	, m_nDownloadEnd(-1)
 	, m_bNotPad(false)
 	, m_nLastPartitionIndex(7)
-	, m_bNotUpdateExtendedHeaderHash(false)
-	, m_bNotUpdateExeFsHash(false)
-	, m_bNotUpdateRomFsHash(false)
-	, m_bExtendedHeaderAutoKey(false)
-	, m_bExeFsAutoKey(false)
-	, m_bExeFsTopAutoKey(false)
-	, m_bRomFsAutoKey(false)
+	, m_bKeyValid(false)
 	, m_bCounterValid(false)
 	, m_bUncompress(false)
 	, m_bCompress(false)
@@ -229,6 +212,10 @@ int C3dsTool::CheckOptions()
 		UPrintf(USTR("ERROR: no --file option\n\n"));
 		return 1;
 	}
+	if (m_nEncryptMode == CNcch::kEncryptModeNone)
+	{
+		m_nEncryptMode = CNcch::kEncryptModeAuto;
+	}
 	if (m_eAction == kActionExtract)
 	{
 		if (!checkFileType())
@@ -263,11 +250,21 @@ int C3dsTool::CheckOptions()
 				UPrintf(USTR("ERROR: nothing to be extract\n\n"));
 				return 1;
 			}
+			if (m_nEncryptMode != CNcch::kEncryptModeAuto)
+			{
+				UPrintf(USTR("ERROR: encrypt error\n\n"));
+				return 1;
+			}
 			break;
 		case kFileTypeCfa:
 			if (m_sHeaderFileName.empty() && m_sRomFsFileName.empty())
 			{
 				UPrintf(USTR("ERROR: nothing to be extract\n\n"));
+				return 1;
+			}
+			if (m_nEncryptMode != CNcch::kEncryptModeAuto)
+			{
+				UPrintf(USTR("ERROR: encrypt error\n\n"));
 				return 1;
 			}
 			break;
@@ -328,12 +325,22 @@ int C3dsTool::CheckOptions()
 					UPrintf(USTR("ERROR: no --extendedheader or --exefs option\n\n"));
 					return 1;
 				}
+				if (m_nEncryptMode != CNcch::kEncryptModeNotEncrypt && m_nEncryptMode != CNcch::kEncryptModeFixedKey && m_nEncryptMode != CNcch::kEncryptModeAuto)
+				{
+					UPrintf(USTR("ERROR: encrypt error\n\n"));
+					return 1;
+				}
 			}
 			else if (m_eFileType == kFileTypeCfa)
 			{
 				if (m_sRomFsFileName.empty())
 				{
 					UPrintf(USTR("ERROR: no --romfs option\n\n"));
+					return 1;
+				}
+				if (m_nEncryptMode != CNcch::kEncryptModeNotEncrypt && m_nEncryptMode != CNcch::kEncryptModeFixedKey && m_nEncryptMode != CNcch::kEncryptModeAuto)
+				{
+					UPrintf(USTR("ERROR: encrypt error\n\n"));
 					return 1;
 				}
 			}
@@ -365,44 +372,25 @@ int C3dsTool::CheckOptions()
 	}
 	if (m_eAction == kActionEncrypt)
 	{
-		if (m_nEncryptMode == CNcch::kEncryptModeNone)
+		if (m_nEncryptMode == CNcch::kEncryptModeAesCtr)
 		{
-			UPrintf(USTR("ERROR: no key or xor data file\n\n"));
-			return 1;
+			if (!m_bKeyValid)
+			{
+				UPrintf(USTR("ERROR: no --key option\n\n"));
+				return 1;
+			}
+			if (!m_bCounterValid)
+			{
+				UPrintf(USTR("ERROR: no --counter option\n\n"));
+				return 1;
+			}
 		}
 		else if (m_nEncryptMode == CNcch::kEncryptModeXor)
 		{
-			if (!m_sExtendedHeaderXorFileName.empty() || !m_sExeFsXorFileName.empty() || !m_sRomFsXorFileName.empty())
+			if (m_sXorFileName.empty())
 			{
-				if (!m_sXorFileName.empty())
-				{
-					UPrintf(USTR("ERROR: --xor can not with --extendedheader-xor or --exefs-xor or --romfs-xor\n\n"));
-					return 1;
-				}
-				if (CNcch::IsCxiFile(m_sFileName))
-				{
-					if (m_eFileType != kFileTypeUnknown && m_eFileType != kFileTypeCxi && m_bVerbose)
-					{
-						UPrintf(USTR("INFO: ignore --type option\n"));
-					}
-				}
-				else if (CNcch::IsCfaFile(m_sFileName))
-				{
-					if (m_sRomFsXorFileName.empty())
-					{
-						UPrintf(USTR("ERROR: no --romfs-xor option\n\n"));
-						return 1;
-					}
-					if (m_eFileType != kFileTypeUnknown && m_eFileType != kFileTypeCfa && m_bVerbose)
-					{
-						UPrintf(USTR("INFO: ignore --type option\n"));
-					}
-				}
-				else
-				{
-					UPrintf(USTR("ERROR: %") PRIUS USTR(" is not a ncch file\n\n"), m_sFileName.c_str());
-					return 1;
-				}
+				UPrintf(USTR("ERROR: no --xor option\n\n"));
+				return 1;
 			}
 		}
 	}
@@ -808,17 +796,39 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		}
 		m_sHeaderFileName = a_pArgv[++a_nIndex];
 	}
-	else if (UCscmp(a_pName, USTR("key0")) == 0)
+	else if (UCscmp(a_pName, USTR("not-encrypt")) == 0)
 	{
 		if (m_nEncryptMode == CNcch::kEncryptModeNone)
 		{
-			m_nEncryptMode = CNcch::kEncryptModeAesCtr;
+			m_nEncryptMode = CNcch::kEncryptModeNotEncrypt;
 		}
-		else if (m_nEncryptMode != CNcch::kEncryptModeAesCtr)
+		else if (m_nEncryptMode != CNcch::kEncryptModeNotEncrypt)
 		{
 			return kParseOptionReturnOptionConflict;
 		}
-		m_Key = 0;
+	}
+	else if (UCscmp(a_pName, USTR("fixed-key")) == 0)
+	{
+		if (m_nEncryptMode == CNcch::kEncryptModeNone)
+		{
+			m_nEncryptMode = CNcch::kEncryptModeFixedKey;
+		}
+		else if (m_nEncryptMode != CNcch::kEncryptModeFixedKey)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+	}
+	else if (UCscmp(a_pName, USTR("dev")) == 0)
+	{
+		if (m_nEncryptMode == CNcch::kEncryptModeNone)
+		{
+			m_nEncryptMode = CNcch::kEncryptModeAuto;
+		}
+		else if (m_nEncryptMode != CNcch::kEncryptModeAuto)
+		{
+			return kParseOptionReturnOptionConflict;
+		}
+		m_bDev = true;
 	}
 	else if (UCscmp(a_pName, USTR("key")) == 0)
 	{
@@ -841,6 +851,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 			return kParseOptionReturnUnknownArgument;
 		}
 		m_Key = UToA(sKey).c_str();
+		m_bKeyValid = true;
 	}
 	else if (UCscmp(a_pName, USTR("counter")) == 0)
 	{
@@ -1043,18 +1054,6 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 			return kParseOptionReturnIllegalOption;
 		}
 	}
-	else if (UCscmp(a_pName, USTR("not-update-extendedheader-hash")) == 0 || UCscmp(a_pName, USTR("not-update-exh-hash")) == 0)
-	{
-		m_bNotUpdateExtendedHeaderHash = true;
-	}
-	else if (UCscmp(a_pName, USTR("not-update-exefs-hash")) == 0)
-	{
-		m_bNotUpdateExeFsHash = true;
-	}
-	else if (UCscmp(a_pName, USTR("not-update-romfs-hash")) == 0)
-	{
-		m_bNotUpdateRomFsHash = true;
-	}
 	else if (UCscmp(a_pName, USTR("extendedheader")) == 0 || UCscmp(a_pName, USTR("exh")) == 0)
 	{
 		if (a_nIndex + 1 >= a_nArgc)
@@ -1094,150 +1093,6 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 			return kParseOptionReturnNoArgument;
 		}
 		m_sRomFsFileName = a_pArgv[++a_nIndex];
-	}
-	else if (UCscmp(a_pName, USTR("extendedheader-xor")) == 0 || UCscmp(a_pName, USTR("exh-xor")) == 0)
-	{
-		if (a_nIndex + 1 >= a_nArgc)
-		{
-			return kParseOptionReturnNoArgument;
-		}
-		if (m_nEncryptMode == CNcch::kEncryptModeNone)
-		{
-			m_nEncryptMode = CNcch::kEncryptModeXor;
-		}
-		else if (m_nEncryptMode != CNcch::kEncryptModeXor)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		if (m_bExtendedHeaderAutoKey)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		m_sExtendedHeaderXorFileName = a_pArgv[++a_nIndex];
-	}
-	else if (UCscmp(a_pName, USTR("exefs-xor")) == 0)
-	{
-		if (a_nIndex + 1 >= a_nArgc)
-		{
-			return kParseOptionReturnNoArgument;
-		}
-		if (m_nEncryptMode == CNcch::kEncryptModeNone)
-		{
-			m_nEncryptMode = CNcch::kEncryptModeXor;
-		}
-		else if (m_nEncryptMode != CNcch::kEncryptModeXor)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		if (m_bExeFsAutoKey)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		m_sExeFsXorFileName = a_pArgv[++a_nIndex];
-	}
-	else if (UCscmp(a_pName, USTR("exefs-top-xor")) == 0)
-	{
-		if (a_nIndex + 1 >= a_nArgc)
-		{
-			return kParseOptionReturnNoArgument;
-		}
-		if (m_nEncryptMode == CNcch::kEncryptModeNone)
-		{
-			m_nEncryptMode = CNcch::kEncryptModeXor;
-		}
-		else if (m_nEncryptMode != CNcch::kEncryptModeXor)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		if (m_bExeFsTopAutoKey)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		m_sExeFsTopXorFileName = a_pArgv[++a_nIndex];
-	}
-	else if (UCscmp(a_pName, USTR("romfs-xor")) == 0)
-	{
-		if (a_nIndex + 1 >= a_nArgc)
-		{
-			return kParseOptionReturnNoArgument;
-		}
-		if (m_nEncryptMode == CNcch::kEncryptModeNone)
-		{
-			m_nEncryptMode = CNcch::kEncryptModeXor;
-		}
-		else if (m_nEncryptMode != CNcch::kEncryptModeXor)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		if (m_bRomFsAutoKey)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		m_sRomFsXorFileName = a_pArgv[++a_nIndex];
-	}
-	else if (UCscmp(a_pName, USTR("extendedheader-auto-key")) == 0 || UCscmp(a_pName, USTR("exh-auto-key")) == 0)
-	{
-		if (m_nEncryptMode == CNcch::kEncryptModeNone)
-		{
-			m_nEncryptMode = CNcch::kEncryptModeXor;
-		}
-		else if (m_nEncryptMode != CNcch::kEncryptModeXor)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		if (!m_sExtendedHeaderXorFileName.empty())
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		m_bExtendedHeaderAutoKey = true;
-	}
-	else if (UCscmp(a_pName, USTR("exefs-auto-key")) == 0)
-	{
-		if (m_nEncryptMode == CNcch::kEncryptModeNone)
-		{
-			m_nEncryptMode = CNcch::kEncryptModeXor;
-		}
-		else if (m_nEncryptMode != CNcch::kEncryptModeXor)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		if (!m_sExeFsXorFileName.empty())
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		m_bExeFsAutoKey = true;
-	}
-	else if (UCscmp(a_pName, USTR("exefs-top-auto-key")) == 0)
-	{
-		if (m_nEncryptMode == CNcch::kEncryptModeNone)
-		{
-			m_nEncryptMode = CNcch::kEncryptModeXor;
-		}
-		else if (m_nEncryptMode != CNcch::kEncryptModeXor)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		if (!m_sExeFsTopXorFileName.empty())
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		m_bExeFsTopAutoKey = true;
-	}
-	else if (UCscmp(a_pName, USTR("romfs-auto-key")) == 0)
-	{
-		if (m_nEncryptMode == CNcch::kEncryptModeNone)
-		{
-			m_nEncryptMode = CNcch::kEncryptModeXor;
-		}
-		else if (m_nEncryptMode != CNcch::kEncryptModeXor)
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		if (!m_sRomFsXorFileName.empty())
-		{
-			return kParseOptionReturnOptionConflict;
-		}
-		m_bRomFsAutoKey = true;
 	}
 	else if (UCscmp(a_pName, USTR("exefs-dir")) == 0)
 	{
@@ -1471,20 +1326,12 @@ bool C3dsTool::extractFile()
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
-			ncch.SetKey(m_Key);
+			ncch.SetDev(m_bDev);
 			ncch.SetExtendedHeaderFileName(m_sExtendedHeaderFileName);
 			ncch.SetLogoRegionFileName(m_sLogoRegionFileName);
 			ncch.SetPlainRegionFileName(m_sPlainRegionFileName);
 			ncch.SetExeFsFileName(m_sExeFsFileName);
 			ncch.SetRomFsFileName(m_sRomFsFileName);
-			ncch.SetExtendedHeaderXorFileName(m_sExtendedHeaderXorFileName);
-			ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
-			ncch.SetExeFsTopXorFileName(m_sExeFsTopXorFileName);
-			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
-			ncch.SetExtendedHeaderAutoKey(m_bExtendedHeaderAutoKey);
-			ncch.SetExeFsAutoKey(m_bExeFsAutoKey);
-			ncch.SetExeFsTopAutoKey(m_bExeFsTopAutoKey);
-			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 			bResult = ncch.ExtractFile();
 		}
 		break;
@@ -1495,13 +1342,9 @@ bool C3dsTool::extractFile()
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
-			ncch.SetKey(m_Key);
+			ncch.SetDev(m_bDev);
 			ncch.SetExeFsFileName(m_sExeFsFileName);
 			ncch.SetRomFsFileName(m_sRomFsFileName);
-			ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
-			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
-			ncch.SetExeFsAutoKey(m_bExeFsAutoKey);
-			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 			bResult = ncch.ExtractFile();
 		}
 		break;
@@ -1563,23 +1406,12 @@ bool C3dsTool::createFile()
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
-			ncch.SetKey(m_Key);
-			ncch.SetNotUpdateExtendedHeaderHash(m_bNotUpdateExtendedHeaderHash);
-			ncch.SetNotUpdateExeFsHash(m_bNotUpdateExeFsHash);
-			ncch.SetNotUpdateRomFsHash(m_bNotUpdateRomFsHash);
+			ncch.SetDev(m_bDev);
 			ncch.SetExtendedHeaderFileName(m_sExtendedHeaderFileName);
 			ncch.SetLogoRegionFileName(m_sLogoRegionFileName);
 			ncch.SetPlainRegionFileName(m_sPlainRegionFileName);
 			ncch.SetExeFsFileName(m_sExeFsFileName);
 			ncch.SetRomFsFileName(m_sRomFsFileName);
-			ncch.SetExtendedHeaderXorFileName(m_sExtendedHeaderXorFileName);
-			ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
-			ncch.SetExeFsTopXorFileName(m_sExeFsTopXorFileName);
-			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
-			ncch.SetExtendedHeaderAutoKey(m_bExtendedHeaderAutoKey);
-			ncch.SetExeFsAutoKey(m_bExeFsAutoKey);
-			ncch.SetExeFsTopAutoKey(m_bExeFsTopAutoKey);
-			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 			bResult = ncch.CreateFile();
 		}
 		break;
@@ -1590,15 +1422,9 @@ bool C3dsTool::createFile()
 			ncch.SetVerbose(m_bVerbose);
 			ncch.SetHeaderFileName(m_sHeaderFileName);
 			ncch.SetEncryptMode(m_nEncryptMode);
-			ncch.SetKey(m_Key);
-			ncch.SetNotUpdateExeFsHash(m_bNotUpdateExeFsHash);
-			ncch.SetNotUpdateRomFsHash(m_bNotUpdateRomFsHash);
+			ncch.SetDev(m_bDev);
 			ncch.SetExeFsFileName(m_sExeFsFileName);
 			ncch.SetRomFsFileName(m_sRomFsFileName);
-			ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
-			ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
-			ncch.SetExeFsAutoKey(m_bExeFsAutoKey);
-			ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
 			bResult = ncch.CreateFile();
 		}
 		break;
@@ -1641,43 +1467,19 @@ bool C3dsTool::createFile()
 bool C3dsTool::encryptFile()
 {
 	bool bResult = false;
-	if (m_nEncryptMode == CNcch::kEncryptModeAesCtr && m_bCounterValid)
+	if (m_nEncryptMode == CNcch::kEncryptModeAesCtr)
 	{
-		bResult = FEncryptAesCtrFile(m_sFileName, m_Key, m_Counter, 0, 0, true, 0);
+		if (m_bKeyValid && m_bCounterValid)
+		{
+			bResult = FEncryptAesCtrFile(m_sFileName, m_Key, m_Counter, 0, 0, true, 0);
+		}
 	}
-	else if (m_nEncryptMode == CNcch::kEncryptModeXor && !m_sXorFileName.empty())
+	else if (m_nEncryptMode == CNcch::kEncryptModeXor)
 	{
-		bResult = FEncryptXorFile(m_sFileName, m_sXorFileName, 0, 0, true, 0);
-	}
-	else if (CNcch::IsCxiFile(m_sFileName))
-	{
-		CNcch ncch;
-		ncch.SetFileName(m_sFileName);
-		ncch.SetVerbose(m_bVerbose);
-		ncch.SetEncryptMode(m_nEncryptMode);
-		ncch.SetKey(m_Key);
-		ncch.SetExtendedHeaderXorFileName(m_sExtendedHeaderXorFileName);
-		ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
-		ncch.SetExeFsTopXorFileName(m_sExeFsTopXorFileName);
-		ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
-		ncch.SetExtendedHeaderAutoKey(m_bExtendedHeaderAutoKey);
-		ncch.SetExeFsAutoKey(m_bExeFsAutoKey);
-		ncch.SetExeFsTopAutoKey(m_bExeFsTopAutoKey);
-		ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
-		bResult = ncch.EncryptFile();
-	}
-	else if (CNcch::IsCfaFile(m_sFileName))
-	{
-		CNcch ncch;
-		ncch.SetFileName(m_sFileName);
-		ncch.SetVerbose(m_bVerbose);
-		ncch.SetEncryptMode(m_nEncryptMode);
-		ncch.SetKey(m_Key);
-		ncch.SetExeFsXorFileName(m_sExeFsXorFileName);
-		ncch.SetRomFsXorFileName(m_sRomFsXorFileName);
-		ncch.SetExeFsAutoKey(m_bExeFsAutoKey);
-		ncch.SetRomFsAutoKey(m_bRomFsAutoKey);
-		bResult = ncch.EncryptFile();
+		if (!m_sXorFileName.empty())
+		{
+			bResult = FEncryptXorFile(m_sFileName, m_sXorFileName);
+		}
 	}
 	return bResult;
 }
@@ -1921,29 +1723,15 @@ int C3dsTool::sample()
 {
 	UPrintf(USTR("sample:\n"));
 	UPrintf(USTR("# extract cci\n"));
-	UPrintf(USTR("3dstool -xvt017f cci 0.cxi 1.cfa 7.cfa input.3ds --header ncsdheader.bin\n\n"));
-	UPrintf(USTR("# extract cxi without encryption\n"));
+	UPrintf(USTR("3dstool -xvt01267f cci 0.cxi 1.cfa 2.cfa 6.cfa 7.cfa input.3ds --header ncsdheader.bin\n\n"));
+	UPrintf(USTR("# extract cxi with auto encryption for dev\n"));
+	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --dev\n\n"));
+	UPrintf(USTR("# extract cxi with auto encryption for retail\n"));
 	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin\n\n"));
-	UPrintf(USTR("# extract cxi with AES-CTR encryption\n"));
-	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --key 00000000000000000000000000000000\n\n"));
-	UPrintf(USTR("# extract cxi with xor encryption\n"));
-	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n"));
-	UPrintf(USTR("# extract cxi with 7.x xor encryption\n"));
-	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --exefs-top-xor 000400000XXXXX00.0.exefs_top.xor --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n"));
-	UPrintf(USTR("# extract cxi with 7.x auto encryption\n"));
-	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --exefs-top-auto-key --romfs-auto-key\n\n"));
-	UPrintf(USTR("# extract cxi with auto encryption\n"));
-	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-auto-key --exefs-auto-key --romfs-auto-key\n\n"));
-	UPrintf(USTR("# extract cxi with auto encryption\n"));
-	UPrintf(USTR("3dstool -xvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-auto-key --exefs-auto-key --exefs-top-auto-key --romfs-auto-key\n\n"));
-	UPrintf(USTR("# extract cfa without encryption\n"));
+	UPrintf(USTR("# extract cfa with auto encryption for dev\n"));
+	UPrintf(USTR("3dstool -xvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --dev\n\n"));
+	UPrintf(USTR("# extract cfa with auto encryption for retail\n"));
 	UPrintf(USTR("3dstool -xvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin\n\n"));
-	UPrintf(USTR("# extract cfa with AES-CTR encryption\n"));
-	UPrintf(USTR("3dstool -xvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --key 00000000000000000000000000000000\n\n"));
-	UPrintf(USTR("# extract cfa with xor encryption\n"));
-	UPrintf(USTR("3dstool -xvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --romfs-xor 000400000XXXXX00.1.romfs.xor\n\n"));
-	UPrintf(USTR("# extract cfa with auto encryption\n"));
-	UPrintf(USTR("3dstool -xvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --romfs-auto-key\n\n"));
 	UPrintf(USTR("# extract exefs without Backward LZ77 uncompress\n"));
 	UPrintf(USTR("3dstool -xvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n"));
 	UPrintf(USTR("# extract exefs with Backward LZ77 uncompress\n"));
@@ -1953,31 +1741,25 @@ int C3dsTool::sample()
 	UPrintf(USTR("# extract banner\n"));
 	UPrintf(USTR("3dstool -xvtf banner banner.bnr --banner-dir banner\n\n"));
 	UPrintf(USTR("# create cci with pad 0xFF\n"));
-	UPrintf(USTR("3dstool -cvt017f cci 0.cxi 1.cfa 7.cfa output.3ds --header ncsdheader.bin\n\n"));
+	UPrintf(USTR("3dstool -cvt01267f cci 0.cxi 1.cfa 2.cfa 6.cfa 7.cfa output.3ds --header ncsdheader.bin\n\n"));
 	UPrintf(USTR("# create cci without pad\n"));
-	UPrintf(USTR("3dstool -cvt017f cci 0.cxi 1.cfa 7.cfa output.3ds --header ncsdheader.bin --not-pad\n\n"));
-	UPrintf(USTR("# create cxi without encryption and calculate hash\n"));
-	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --not-update-exh-hash --not-update-exefs-hash --not-update-romfs-hash\n\n"));
-	UPrintf(USTR("# create cxi with AES-CTR encryption and calculate hash\n"));
-	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --key 00000000000000000000000000000000\n\n"));
-	UPrintf(USTR("# create cxi with xor encryption and calculate hash\n"));
-	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n"));
-	UPrintf(USTR("# create cxi with 7.x xor encryption and calculate hash\n"));
-	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --exefs-top-xor 000400000XXXXX00.0.exefs_top.xor --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n"));
-	UPrintf(USTR("# create cxi with 7.x auto encryption and calculate hash\n"));
-	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-xor 000400000XXXXX00.0.exh.xor --exefs-xor 000400000XXXXX00.0.exefs.xor --exefs-top-auto-key --romfs-auto-key\n\n"));
-	UPrintf(USTR("# create cxi with auto encryption and calculate hash\n"));
-	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-auto-key --exefs-auto-key --romfs-auto-key\n\n"));
-	UPrintf(USTR("# create cxi with auto encryption and calculate hash\n"));
-	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --exh-auto-key --exefs-auto-key --exefs-top-auto-key --romfs-auto-key\n\n"));
-	UPrintf(USTR("# create cfa without encryption and calculate hash\n"));
-	UPrintf(USTR("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --not-update-romfs-hash\n\n"));
-	UPrintf(USTR("# create cfa with AES-CTR encryption and calculate hash\n"));
-	UPrintf(USTR("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --key 00000000000000000000000000000000\n\n"));
-	UPrintf(USTR("# create cfa with xor encryption and calculate hash\n"));
-	UPrintf(USTR("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --romfs-xor 000400000XXXXX00.0.romfs.xor\n\n"));
-	UPrintf(USTR("# create cfa with auto encryption and calculate hash\n"));
-	UPrintf(USTR("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --romfs-auto-key\n\n"));
+	UPrintf(USTR("3dstool -cvt01267f cci 0.cxi 1.cfa 2.cfa 6.cfa 7.cfa output.3ds --header ncsdheader.bin --not-pad\n\n"));
+	UPrintf(USTR("# create cxi without encryption\n"));
+	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --not-encrypt\n\n"));
+	UPrintf(USTR("# create cxi with AES-CTR encryption using fixedkey\n"));
+	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --fixed-key\n\n"));
+	UPrintf(USTR("# create cxi with auto encryption for dev\n"));
+	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin --dev\n\n"));
+	UPrintf(USTR("# create cxi with auto encryption for retail\n"));
+	UPrintf(USTR("3dstool -cvtf cxi 0.cxi --header ncchheader.bin --exh exh.bin --logo logo.darc.lz --plain plain.bin --exefs exefs.bin --romfs romfs.bin\n\n"));
+	UPrintf(USTR("# create cfa without encryption\n"));
+	UPrintf(USTR("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --not-encrypt\n\n"));
+	UPrintf(USTR("# create cfa with AES-CTR encryption using fixedkey\n"));
+	UPrintf(USTR("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --fixed-key\n\n"));
+	UPrintf(USTR("# create cfa with auto encryption for dev\n"));
+	UPrintf(USTR("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin --dev\n\n"));
+	UPrintf(USTR("# create cfa with auto encryption for retail\n"));
+	UPrintf(USTR("3dstool -cvtf cfa 1.cfa --header ncchheader.bin --romfs romfs.bin\n\n"));
 	UPrintf(USTR("# create exefs without Backward LZ77 compress\n"));
 	UPrintf(USTR("3dstool -cvtf exefs exefs.bin --header exefsheader.bin --exefs-dir exefs\n\n"));
 	UPrintf(USTR("# create exefs with Backward LZ77 compress\n"));
@@ -1989,15 +1771,9 @@ int C3dsTool::sample()
 	UPrintf(USTR("# create banner\n"));
 	UPrintf(USTR("3dstool -cvtf banner banner.bnr --banner-dir banner\n\n"));
 	UPrintf(USTR("# encrypt file with AES-CTR encryption, standalone\n"));
-	UPrintf(USTR("3dstool -evf file.bin --key 00000000000000000000000000000000 --counter 00000000000000000000000000000000\n\n"));
+	UPrintf(USTR("3dstool -evf file.bin --key 0123456789ABCDEF0123456789abcdef --counter 0123456789abcdef0123456789ABCDEF\n\n"));
 	UPrintf(USTR("# encrypt file with xor encryption, standalone\n"));
 	UPrintf(USTR("3dstool -evf file.bin --xor xor.bin\n\n"));
-	UPrintf(USTR("# encrypt cxi with auto encryption, standalone\n"));
-	UPrintf(USTR("3dstool -evf 0.cxi --exh-auto-key --exefs-auto-key --romfs-auto-key\n\n"));
-	UPrintf(USTR("# encrypt cxi with auto encryption, standalone\n"));
-	UPrintf(USTR("3dstool -evf 0.cxi --exh-auto-key --exefs-auto-key --exefs-top-auto-key --romfs-auto-key\n\n"));
-	UPrintf(USTR("# encrypt cfa with auto encryption, standalone\n"));
-	UPrintf(USTR("3dstool -evf 1.cfa --romfs-auto-key\n\n"));
 	UPrintf(USTR("# uncompress file with Backward LZ77, standalone\n"));
 	UPrintf(USTR("3dstool -uvf code.bin --compress-type blz --compress-out code.bin\n\n"));
 	UPrintf(USTR("# compress file with Backward LZ77, standalone\n"));

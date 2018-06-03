@@ -61,7 +61,9 @@ public:
 	{
 		FixedCryptoKey,
 		NoMountRomFs,
-		NoEncrypto
+		NoEncrypto,
+
+		kFlagExtKey = 5
 	};
 	enum FormType
 	{
@@ -73,8 +75,17 @@ public:
 	enum EEncryptMode
 	{
 		kEncryptModeNone,
+		kEncryptModeNotEncrypt,
+		kEncryptModeFixedKey,
+		kEncryptModeAuto,
 		kEncryptModeAesCtr,
 		kEncryptModeXor
+	};
+	enum EEncryptKeyIndex
+	{
+		kEncryptKeyIndexOld,
+		kEncryptKeyIndexNew,
+		kEncryptKeyIndexCount
 	};
 	enum EAesCtrType
 	{
@@ -98,32 +109,20 @@ public:
 	void SetVerbose(bool a_bVerbose);
 	void SetHeaderFileName(const UString& a_sHeaderFileName);
 	void SetEncryptMode(int a_nEncryptMode);
-	void SetKey(const CBigNum& a_Key);
+	void SetDev(bool a_bDev);
 	void SetDownloadBegin(n32 a_nDownloadBegin);
 	void SetDownloadEnd(n32 a_nDownloadEnd);
-	void SetNotUpdateExtendedHeaderHash(bool a_bNotUpdateExtendedHeaderHash);
-	void SetNotUpdateExeFsHash(bool a_bNotUpdateExeFsHash);
-	void SetNotUpdateRomFsHash(bool a_bNotUpdateRomFsHash);
 	void SetExtendedHeaderFileName(const UString& a_sExtendedHeaderFileName);
 	void SetLogoRegionFileName(const UString& a_sLogoRegionFileName);
 	void SetPlainRegionFileName(const UString& a_sPlainRegionFileName);
 	void SetExeFsFileName(const UString& a_sExeFsFileName);
 	void SetRomFsFileName(const UString& a_sRomFsFileName);
-	void SetExtendedHeaderXorFileName(const UString& a_sExtendedHeaderXorFileName);
-	void SetExeFsXorFileName(const UString& a_sExeFsXorFileName);
-	void SetExeFsTopXorFileName(const UString& a_sExeFsTopXorFileName);
-	void SetRomFsXorFileName(const UString& a_sRomFsXorFileName);
-	void SetExtendedHeaderAutoKey(bool a_bExtendedHeaderAutoKey);
-	void SetExeFsAutoKey(bool a_bExeFsAutoKey);
-	void SetExeFsTopAutoKey(bool a_bExeFsTopAutoKey);
-	void SetRomFsAutoKey(bool a_bRomFsAutoKey);
 	void SetFilePtr(FILE* a_fpNcch);
 	void SetOffset(n64 a_nOffset);
 	SNcchHeader& GetNcchHeader();
 	n64* GetOffsetAndSize();
 	bool ExtractFile();
 	bool CreateFile();
-	bool EncryptFile();
 	bool Download(bool a_bReadExtKey = true);
 	void Analyze();
 	static bool IsCxiFile(const UString& a_sFileName);
@@ -151,37 +150,31 @@ private:
 	void clearExeFs();
 	void clearRomFs();
 	void alignFileSize(n64 a_nAlignment);
-	bool encryptAesCtrFile(n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const UChar* a_pType);
-	bool encryptXorFile(const UString& a_sXorFileName, n64 a_nOffset, n64 a_nSize, n64 a_nXorOffset, const UChar* a_pType);
 	void onHttpsGetExtKey(CUrl* a_pUrl, void* a_pUserData);
-	static const CBigNum s_Slot0x18KeyX;
-	static const CBigNum s_Slot0x1BKeyX;
-	static const CBigNum s_Slot0x25KeyX;
-	static const CBigNum s_Slot0x2CKeyX;
+	static const CBigNum s_DevSlot0x18KeyX;
+	static const CBigNum s_DevSlot0x1BKeyX;
+	static const CBigNum s_DevSlot0x25KeyX;
+	static const CBigNum s_DevSlot0x2CKeyX;
+	static const CBigNum s_RetailSlot0x18KeyX;
+	static const CBigNum s_RetailSlot0x1BKeyX;
+	static const CBigNum s_RetailSlot0x25KeyX;
+	static const CBigNum s_RetailSlot0x2CKeyX;
+	static const CBigNum s_SystemFixedKey;
+	static const CBigNum s_NormalFixedKey;
 	C3dsTool::EFileType m_eFileType;
 	UString m_sFileName;
 	bool m_bVerbose;
 	UString m_sHeaderFileName;
 	int m_nEncryptMode;
-	CBigNum m_Key[2];
+	bool m_bDev;
+	CBigNum m_Key[kEncryptKeyIndexCount];
 	n32 m_nDownloadBegin;
 	n32 m_nDownloadEnd;
-	bool m_bNotUpdateExtendedHeaderHash;
-	bool m_bNotUpdateExeFsHash;
-	bool m_bNotUpdateRomFsHash;
 	UString m_sExtendedHeaderFileName;
 	UString m_sLogoRegionFileName;
 	UString m_sPlainRegionFileName;
 	UString m_sExeFsFileName;
 	UString m_sRomFsFileName;
-	UString m_sExtendedHeaderXorFileName;
-	UString m_sExeFsXorFileName;
-	UString m_sExeFsTopXorFileName;
-	UString m_sRomFsXorFileName;
-	bool m_bExtendedHeaderAutoKey;
-	bool m_bExeFsAutoKey;
-	bool m_bExeFsTopAutoKey;
-	bool m_bRomFsAutoKey;
 	FILE* m_fpNcch;
 	n64 m_nOffset;
 	SNcchHeader m_NcchHeader;
@@ -191,7 +184,6 @@ private:
 	map<string, string> m_mExtKey;
 	int m_nKeyIndex;
 	CBigNum m_Counter;
-	UString m_sXorFileName;
 };
 
 #endif	// NCCH_H_

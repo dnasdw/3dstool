@@ -57,16 +57,16 @@ An all-in-one tool for extracting/creating 3ds roms.
 
 - make 64-bit version
 ~~~
-mkdir project
-cd project
+mkdir build
+cd build
 cmake -DUSE_DEP=OFF ..
 make
 ~~~
 
 - make 32-bit version
 ~~~
-mkdir project
-cd project
+mkdir build
+cd build
 cmake -DBUILD64=OFF -DUSE_DEP=OFF ..
 make
 ~~~

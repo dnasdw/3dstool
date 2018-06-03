@@ -27,47 +27,6 @@ void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const CBigNum& a_Key,
 	delete[] pInBuffer;
 }
 
-bool FEncryptXorCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const UString& a_sXorFileName, n64 a_nOffset, n64 a_nSize)
-{
-	FILE* fpXor = UFopen(a_sXorFileName.c_str(), USTR("rb"));
-	if (fpXor == nullptr)
-	{
-		return false;
-	}
-	Fseek(fpXor, 0, SEEK_END);
-	n64 nXorSize = Ftell(fpXor);
-	if (nXorSize < a_nSize)
-	{
-		fclose(fpXor);
-		UPrintf(USTR("ERROR: xor file %") PRIUS USTR(" size less than data size\n\n"), a_sXorFileName.c_str());
-		return false;
-	}
-	Fseek(fpXor, 0, SEEK_SET);
-	const n64 nBufferSize = 0x100000;
-	u8* pDataBuffer = new u8[nBufferSize];
-	u8* pXorBuffer = new u8[nBufferSize];
-	Fseek(a_fpSrc, a_nOffset, SEEK_SET);
-	while (a_nSize > 0)
-	{
-		n64 nSize = a_nSize > nBufferSize ? nBufferSize : a_nSize;
-		fread(pDataBuffer, 1, static_cast<size_t>(nSize), a_fpSrc);
-		fread(pXorBuffer, 1, static_cast<size_t>(nSize), fpXor);
-		u64* pDataBuffer64 = reinterpret_cast<u64*>(pDataBuffer);
-		u64* pXorBuffer64 = reinterpret_cast<u64*>(pXorBuffer);
-		n64 nXorCount = Align(nSize, 8) / 8;
-		for (n64 i = 0; i < nXorCount; i++)
-		{
-			*pDataBuffer64++ ^= *pXorBuffer64++;
-		}
-		fwrite(pDataBuffer, 1, static_cast<size_t>(nSize), a_fpDest);
-		a_nSize -= nSize;
-	}
-	delete[] pXorBuffer;
-	delete[] pDataBuffer;
-	fclose(fpXor);
-	return true;
-}
-
 bool FEncryptAesCtrFile(const UString& a_sDataFileName, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset)
 {
 	FILE* fpData = UFopen(a_sDataFileName.c_str(), USTR("rb+"));
@@ -127,7 +86,7 @@ bool FEncryptAesCtrFile(const UString& a_sDataFileName, const CBigNum& a_Key, co
 	return true;
 }
 
-bool FEncryptXorFile(const UString& a_sDataFileName, const UString& a_sXorFileName, n64 a_nDataOffset, n64 a_nDataSize, bool a_bDataFileAll, n64 a_nXorOffset)
+bool FEncryptXorFile(const UString& a_sDataFileName, const UString& a_sXorFileName)
 {
 	FILE* fpData = UFopen(a_sDataFileName.c_str(), USTR("rb+"));
 	if (fpData == nullptr)
@@ -136,22 +95,6 @@ bool FEncryptXorFile(const UString& a_sDataFileName, const UString& a_sXorFileNa
 	}
 	Fseek(fpData, 0, SEEK_END);
 	n64 nDataSize = Ftell(fpData);
-	if (nDataSize < a_nDataOffset)
-	{
-		fclose(fpData);
-		UPrintf(USTR("ERROR: data file %") PRIUS USTR(" size less than data offset\n\n"), a_sDataFileName.c_str());
-		return false;
-	}
-	if (a_bDataFileAll)
-	{
-		a_nDataSize = nDataSize - a_nDataOffset;
-	}
-	if (nDataSize < a_nDataOffset + a_nDataSize)
-	{
-		fclose(fpData);
-		UPrintf(USTR("ERROR: data file %") PRIUS USTR(" size less than data offset + data size\n\n"), a_sDataFileName.c_str());
-		return false;
-	}
 	FILE* fpXor = UFopen(a_sXorFileName.c_str(), USTR("rb"));
 	if (fpXor == nullptr)
 	{
@@ -160,22 +103,22 @@ bool FEncryptXorFile(const UString& a_sDataFileName, const UString& a_sXorFileNa
 	}
 	Fseek(fpXor, 0, SEEK_END);
 	n64 nXorSize = Ftell(fpXor);
-	if (nXorSize - a_nXorOffset < a_nDataSize)
+	if (nXorSize < nDataSize)
 	{
 		fclose(fpXor);
 		fclose(fpData);
 		UPrintf(USTR("ERROR: xor file %") PRIUS USTR(" size less than data size\n\n"), a_sXorFileName.c_str());
 		return false;
 	}
-	Fseek(fpXor, a_nXorOffset, SEEK_SET);
+	Fseek(fpXor, 0, SEEK_SET);
 	n64 nIndex = 0;
 	const n64 nBufferSize = 0x100000;
 	u8* pDataBuffer = new u8[nBufferSize];
 	u8* pXorBuffer = new u8[nBufferSize];
-	while (a_nDataSize > 0)
+	while (nDataSize > 0)
 	{
-		n64 nSize = a_nDataSize > nBufferSize ? nBufferSize : a_nDataSize;
-		Fseek(fpData, a_nDataOffset + nIndex * nBufferSize, SEEK_SET);
+		n64 nSize = nDataSize > nBufferSize ? nBufferSize : nDataSize;
+		Fseek(fpData, nIndex * nBufferSize, SEEK_SET);
 		fread(pDataBuffer, 1, static_cast<size_t>(nSize), fpData);
 		fread(pXorBuffer, 1, static_cast<size_t>(nSize), fpXor);
 		u64* pDataBuffer64 = reinterpret_cast<u64*>(pDataBuffer);
@@ -185,9 +128,9 @@ bool FEncryptXorFile(const UString& a_sDataFileName, const UString& a_sXorFileNa
 		{
 			*pDataBuffer64++ ^= *pXorBuffer64++;
 		}
-		Fseek(fpData, a_nDataOffset + nIndex * nBufferSize, SEEK_SET);
+		Fseek(fpData, nIndex * nBufferSize, SEEK_SET);
 		fwrite(pDataBuffer, 1, static_cast<size_t>(nSize), fpData);
-		a_nDataSize -= nSize;
+		nDataSize -= nSize;
 		nIndex++;
 	}
 	delete[] pXorBuffer;
@@ -231,52 +174,4 @@ void FEncryptAesCtrData(void* a_pData, const CBigNum& a_Key, const CBigNum& a_Co
 			}
 		}
 	}
-}
-
-bool FEncryptXorData(void* a_pData, const UString& a_sXorFileName, n64 a_nDataSize, n64 a_nXorOffset)
-{
-	FILE* fpXor = UFopen(a_sXorFileName.c_str(), USTR("rb"));
-	if (fpXor == nullptr)
-	{
-		return false;
-	}
-	Fseek(fpXor, 0, SEEK_END);
-	n64 nXorSize = Ftell(fpXor);
-	if (nXorSize - a_nXorOffset < a_nDataSize)
-	{
-		fclose(fpXor);
-		UPrintf(USTR("ERROR: xor file %") PRIUS USTR(" size less than data size\n\n"), a_sXorFileName.c_str());
-		return false;
-	}
-	Fseek(fpXor, a_nXorOffset, SEEK_SET);
-	n64 nIndex = 0;
-	const n64 nBufferSize = 0x100000;
-	u8* pXorBuffer = new u8[nBufferSize];
-	while (a_nDataSize > 0)
-	{
-		n64 nSize = a_nDataSize > nBufferSize ? nBufferSize : a_nDataSize;
-		fread(pXorBuffer, 1, static_cast<size_t>(nSize), fpXor);
-		u32* pDataBuffer32 = reinterpret_cast<u32*>(static_cast<u8*>(a_pData) + nIndex * nBufferSize);
-		u32* pXorBuffer32 = reinterpret_cast<u32*>(pXorBuffer);
-		n64 nXorCount = nSize / 4;
-		for (n64 i = 0; i < nXorCount; i++)
-		{
-			*pDataBuffer32++ ^= *pXorBuffer32++;
-		}
-		int nRemain = nSize % 4;
-		if (nRemain != 0)
-		{
-			u8* pDataBuffer8 = reinterpret_cast<u8*>(pDataBuffer32);
-			u8* pXorBuffer8 = reinterpret_cast<u8*>(pXorBuffer32);
-			for (int i = 0; i < nRemain; i++)
-			{
-				*pDataBuffer8++ ^= *pXorBuffer8++;
-			}
-		}
-		a_nDataSize -= nSize;
-		nIndex++;
-	}
-	delete[] pXorBuffer;
-	fclose(fpXor);
-	return true;
 }
