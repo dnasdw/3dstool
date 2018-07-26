@@ -1010,12 +1010,12 @@ bool CRomFs::writeBufferFromFile(int a_nLevel, const UString& a_sPath, n64 a_nSi
 		UPrintf(USTR("load: %") PRIUS USTR("\n"), a_sPath.c_str());
 	}
 	const n64 nBufferSize = 0x100000;
-	static u8 buffer[nBufferSize];
+	static u8 uBuffer[nBufferSize];
 	while (a_nSize > 0)
 	{
 		n64 nSize = a_nSize > nBufferSize ? nBufferSize : a_nSize;
-		fread(buffer, 1, static_cast<size_t>(nSize), fp);
-		writeBuffer(a_nLevel, buffer, nSize);
+		fread(uBuffer, 1, static_cast<size_t>(nSize), fp);
+		writeBuffer(a_nLevel, uBuffer, nSize);
 		a_nSize -= nSize;
 	}
 	fclose(fp);

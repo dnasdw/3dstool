@@ -20,9 +20,9 @@ SET /P version=<"%rootdir%version.txt"
 RD /S /Q "%rootdir%%version%"
 MD "%rootdir%%version%"
 XCOPY "%rootdir%..\%version%" "%rootdir%%version%" /S /Y
-RD /S /Q "%rootdir%project"
-MD "%rootdir%project"
-CD /D "%rootdir%project"
+RD /S /Q "%rootdir%build"
+MD "%rootdir%build"
+CD /D "%rootdir%build"
 cmake -C "%rootdir%CMakeLists-MSVC.txt" -DBUILD_CURL_EXE=OFF -DBUILD_TESTING=OFF -DCURL_STATICLIB=ON -DCURL_DISABLE_LDAP=ON -DCURL_ZLIB=OFF -DCMAKE_INSTALL_PREFIX="%prefix%" -G %GENERATOR% "%rootdir%%version%"
 cmake "%rootdir%%version%"
 cmake --build . --target install --config Release --clean-first
@@ -32,7 +32,7 @@ MD "%rootdir%..\..\lib\%target%%target_lib_suffix%"
 COPY /Y "%prefix%\lib\libcurl.lib" "%rootdir%..\..\lib\%target%%target_lib_suffix%"
 CD /D "%cwdir%"
 RD /S /Q "%rootdir%%version%"
-RD /S /Q "%rootdir%project"
+RD /S /Q "%rootdir%build"
 RD /S /Q "%prefix%"
 GOTO :EOF
 

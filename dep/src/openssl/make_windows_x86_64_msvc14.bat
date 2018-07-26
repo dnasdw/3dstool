@@ -1,9 +1,11 @@
 IF DEFINED VS140COMNTOOLS (
   SET VCVARSALL="%VS140COMNTOOLS%..\..\VC\vcvarsall.bat"
-  SET target_lib_suffix=_msvc14
+) ELSE (
+  FOR /F "tokens=1,2,*" %%I IN ('REG QUERY HKLM\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7 /v 15.0 ^| FIND "15.0"') DO SET VCVARSALL="%%~KVC\Auxiliary\Build\vcvarsall.bat"
 )
+SET target_lib_suffix=_msvc14
 IF NOT DEFINED VCVARSALL (
-  ECHO Can not find VC2015 installed!
+  ECHO Can not find VC2015 or VC2017 installed!
   GOTO ERROR
 )
 CALL %VCVARSALL% amd64

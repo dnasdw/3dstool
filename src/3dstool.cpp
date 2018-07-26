@@ -313,16 +313,16 @@ int C3dsTool::CheckOptions()
 					return 1;
 				}
 			}
-			if (m_eFileType == kFileTypeCci)
+			switch (m_eFileType)
 			{
+			case kFileTypeCci:
 				if (m_mNcchFileName[0].empty())
 				{
 					UPrintf(USTR("ERROR: no --partition0 option\n\n"));
 					return 1;
 				}
-			}
-			else if (m_eFileType == kFileTypeCxi)
-			{
+				break;
+			case kFileTypeCxi:
 				if (m_sExtendedHeaderFileName.empty() || m_sExeFsFileName.empty())
 				{
 					UPrintf(USTR("ERROR: no --extendedheader or --exefs option\n\n"));
@@ -333,9 +333,8 @@ int C3dsTool::CheckOptions()
 					UPrintf(USTR("ERROR: encrypt error\n\n"));
 					return 1;
 				}
-			}
-			else if (m_eFileType == kFileTypeCfa)
-			{
+				break;
+			case kFileTypeCfa:
 				if (m_sRomFsFileName.empty())
 				{
 					UPrintf(USTR("ERROR: no --romfs option\n\n"));
@@ -346,30 +345,30 @@ int C3dsTool::CheckOptions()
 					UPrintf(USTR("ERROR: encrypt error\n\n"));
 					return 1;
 				}
-			}
-			else if (m_eFileType == kFileTypeExeFs)
-			{
+				break;
+			case kFileTypeExeFs:
 				if (m_sExeFsDirName.empty())
 				{
 					UPrintf(USTR("ERROR: no --exefs-dir option\n\n"));
 					return 1;
 				}
-			}
-			else if (m_eFileType == kFileTypeRomFs)
-			{
+				break;
+			case kFileTypeRomFs:
 				if (m_sRomFsDirName.empty())
 				{
 					UPrintf(USTR("ERROR: no --romfs-dir option\n\n"));
 					return 1;
 				}
-			}
-			else if (m_eFileType == kFileTypeBanner)
-			{
+				break;
+			case kFileTypeBanner:
 				if (m_sBannerDirName.empty())
 				{
 					UPrintf(USTR("ERROR: no --banner-dir option\n\n"));
 					return 1;
 				}
+				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -1589,8 +1588,8 @@ bool C3dsTool::uncompressFile()
 bool C3dsTool::compressFile()
 {
 	FILE* fp = UFopen(m_sFileName.c_str(), USTR("rb"));
-	bool bReuslt = fp != nullptr;
-	if (bReuslt)
+	bool bResult = fp != nullptr;
+	if (bResult)
 	{
 		Fseek(fp, 0, SEEK_END);
 		u32 uUncompressedSize = static_cast<u32>(Ftell(fp));
@@ -1625,34 +1624,34 @@ bool C3dsTool::compressFile()
 		switch (m_eCompressType)
 		{
 		case kCompressTypeBlz:
-			bReuslt = CBackwardLz77::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize);
+			bResult = CBackwardLz77::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize);
 			break;
 		case kCompressTypeLz:
-			bReuslt = CLz77::CompressLz(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
+			bResult = CLz77::CompressLz(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
 			break;
 		case kCompressTypeLzEx:
-			bReuslt = CLz77::CompressLzEx(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
+			bResult = CLz77::CompressLzEx(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
 			break;
 		case kCompressTypeH4:
-			bReuslt = CHuffman::CompressH4(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
+			bResult = CHuffman::CompressH4(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
 			break;
 		case kCompressTypeH8:
-			bReuslt = CHuffman::CompressH8(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
+			bResult = CHuffman::CompressH8(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
 			break;
 		case kCompressTypeRl:
-			bReuslt = CRunLength::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
+			bResult = CRunLength::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign);
 			break;
 		case kCompressTypeYaz0:
-			bReuslt = CYaz0::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign, m_nYaz0Align);
+			bResult = CYaz0::Compress(pUncompressed, uUncompressedSize, pCompressed, uCompressedSize, m_nCompressAlign, m_nYaz0Align);
 			break;
 		default:
 			break;
 		}
-		if (bReuslt)
+		if (bResult)
 		{
 			fp = UFopen(m_sCompressOutFileName.c_str(), USTR("wb"));
-			bReuslt = fp != nullptr;
-			if (bReuslt)
+			bResult = fp != nullptr;
+			if (bResult)
 			{
 				fwrite(pCompressed, 1, uCompressedSize, fp);
 				fclose(fp);
@@ -1665,7 +1664,7 @@ bool C3dsTool::compressFile()
 		delete[] pCompressed;
 		delete[] pUncompressed;
 	}
-	return bReuslt;
+	return bResult;
 }
 
 bool C3dsTool::trimFile()

@@ -1,6 +1,5 @@
 #include "3dscrypt.h"
 #include <openssl/aes.h>
-#include <openssl/crypto.h>
 #include <openssl/modes.h>
 
 void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const CBigNum& a_Key, const CBigNum& a_Counter, n64 a_nSrcOffset, n64 a_nSize)
@@ -21,7 +20,7 @@ void FEncryptAesCtrCopyFile(FILE* a_fpDest, FILE* a_fpSrc, const CBigNum& a_Key,
 	{
 		n64 nSize = a_nSize > nBufferSize ? nBufferSize : a_nSize;
 		fread(pInBuffer, 1, static_cast<size_t>(nSize), a_fpSrc);
-		CRYPTO_ctr128_encrypt(pInBuffer, pOutBuffer, static_cast<size_t>(nSize), &key, uCounter, uEcountBuf, &uNum, (block128_f)AES_encrypt);
+		CRYPTO_ctr128_encrypt(pInBuffer, pOutBuffer, static_cast<size_t>(nSize), &key, uCounter, uEcountBuf, &uNum, reinterpret_cast<block128_f>(AES_encrypt));
 		fwrite(pOutBuffer, 1, static_cast<size_t>(nSize), a_fpDest);
 		a_nSize -= nSize;
 	}
@@ -75,7 +74,7 @@ bool FEncryptAesCtrFile(const UString& a_sDataFileName, const CBigNum& a_Key, co
 		n64 nSize = nXorOffset + a_nDataSize > nBufferSize ? nBufferSize : nXorOffset + a_nDataSize;
 		Fseek(fpData, a_nDataOffset + nIndex * nBufferSize - (a_nXorOffset - nXorOffset), SEEK_SET);
 		fread(pInBuffer + nXorOffset, 1, static_cast<size_t>(nSize - nXorOffset), fpData);
-		CRYPTO_ctr128_encrypt(pInBuffer, pOutBuffer, static_cast<size_t>(nSize), &key, uCounter, uEcountBuf, &uNum, (block128_f)AES_encrypt);
+		CRYPTO_ctr128_encrypt(pInBuffer, pOutBuffer, static_cast<size_t>(nSize), &key, uCounter, uEcountBuf, &uNum, reinterpret_cast<block128_f>(AES_encrypt));
 		Fseek(fpData, a_nDataOffset + nIndex * nBufferSize - (a_nXorOffset - nXorOffset), SEEK_SET);
 		fwrite(pOutBuffer + nXorOffset, 1, static_cast<size_t>(nSize - nXorOffset), fpData);
 		a_nDataSize -= nSize - nXorOffset;
@@ -159,7 +158,7 @@ void FEncryptAesCtrData(void* a_pData, const CBigNum& a_Key, const CBigNum& a_Co
 	{
 		if (a_nXorOffset == 0)
 		{
-			CRYPTO_ctr128_encrypt(reinterpret_cast<u8*>(a_pData), reinterpret_cast<u8*>(a_pData), static_cast<size_t>(a_nDataSize), &key, uCounter, uEcountBuf, &uNum, (block128_f)AES_encrypt);
+			CRYPTO_ctr128_encrypt(reinterpret_cast<u8*>(a_pData), reinterpret_cast<u8*>(a_pData), static_cast<size_t>(a_nDataSize), &key, uCounter, uEcountBuf, &uNum, reinterpret_cast<block128_f>(AES_encrypt));
 		}
 		else
 		{
@@ -167,12 +166,12 @@ void FEncryptAesCtrData(void* a_pData, const CBigNum& a_Key, const CBigNum& a_Co
 			u8 uBuffer[nBufferSize] = {};
 			n64 nSize = a_nXorOffset + a_nDataSize > nBufferSize ? nBufferSize : a_nXorOffset + a_nDataSize;
 			memcpy(uBuffer + a_nXorOffset, a_pData, static_cast<size_t>(nSize - a_nXorOffset));
-			CRYPTO_ctr128_encrypt(uBuffer, uBuffer, static_cast<size_t>(nSize), &key, uCounter, uEcountBuf, &uNum, (block128_f)AES_encrypt);
+			CRYPTO_ctr128_encrypt(uBuffer, uBuffer, static_cast<size_t>(nSize), &key, uCounter, uEcountBuf, &uNum, reinterpret_cast<block128_f>(AES_encrypt));
 			memcpy(a_pData, uBuffer + a_nXorOffset, static_cast<size_t>(nSize - a_nXorOffset));
 			a_nDataSize -= nSize - a_nXorOffset;
 			if (a_nDataSize > 0)
 			{
-				CRYPTO_ctr128_encrypt(reinterpret_cast<u8*>(a_pData) + (nSize - a_nXorOffset), reinterpret_cast<u8*>(a_pData) + (nSize - a_nXorOffset), static_cast<size_t>(a_nDataSize), &key, uCounter, uEcountBuf, &uNum, (block128_f)AES_encrypt);
+				CRYPTO_ctr128_encrypt(reinterpret_cast<u8*>(a_pData) + (nSize - a_nXorOffset), reinterpret_cast<u8*>(a_pData) + (nSize - a_nXorOffset), static_cast<size_t>(a_nDataSize), &key, uCounter, uEcountBuf, &uNum, reinterpret_cast<block128_f>(AES_encrypt));
 			}
 		}
 	}

@@ -119,7 +119,7 @@ public:
 	};
 	CRomFs();
 	~CRomFs();
-	void SetFileName(const UString& a_pFileName);
+	void SetFileName(const UString& a_sFileName);
 	void SetVerbose(bool a_bVerbose);
 	void SetRomFsDirName(const UString& a_sRomFsDirName);
 	void SetRomFsFileName(const UString& a_sRomFsFileName);
