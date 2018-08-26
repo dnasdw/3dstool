@@ -962,13 +962,13 @@ bool CNcch::createRomFs()
 		delete[] pBuffer;
 		m_NcchHeader.Ncch.RomFsOffset = m_NcchHeader.Ncch.ContentSize;
 		m_NcchHeader.Ncch.RomFsSize = static_cast<u32>(Align(nFileSize, m_nMediaUnitSize) / m_nMediaUnitSize);
-		calculateCounter(kAesCtrTypeRomFs);
-		if (m_nEncryptMode == kEncryptModeNone)
+		if (m_nEncryptMode == kEncryptModeNotEncrypt)
 		{
 			CopyFile(m_fpNcch, fp, 0, nFileSize);
 		}
 		else
 		{
+			calculateCounter(kAesCtrTypeRomFs);
 			FEncryptAesCtrCopyFile(m_fpNcch, fp, m_Key[kEncryptKeyIndexNew], m_Counter, 0, nFileSize);
 		}
 		fclose(fp);
