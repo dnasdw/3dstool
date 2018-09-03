@@ -162,51 +162,62 @@ bool CNcch::ExtractFile()
 	{
 		bResult = false;
 	}
-	if (m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] != 0)
+	if (!m_sExeFsFileName.empty())
 	{
-		Fseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
-		ExeFsSuperBlock exeFsSuperBlock;
-		fread(&exeFsSuperBlock, sizeof(exeFsSuperBlock), 1, m_fpNcch);
-		calculateCounter(kAesCtrTypeExeFs);
-		if (m_nEncryptMode == kEncryptModeFixedKey || m_nEncryptMode == kEncryptModeAuto)
-		{
-			FEncryptAesCtrData(&exeFsSuperBlock, m_Key[kEncryptKeyIndexOld], m_Counter, sizeof(exeFsSuperBlock), 0);
-		}
-		if (CExeFs::IsExeFsSuperBlock(exeFsSuperBlock))
+		if (m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] != 0)
 		{
 			Fseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
-			u8* pExeFs = new u8[static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1])];
-			fread(pExeFs, 1, static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1]), m_fpNcch);
+			ExeFsSuperBlock exeFsSuperBlock;
+			fread(&exeFsSuperBlock, sizeof(exeFsSuperBlock), 1, m_fpNcch);
+			calculateCounter(kAesCtrTypeExeFs);
 			if (m_nEncryptMode == kEncryptModeFixedKey || m_nEncryptMode == kEncryptModeAuto)
 			{
-				n64 nXorOffset = 0;
-				FEncryptAesCtrData(pExeFs + nXorOffset, m_Key[kEncryptKeyIndexOld], m_Counter, sizeof(exeFsSuperBlock), nXorOffset);
-				nXorOffset += sizeof(exeFsSuperBlock);
-				FEncryptAesCtrData(pExeFs + nXorOffset, m_Key[kEncryptKeyIndexNew], m_Counter, exeFsSuperBlock.m_Header[0].size, nXorOffset);
-				nXorOffset += exeFsSuperBlock.m_Header[0].size;
-				FEncryptAesCtrData(pExeFs + nXorOffset, m_Key[kEncryptKeyIndexOld], m_Counter, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] - nXorOffset, nXorOffset);
+				FEncryptAesCtrData(&exeFsSuperBlock, m_Key[kEncryptKeyIndexOld], m_Counter, sizeof(exeFsSuperBlock), 0);
 			}
-			FILE* fp = UFopen(m_sExeFsFileName.c_str(), USTR("wb"));
-			if (fp == nullptr)
+			if (CExeFs::IsExeFsSuperBlock(exeFsSuperBlock))
 			{
-				bResult = false;
+				Fseek(m_fpNcch, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], SEEK_SET);
+				u8* pExeFs = new u8[static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1])];
+				fread(pExeFs, 1, static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1]), m_fpNcch);
+				if (m_nEncryptMode == kEncryptModeFixedKey || m_nEncryptMode == kEncryptModeAuto)
+				{
+					n64 nXorOffset = 0;
+					FEncryptAesCtrData(pExeFs + nXorOffset, m_Key[kEncryptKeyIndexOld], m_Counter, sizeof(exeFsSuperBlock), nXorOffset);
+					nXorOffset += sizeof(exeFsSuperBlock);
+					FEncryptAesCtrData(pExeFs + nXorOffset, m_Key[kEncryptKeyIndexNew], m_Counter, exeFsSuperBlock.m_Header[0].size, nXorOffset);
+					nXorOffset += exeFsSuperBlock.m_Header[0].size;
+					FEncryptAesCtrData(pExeFs + nXorOffset, m_Key[kEncryptKeyIndexOld], m_Counter, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] - nXorOffset, nXorOffset);
+				}
+				FILE* fp = UFopen(m_sExeFsFileName.c_str(), USTR("wb"));
+				if (fp == nullptr)
+				{
+					bResult = false;
+				}
+				else
+				{
+					if (m_bVerbose)
+					{
+						UPrintf(USTR("save: %") PRIUS USTR("\n"), m_sExeFsFileName.c_str());
+					}
+					fwrite(pExeFs, 1, static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1]), fp);
+					fclose(fp);
+				}
+				delete[] pExeFs;
 			}
 			else
 			{
-				if (m_bVerbose)
-				{
-					UPrintf(USTR("save: %") PRIUS USTR("\n"), m_sExeFsFileName.c_str());
-				}
-				fwrite(pExeFs, 1, static_cast<size_t>(m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1]), fp);
-				fclose(fp);
+				bResult = false;
+				extractFile(m_sExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], true, USTR("exefs"));
 			}
-			delete[] pExeFs;
 		}
-		else
+		else if (m_bVerbose)
 		{
-			bResult = false;
-			extractFile(m_sExeFsFileName, m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2], m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1], true, USTR("exefs"));
+			UPrintf(USTR("INFO: %") PRIUS USTR(" is not exists, %") PRIUS USTR(" will not be create\n"), USTR("exefs"), m_sExeFsFileName.c_str());
 		}
+	}
+	else if (m_nOffsetAndSize[kOffsetSizeIndexExeFs * 2 + 1] != 0 && m_bVerbose)
+	{
+		UPrintf(USTR("INFO: %") PRIUS USTR(" is not extract\n"), USTR("exefs"));
 	}
 	m_nKeyIndex = kEncryptKeyIndexNew;
 	calculateCounter(kAesCtrTypeRomFs);
