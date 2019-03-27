@@ -1,5 +1,4 @@
 #include "code.h"
-#include <capstone.h>
 
 CCode::CCode()
 	: m_bVerbose(false)

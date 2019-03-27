@@ -2,7 +2,7 @@
 #define CODE_H_
 
 #include "utility.h"
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 class CCode
 {
