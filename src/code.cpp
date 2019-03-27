@@ -314,6 +314,71 @@ void CCode::findGetRegionFunctionArm(SFunction& a_Function)
 			}
 		}
 	}
+	for (n32 i = 0; i < m_nArmCount; i++)
+	{
+		// mov r0, #0x20000
+		if (m_pArm[i] == 0xE3A00802)
+		{
+			SFunction function = { i, i };
+			findFunctionArm(function);
+			for (n32 j = i + 1; j < function.Last; j++)
+			{
+				// nn::svc::SendSyncRequest
+				m_uDisasmCount = cs_disasm(m_uHandle, reinterpret_cast<u8*>(m_pArm + j), 4, 0x100000 + j * 4, 0, &m_pInsn);
+				if (m_uDisasmCount > 0)
+				{
+					if (strcmp(m_pInsn->mnemonic, "bl") == 0 && m_pInsn->detail != nullptr)
+					{
+						cs_arm* pDetail = &m_pInsn->detail->arm;
+						if (pDetail->op_count == 1)
+						{
+							cs_arm_op* pArmOp0 = &pDetail->operands[0];
+							if (pArmOp0->type == ARM_OP_IMM && pArmOp0->imm >= 0x100000 && pArmOp0->imm + 8 <= 0x100000 + m_nArmCount * 4 && pArmOp0->imm % 4 == 0)
+							{
+								n32 nFunction = (pArmOp0->imm - 0x100000) / 4;
+								// svc 0x32
+								// bx lr
+								if (m_pArm[nFunction] == 0xEF000032 && m_pArm[nFunction + 1] == 0xE12FFF1E)
+								{
+									vFunction.push_back(function);
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	// nn::cfg::CTR::detail::Initialize
+	for (n32 i = 0; i < m_nArmCount; i++)
+	{
+		// nn::srv::Initialize
+		// nn::Result
+		// Level	-5 LEVEL_PERMANENT
+		// Summary	5 SUMMARY_INVALID_STATE
+		// Module	64 MODULE_NN_CFG
+		if (m_pArm[i] == 0xD8A103F9)
+		{
+			for (n32 j = i - 4; j < i + 4; j++)
+			{
+				if (j >= 0 && j < m_nArmCount)
+				{
+					for (vector<SFunction>::iterator it = vFunction.begin(); it != vFunction.end(); ++it)
+					{
+						SFunction& function = *it;
+						// nn::cfg::CTR::detail::IpcUser::s_Session
+						if (function.Last + 1 < m_nArmCount && m_pArm[j] == m_pArm[function.Last + 1])
+						{
+							a_Function.First = function.First;
+							a_Function.Last = function.Last;
+							return;
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 // nn::cfg::CTR::detail::IpcUser::GetRegion

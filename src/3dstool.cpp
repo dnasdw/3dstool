@@ -56,7 +56,7 @@ C3dsTool::SOption C3dsTool::s_Option[] =
 	{ USTR("compress-type"), 0, USTR("[blz|lz(ex)|h4|h8|rl|yaz0]\n\t\tthe type of the compress") },
 	{ USTR("compress-out"), 0, USTR("the output file of uncompressed or compressed") },
 	{ nullptr, 0, USTR("  yaz0:") },
-	{ USTR("yaz0-align"), 0, USTR("[0|128]\n\t\tthe alignment property of the yaz0 compressed file, optional") },
+	{ USTR("yaz0-align"), 0, USTR("[0|128|8192]\n\t\tthe alignment property of the yaz0 compressed file, optional") },
 	{ nullptr, 0, USTR(" diff:") },
 	{ USTR("old"), 0, USTR("the old file") },
 	{ USTR("new"), 0, USTR("the new file") },
@@ -978,7 +978,7 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 		}
 		UString sYaz0Align = a_pArgv[++a_nIndex];
 		n32 nYaz0Align = SToN32(sYaz0Align);
-		if (nYaz0Align != 0 && nYaz0Align != 128)
+		if (nYaz0Align != 0 && nYaz0Align != 128 && nYaz0Align != 8192)
 		{
 			m_sMessage = sYaz0Align;
 			return kParseOptionReturnUnknownArgument;
