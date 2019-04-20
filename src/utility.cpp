@@ -139,65 +139,65 @@ int main(int argc, char* argv[])
 const UString& UGetModuleFileName()
 {
 	const u32 uMaxPath = 4096;
-	static UString sFileName;
-	if (!sFileName.empty())
+	static UString c_sFileName;
+	if (!c_sFileName.empty())
 	{
-		return sFileName;
+		return c_sFileName;
 	}
-	sFileName.resize(uMaxPath, USTR('\0'));
+	c_sFileName.resize(uMaxPath, USTR('\0'));
 	u32 uSize = 0;
 #if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
-	uSize = GetModuleFileNameW(nullptr, &*sFileName.begin(), uMaxPath);
+	uSize = GetModuleFileNameW(nullptr, &*c_sFileName.begin(), uMaxPath);
 #elif SDW_PLATFORM == SDW_PLATFORM_MACOS
 	char szPath[uMaxPath] = {};
 	u32 uPathSize = uMaxPath;
 	if (_NSGetExecutablePath(szPath, &uPathSize) != 0)
 	{
-		sFileName.clear();
+		c_sFileName.clear();
 		printf("ERROR: _NSGetExecutablePath error\n\n");
 	}
-	else if (realpath(szPath, &*sFileName.begin()) == nullptr)
+	else if (realpath(szPath, &*c_sFileName.begin()) == nullptr)
 	{
-		sFileName.clear();
+		c_sFileName.clear();
 		printf("ERROR: realpath error\n\n");
 	}
-	uSize = strlen(sFileName.c_str());
+	uSize = strlen(c_sFileName.c_str());
 #elif SDW_PLATFORM == SDW_PLATFORM_LINUX || SDW_PLATFORM == SDW_PLATFORM_CYGWIN
-	ssize_t nCount = readlink("/proc/self/exe", &*sFileName.begin(), uMaxPath);
+	ssize_t nCount = readlink("/proc/self/exe", &*c_sFileName.begin(), uMaxPath);
 	if (nCount == -1)
 	{
-		sFileName.clear();
+		c_sFileName.clear();
 		printf("ERROR: readlink /proc/self/exe error\n\n");
 	}
 	else
 	{
-		sFileName[nCount] = '\0';
+		c_sFileName[nCount] = '\0';
 	}
-	uSize = strlen(sFileName.c_str());
+	uSize = strlen(c_sFileName.c_str());
 #endif
-	sFileName.erase(uSize);
-	sFileName = Replace(sFileName, USTR('\\'), USTR('/'));
-	return sFileName;
+	c_sFileName.erase(uSize);
+	c_sFileName = Replace(c_sFileName, USTR('\\'), USTR('/'));
+	return c_sFileName;
 }
 
 const UString& UGetModuleDirName()
 {
-	static UString sDirName;
-	if (!sDirName.empty())
+	static UString c_sDirName;
+	if (!c_sDirName.empty())
 	{
-		return sDirName;
+		return c_sDirName;
 	}
-	sDirName = UGetModuleFileName();
-	UString::size_type uPos = sDirName.rfind(USTR('/'));
+	c_sDirName = UGetModuleFileName();
+	UString::size_type uPos = c_sDirName.rfind(USTR('/'));
 	if (uPos != UString::npos)
 	{
-		sDirName.erase(uPos);
+		c_sDirName.erase(uPos);
 	}
 	else
 	{
-		sDirName.clear();
+		c_sDirName.clear();
 	}
-	return sDirName;
+	return c_sDirName;
 }
 
 void SetLocale()

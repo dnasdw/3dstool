@@ -203,7 +203,7 @@ n64 Align(n64 a_nData, n64 a_nAlignment);
 
 #define SDW_BIT64(n) (UINT64_C(1) << (n))
 
-#define SDW_CONVERT_ENDIAN32(n) (((n) >> 24 & 0xFF) | ((n) >> 8 & 0xFF00) | (((n) & 0xFF00) << 8) | (((n) & 0xFF) << 24))
+#define SDW_CONVERT_ENDIAN32(n) (((n) >> 24 & 0xFF) | ((n) >> 8 & 0xFF00) | ((n) << 8 & 0xFF0000) | ((n) << 24 & 0xFF000000))
 
 #if SDW_PLATFORM == SDW_PLATFORM_WINDOWS
 #define Mkdir _mkdir
@@ -289,19 +289,19 @@ TDest TSToS(const TSrc& a_sString, const string& a_sSrcType, const string& a_sDe
 		return sConverted;
 	}
 	size_t uStringLeft = a_sString.size() * sizeof(typename TSrc::value_type);
-	static const n32 c_nBufferSize = 1024;
-	static const n32 c_nConvertBufferSize = c_nBufferSize - 4;
+	static const int c_nBufferSize = 1024;
+	static const int c_nConvertBufferSize = c_nBufferSize - 4;
 	char szBuffer[c_nBufferSize];
 	typename TSrc::value_type* pString = const_cast<typename TSrc::value_type*>(a_sString.c_str());
 	do
 	{
 		char* pBuffer = szBuffer;
 		size_t uBufferLeft = c_nConvertBufferSize;
-		n32 nError = iconv(cd, reinterpret_cast<char**>(&pString), &uStringLeft, &pBuffer, &uBufferLeft);
+		int nError = static_cast<int>(iconv(cd, reinterpret_cast<char**>(&pString), &uStringLeft, &pBuffer, &uBufferLeft));
 #if SDW_PLATFORM == SDW_PLATFORM_MACOS
-		if (nError >= 0 || (nError == static_cast<size_t>(-1) && errno == E2BIG))
+		if (nError >= 0 || (nError == -1 && errno == E2BIG))
 #else
-		if (nError == 0 || (nError == static_cast<size_t>(-1) && errno == E2BIG))
+		if (nError == 0 || (nError == -1 && errno == E2BIG))
 #endif
 		{
 			*reinterpret_cast<typename TDest::value_type*>(szBuffer + c_nConvertBufferSize - uBufferLeft) = 0;

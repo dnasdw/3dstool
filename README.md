@@ -9,6 +9,7 @@ An all-in-one tool for extracting/creating 3ds roms.
 - v1.2.2 @ 2018.08.27 - Fix not encrypt bug
 - v1.2.3 @ 2018.09.03 - Fix extract cxi without exefs bug
 - v1.2.4 @ 2019.03.28 - Improve lock region
+- v1.2.5 @ 2019.04.20 - Fix extract exefs without exefs-dir bug
 
 ### v1.1
 

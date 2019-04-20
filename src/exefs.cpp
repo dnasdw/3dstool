@@ -59,20 +59,26 @@ bool CExeFs::ExtractFile()
 		return false;
 	}
 	fread(&m_ExeFsSuperBlock, sizeof(m_ExeFsSuperBlock), 1, m_fpExeFs);
-	if (!UMakeDir(m_sExeFsDirName.c_str()))
+	if (!m_sExeFsDirName.empty())
 	{
-		fclose(m_fpExeFs);
-		return false;
+		if (!UMakeDir(m_sExeFsDirName.c_str()))
+		{
+			fclose(m_fpExeFs);
+			return false;
+		}
 	}
 	if (!extractHeader())
 	{
 		bResult = false;
 	}
-	for (int i = 0; i < 8; i++)
+	if (!m_sExeFsDirName.empty())
 	{
-		if (!extractSection(i))
+		for (int i = 0; i < 8; i++)
 		{
-			bResult = false;
+			if (!extractSection(i))
+			{
+				bResult = false;
+			}
 		}
 	}
 	fclose(m_fpExeFs);
