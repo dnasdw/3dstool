@@ -359,21 +359,24 @@ template<typename T>
 vector<T> Split(const T& a_sString, const T& a_sSeparator)
 {
 	vector<T> vString;
-	for (typename T::size_type uOffset = 0; uOffset < a_sString.size(); uOffset += a_sSeparator.size())
+	if (a_sSeparator.size() != 0)
 	{
-		typename T::size_type uPos = a_sString.find(a_sSeparator, uOffset);
-		if (uPos != T::npos)
+		for (typename T::size_type uOffset = 0; uOffset <= a_sString.size(); uOffset += a_sSeparator.size())
 		{
-			vString.push_back(a_sString.substr(uOffset, uPos - uOffset));
-			uOffset = uPos;
-		}
-		else
-		{
-			vString.push_back(a_sString.substr(uOffset));
-			break;
+			typename T::size_type uPos = a_sString.find(a_sSeparator, uOffset);
+			if (uPos != T::npos)
+			{
+				vString.push_back(a_sString.substr(uOffset, uPos - uOffset));
+				uOffset = uPos;
+			}
+			else
+			{
+				vString.push_back(a_sString.substr(uOffset));
+				break;
+			}
 		}
 	}
-	if (vString.empty())
+	else
 	{
 		vString.push_back(a_sString);
 	}
@@ -399,21 +402,24 @@ template<typename T>
 vector<T> SplitOf(const T& a_sString, const T& a_sSeparatorSet)
 {
 	vector<T> vString;
-	for (typename T::const_iterator it = a_sString.begin(); it != a_sString.end(); ++it)
+	if (a_sSeparatorSet.size() != 0)
 	{
-		typename T::const_iterator itPos = find_first_of(it, a_sString.end(), a_sSeparatorSet.begin(), a_sSeparatorSet.end());
-		if (itPos != a_sString.end())
+		for (typename T::size_type uOffset = 0; uOffset <= a_sString.size(); uOffset++)
 		{
-			vString.push_back(a_sString.substr(it - a_sString.begin(), itPos - it));
-			it = itPos;
-		}
-		else
-		{
-			vString.push_back(a_sString.substr(it - a_sString.begin()));
-			break;
+			typename T::size_type uPos = a_sString.find_first_of(a_sSeparatorSet, uOffset);
+			if (uPos != T::npos)
+			{
+				vString.push_back(a_sString.substr(uOffset, uPos - uOffset));
+				uOffset = uPos;
+			}
+			else
+			{
+				vString.push_back(a_sString.substr(uOffset));
+				break;
+			}
 		}
 	}
-	if (vString.empty())
+	else
 	{
 		vString.push_back(a_sString);
 	}
@@ -436,9 +442,9 @@ vector<T> SplitOf(const T& a_sString, const typename T::value_type* a_pSeparator
 }
 
 template<typename T>
-bool StartWith(const T& a_sString, const T& a_sPrefix, u32 a_uStart = 0)
+bool StartWith(const T& a_sString, const T& a_sPrefix, typename T::size_type a_uStart = 0)
 {
-	if (a_uStart > static_cast<u32>(a_sString.size()))
+	if (a_uStart > a_sString.size())
 	{
 		return false;
 	}
@@ -449,7 +455,7 @@ bool StartWith(const T& a_sString, const T& a_sPrefix, u32 a_uStart = 0)
 }
 
 template<typename T>
-bool StartWith(const T& a_sString, const typename T::value_type* a_pPrefix, u32 a_uStart = 0)
+bool StartWith(const T& a_sString, const typename T::value_type* a_pPrefix, typename T::size_type a_uStart = 0)
 {
 	if (a_pPrefix == nullptr)
 	{

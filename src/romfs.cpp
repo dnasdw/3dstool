@@ -289,7 +289,7 @@ void CRomFs::buildIgnoreList()
 				if (StartWith(sTxt, "//"))
 				{
 					vector<string> vIngoreTag = Split<string>(sTxt.c_str() + strlen("//"), ":");
-					if (vIngoreTag.size() == 1 && EndWith(sTxt, ":"))
+					if (vIngoreTag.size() == 2 && vIngoreTag[1].empty())
 					{
 						vIngoreTag[0] = Trim(vIngoreTag[0]);
 						if (vIngoreTag[0] == "ignore")
