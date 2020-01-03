@@ -1,5 +1,6 @@
 #include "romfs.h"
 #include "space.h"
+#include <sys/stat.h>
 #include <openssl/sha.h>
 
 bool RemapIgnoreLevelCompare(const CRomFs::SCommonFileEntry* lhs, const CRomFs::SCommonFileEntry* rhs)
@@ -441,6 +442,18 @@ bool CRomFs::createEntryList()
 #endif
 				string sNameUpper = sName;
 				transform(sNameUpper.begin(), sNameUpper.end(), sNameUpper.begin(), ::toupper);
+				// handle cases where d_type is DT_UNKNOWN
+				if (pDirent->d_type == DT_UNKNOWN)
+				{
+					static struct stat stat_buf;
+					static char fname[PATH_MAX];
+					snprintf(fname, PATH_MAX, "%s/%s", m_vCreateDir[current.EntryOffset].Path.c_str(), pDirent->d_name);
+					if (stat(fname, &stat_buf) == 0)
+					{
+						if (S_ISREG(stat_buf.st_mode)) pDirent->d_type = DT_REG;
+						else if (S_ISDIR(stat_buf.st_mode)) pDirent->d_type = DT_DIR;
+					}
+				}
 				if (pDirent->d_type == DT_REG)
 				{
 					mFile.insert(make_pair(sNameUpper, sName));
