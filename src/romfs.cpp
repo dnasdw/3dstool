@@ -1,6 +1,5 @@
 #include "romfs.h"
 #include "space.h"
-#include <sys/stat.h>
 #include <openssl/sha.h>
 
 bool RemapIgnoreLevelCompare(const CRomFs::SCommonFileEntry* lhs, const CRomFs::SCommonFileEntry* rhs)
@@ -432,26 +431,31 @@ bool CRomFs::createEntryList()
 			dirent* pDirent = nullptr;
 			while ((pDirent = readdir(pDir)) != nullptr)
 			{
-				if (matchInIgnoreList(m_vCreateDir[current.EntryOffset].Path.substr(m_sRomFsDirName.size()) + "/" + pDirent->d_name))
-				{
-					continue;
-				}
 				string sName = pDirent->d_name;
 #if SDW_PLATFORM == SDW_PLATFORM_MACOS
 				sName = TSToS<string, string>(sName, "UTF-8-MAC", "UTF-8");
 #endif
+				if (matchInIgnoreList(m_vCreateDir[current.EntryOffset].Path.substr(m_sRomFsDirName.size()) + "/" + sName))
+				{
+					continue;
+				}
 				string sNameUpper = sName;
 				transform(sNameUpper.begin(), sNameUpper.end(), sNameUpper.begin(), ::toupper);
 				// handle cases where d_type is DT_UNKNOWN
 				if (pDirent->d_type == DT_UNKNOWN)
 				{
-					static struct stat stat_buf;
-					static char fname[PATH_MAX];
-					snprintf(fname, PATH_MAX, "%s/%s", m_vCreateDir[current.EntryOffset].Path.c_str(), pDirent->d_name);
-					if (stat(fname, &stat_buf) == 0)
+					string sPath = m_vCreateDir[current.EntryOffset].Path + "/" + sName;
+					Stat st;
+					if (UStat(sPath.c_str(), &st) == 0)
 					{
-						if (S_ISREG(stat_buf.st_mode)) pDirent->d_type = DT_REG;
-						else if (S_ISDIR(stat_buf.st_mode)) pDirent->d_type = DT_DIR;
+						if (S_ISREG(st.st_mode))
+						{
+							pDirent->d_type = DT_REG;
+						}
+						else if (S_ISDIR(st.st_mode))
+						{
+							pDirent->d_type = DT_DIR;
+						}
 					}
 				}
 				if (pDirent->d_type == DT_REG)

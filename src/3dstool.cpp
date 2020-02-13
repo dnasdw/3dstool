@@ -1237,13 +1237,13 @@ C3dsTool::EParseOptionReturn C3dsTool::parseOptions(const UChar* a_pName, int& a
 	return kParseOptionReturnSuccess;
 }
 
-C3dsTool::EParseOptionReturn C3dsTool::parseOptions(int a_nKey, int& a_nIndex, int m_nArgc, UChar* a_pArgv[])
+C3dsTool::EParseOptionReturn C3dsTool::parseOptions(int a_nKey, int& a_nIndex, int a_nArgc, UChar* a_pArgv[])
 {
 	for (SOption* pOption = s_Option; pOption->Name != nullptr || pOption->Key != 0 || pOption->Doc != nullptr; pOption++)
 	{
 		if (pOption->Key == a_nKey)
 		{
-			return parseOptions(pOption->Name, a_nIndex, m_nArgc, a_pArgv);
+			return parseOptions(pOption->Name, a_nIndex, a_nArgc, a_pArgv);
 		}
 	}
 	return kParseOptionReturnIllegalOption;
