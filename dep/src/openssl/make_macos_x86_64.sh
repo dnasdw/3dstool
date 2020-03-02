@@ -1,25 +1,22 @@
 #!/bin/bash
 
-cwdir=`pwd`
-rootdir=`dirname "$0"`
-cd "$rootdir"
-rootdir=`pwd`
+pushd "`dirname "$0"`"
 tmpdir=/tmp/3dstool_openssl
 target=macos_x86_64
 prefix=$tmpdir/$target
 openssldir=$prefix/ssl
-version=`cat "$rootdir/version.txt"`
+version=`cat version.txt`
 rm -rf "$tmpdir/$version"
 mkdir -p "$tmpdir/$version"
-cp -rf "$rootdir/../$version/"* "$tmpdir/$version"
-cd "$tmpdir/$version"
-./Configure no-shared no-asm no-dso --prefix="$prefix" --openssldir="$openssldir" darwin64-x86_64-cc -m64 -fPIC
+cp -rf "../$version/"* "$tmpdir/$version"
+pushd "$tmpdir/$version"
+./Configure no-shared no-asm --prefix="$prefix" --openssldir="$openssldir" darwin64-x86_64-cc -m64 -fPIC
 make
 make install
-mkdir -p "$rootdir/../../include/$target"
-cp -rf "$prefix/include/"* "$rootdir/../../include/$target"
-mkdir -p "$rootdir/../../lib/$target"
-cp -f "$prefix/lib/"*.a "$rootdir/../../lib/$target"
-cd "$cwdir"
+popd
+mkdir -p "../../include/$target"
+cp -rf "$prefix/include/"* "../../include/$target"
+mkdir -p "../../lib/$target"
+cp -f "$prefix/lib/"*.a "../../lib/$target"
+popd
 rm -rf "$tmpdir"
-rm -rf "$prefix"
