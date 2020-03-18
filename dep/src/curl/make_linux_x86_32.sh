@@ -1,26 +1,24 @@
 #!/bin/bash
 
-cwdir=`pwd`
-rootdir=`dirname "$0"`
-cd "$rootdir"
+pushd "`dirname "$0"`"
 rootdir=`pwd`
+tmpdir=/tmp/libsundaowen_curl_with_openssl
 target=linux_x86_32
-prefix=$rootdir/$target
-version=`cat "$rootdir/version.txt"`
-rm -rf "$rootdir/$version"
-mkdir -p "$rootdir/$version"
-cp -rf "$rootdir/../$version/"* "$rootdir/$version"
-rm -rf "$rootdir/build"
-mkdir -p "$rootdir/build"
-cd "$rootdir/build"
-openssl_version=`cat "$rootdir/../openssl/version.txt"`
-cmake -DBUILD64=OFF -C "$rootdir/CMakeLists.txt" -D_OPENSSL_VERSION="$openssl_version" -DOPENSSL_INCLUDE_DIR="$rootdir/../../include/$target" -DOPENSSL_CRYPTO_LIBRARY="$rootdir/../../lib/$target/libcrypto.a" -DOPENSSL_SSL_LIBRARY="$rootdir/../../lib/$target/libssl.a" -DBUILD_CURL_EXE=OFF -DBUILD_TESTING=OFF -DCURL_STATICLIB=ON -DCURL_DISABLE_LDAP=ON -DCURL_ZLIB=OFF -DCMAKE_INSTALL_PREFIX="$prefix" "$rootdir/$version"
+prefix=$tmpdir/$target
+version=`cat version.txt`
+rm -rf "$tmpdir/$version"
+mkdir -p "$tmpdir/$version"
+cp -rf "../$version/"* "$tmpdir/$version"
+pushd "$tmpdir/$version"
+rm -rf build
+mkdir build
+cd build
+cmake -DBUILD64=OFF -C "$rootdir/CMakeLists.txt" -DBUILD_CURL_EXE=OFF -DBUILD_SHARED_LIBS=OFF -DOPENSSL_INCLUDE_DIR="$rootdir/../../include/$target" -DOPENSSL_CRYPTO_LIBRARY="$rootdir/../../lib/$target/libcrypto.a" -DOPENSSL_SSL_LIBRARY="$rootdir/../../lib/$target/libssl.a" -DCURL_ZLIB=OFF -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX="$prefix" ..
 cmake --build . --target install --config Release --clean-first
-mkdir -p "$rootdir/../../include/$target"
-cp -rf "$prefix/include/"* "$rootdir/../../include/$target"
-mkdir -p "$rootdir/../../lib/$target"
-cp -f "$prefix/lib/libcurl.a" "$rootdir/../../lib/$target"
-cd "$cwdir"
-rm -rf "$rootdir/$version"
-rm -rf "$rootdir/build"
-rm -rf "$prefix"
+popd
+mkdir -p "../../include/$target"
+cp -rf "$prefix/include/"* "../../include/$target"
+mkdir -p "../../lib/$target"
+cp -f "$prefix/lib/"*.a "../../lib/$target"
+popd
+rm -rf "$tmpdir"

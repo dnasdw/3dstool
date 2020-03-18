@@ -12,28 +12,29 @@ IF NOT DEFINED GENERATOR (
   ECHO Can not find VC2008 or VC2010 or VC2012 or VC2013 installed!
   GOTO ERROR
 )
-SET cwdir=%CD%
+PUSHD "%~dp0"
 SET rootdir=%~dp0
+SET rootdir=%rootdir:~0,-1%
+SET tmpdir=%~d0\tmp_libsundaowen_curl_with_openssl
 SET target=windows_x86_32
-SET prefix=%rootdir%%target%
-SET /P version=<"%rootdir%version.txt"
-RD /S /Q "%rootdir%%version%"
-MD "%rootdir%%version%"
-XCOPY "%rootdir%..\%version%" "%rootdir%%version%" /S /Y
-RD /S /Q "%rootdir%build"
-MD "%rootdir%build"
-CD /D "%rootdir%build"
-cmake -C "%rootdir%CMakeLists-MSVC.txt" -DBUILD_CURL_EXE=OFF -DBUILD_TESTING=OFF -DCURL_STATICLIB=ON -DCURL_DISABLE_LDAP=ON -DCURL_ZLIB=OFF -DCMAKE_INSTALL_PREFIX="%prefix%" -G %GENERATOR% "%rootdir%%version%"
-cmake "%rootdir%%version%"
+SET prefix=%tmpdir%\%target%
+SET /P version=<version.txt
+RD /S /Q "%tmpdir%\%version%"
+MD "%tmpdir%\%version%"
+XCOPY "..\%version%" "%tmpdir%\%version%" /S /Y
+PUSHD "%tmpdir%\%version%"
+RD /S /Q build
+MD build
+CD build
+cmake -C "%rootdir%\CMakeLists-MSVC.txt" -DBUILD_CURL_EXE=OFF -DBUILD_SHARED_LIBS=OFF -DCURL_STATIC_CRT=ON -DENABLE_INET_PTON=OFF -DCMAKE_USE_WINSSL=ON -DCURL_ZLIB=OFF -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX="%prefix%" -G %GENERATOR% ..
 cmake --build . --target install --config Release --clean-first
-MD "%rootdir%..\..\include\%target%"
-XCOPY "%prefix%\include" "%rootdir%..\..\include\%target%" /S /Y
-MD "%rootdir%..\..\lib\%target%%target_lib_suffix%"
-COPY /Y "%prefix%\lib\libcurl.lib" "%rootdir%..\..\lib\%target%%target_lib_suffix%"
-CD /D "%cwdir%"
-RD /S /Q "%rootdir%%version%"
-RD /S /Q "%rootdir%build"
-RD /S /Q "%prefix%"
+POPD
+MD "..\..\include\%target%"
+XCOPY "%prefix%\include" "..\..\include\%target%" /S /Y
+MD "..\..\lib\%target%%target_lib_suffix%"
+COPY /Y "%prefix%\lib\*.lib" "..\..\lib\%target%%target_lib_suffix%"
+POPD
+RD /S /Q "%tmpdir%"
 GOTO :EOF
 
 :ERROR

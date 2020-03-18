@@ -1,5 +1,5 @@
-#ifndef __CURL_MULTI_H
-#define __CURL_MULTI_H
+#ifndef CURLINC_MULTI_H
+#define CURLINC_MULTI_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -70,6 +70,9 @@ typedef enum {
   CURLM_UNKNOWN_OPTION,  /* curl_multi_setopt() with unsupported option */
   CURLM_ADDED_ALREADY,   /* an easy handle already added to a multi handle was
                             attempted to get added - again */
+  CURLM_RECURSIVE_API_CALL, /* an api function was called from inside a
+                               callback */
+  CURLM_WAKEUP_FAILURE, /* wakeup is unavailable or failed */
   CURLM_LAST
 } CURLMcode;
 
@@ -171,6 +174,29 @@ CURL_EXTERN CURLMcode curl_multi_wait(CURLM *multi_handle,
                                       int timeout_ms,
                                       int *ret);
 
+/*
+ * Name:     curl_multi_poll()
+ *
+ * Desc:     Poll on all fds within a CURLM set as well as any
+ *           additional fds passed to the function.
+ *
+ * Returns:  CURLMcode type, general multi error code.
+ */
+CURL_EXTERN CURLMcode curl_multi_poll(CURLM *multi_handle,
+                                      struct curl_waitfd extra_fds[],
+                                      unsigned int extra_nfds,
+                                      int timeout_ms,
+                                      int *ret);
+
+/*
+ * Name:     curl_multi_wakeup()
+ *
+ * Desc:     wakes up a sleeping curl_multi_poll call.
+ *
+ * Returns:  CURLMcode type, general multi error code.
+ */
+CURL_EXTERN CURLMcode curl_multi_wakeup(CURLM *multi_handle);
+
  /*
   * Name:    curl_multi_perform()
   *
@@ -184,8 +210,8 @@ CURL_EXTERN CURLMcode curl_multi_wait(CURLM *multi_handle,
   *
   * Returns: CURLMcode type, general multi error code. *NOTE* that this only
   *          returns errors etc regarding the whole multi stack. There might
-  *          still have occurred problems on invidual transfers even when this
-  *          returns OK.
+  *          still have occurred problems on individual transfers even when
+  *          this returns OK.
   */
 CURL_EXTERN CURLMcode curl_multi_perform(CURLM *multi_handle,
                                          int *running_handles);
@@ -218,7 +244,7 @@ CURL_EXTERN CURLMcode curl_multi_cleanup(CURLM *multi_handle);
  *          curl_multi_cleanup().
  *
  *          The 'CURLMsg' struct is meant to be very simple and only contain
- *          very basic informations. If more involved information is wanted,
+ *          very basic information. If more involved information is wanted,
  *          we will provide the particular "transfer handle" in that struct
  *          and that should/could/would be used in subsequent
  *          curl_easy_getinfo() calls (or similar). The point being that we
@@ -379,6 +405,9 @@ typedef enum {
 
   /* This is the argument passed to the server push callback */
   CINIT(PUSHDATA, OBJECTPOINT, 15),
+
+  /* maximum number of concurrent streams to support on a connection */
+  CINIT(MAX_CONCURRENT_STREAMS, LONG, 16),
 
   CURLMOPT_LASTENTRY /* the last unused */
 } CURLMoption;

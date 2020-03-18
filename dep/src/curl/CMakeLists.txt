@@ -1,5 +1,5 @@
 if(BUILD64)
-  set(CMAKE_C_FLAGS "-m64" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+  set(CMAKE_C_FLAGS "-fPIC -m64" CACHE STRING "Flags used by the compiler during all build types." FORCE)
 else()
-  set(CMAKE_C_FLAGS "-m32" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+  set(CMAKE_C_FLAGS "-fPIC -m32" CACHE STRING "Flags used by the compiler during all build types." FORCE)
 endif()
