@@ -491,7 +491,7 @@ bool CPatch::createPatchFile(n64 a_nOffsetOld, n64 a_nSizeOld, n64 a_nOffsetNew,
 
 void CPatch::writeOver()
 {
-	writePatch(kPatchCommandOver, nullptr);
+	writePatch(kPatchCommandOver);
 }
 
 void CPatch::writeCheck(n64 a_nOffset, n64 a_nSize, u8* a_pSHA256)
@@ -551,7 +551,7 @@ void CPatch::writeSeekWrite(bool a_bSeekSet, n64 a_nOffset, size_t a_nSize, u8* 
 
 void CPatch::writePatch(u8 a_uPatchCommand, n64* a_pArg)
 {
-	fwrite(&a_uPatchCommand, 1, 1, m_fpPatch);
+	writePatch(a_uPatchCommand);
 	if (a_uPatchCommand == kPatchCommandMove)
 	{
 		fwrite(a_pArg, 8, 3, m_fpPatch);
@@ -576,6 +576,11 @@ void CPatch::writePatch(u8 a_uPatchCommand, n64* a_pArg)
 		fwrite(a_pArg, uOffsetByte, 1, m_fpPatch);
 		fwrite(a_pArg + 1, uSizeByte, 1, m_fpPatch);
 	}
+}
+
+void CPatch::writePatch(u8 a_uPatchCommand)
+{
+	fwrite(&a_uPatchCommand, 1, 1, m_fpPatch);
 }
 
 void CPatch::calculateVersion()

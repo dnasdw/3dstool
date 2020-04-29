@@ -50,6 +50,7 @@ private:
 	void writeChangeSize(n64 a_nSize);
 	void writeSeekWrite(bool a_bSeekSet, n64 a_nOffset, size_t a_nSize, u8* a_pData);
 	void writePatch(u8 a_uPatchCommand, n64* a_pArg);
+	void writePatch(u8 a_uPatchCommand);
 	void calculateVersion();
 	void executeMove(n64 a_nFromOffset, n64 a_nToOffset, n64 a_nSize);
 	void executeSet(n64 a_nStartOffset, n64 a_nSize, u8 a_uData);
