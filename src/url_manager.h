@@ -22,21 +22,23 @@ protected:
 	void* m_pUserData;
 };
 
-template<typename T>
 class CFunctionUrl : public CUrl
 {
 public:
-	CFunctionUrl(T a_pFunction, void* a_pUserData)
+	CFunctionUrl(void(*a_pFunction)(CUrl*, void*), void* a_pUserData)
 		: CUrl(a_pUserData)
 		, m_pFunction(a_pFunction)
 	{
 	}
 	virtual void OnWriteOver()
 	{
-		(*m_pFunction)(this, m_pUserData);
+		if (m_pFunction != nullptr)
+		{
+			(*m_pFunction)(this, m_pUserData);
+		}
 	}
 private:
-	T m_pFunction;
+	void (*m_pFunction)(CUrl*, void*);
 };
 
 template<typename T>
@@ -51,7 +53,10 @@ public:
 	}
 	virtual void OnWriteOver()
 	{
-		(m_Obj.*m_pMemberFunction)(this, m_pUserData);
+		if (m_pMemberFunction != nullptr)
+		{
+			(m_Obj.*m_pMemberFunction)(this, m_pUserData);
+		}
 	}
 private:
 	T& m_Obj;
@@ -63,14 +68,13 @@ class CUrlManager
 public:
 	CUrlManager();
 	~CUrlManager();
-	template<typename T>
-	CUrl* HttpsGet(const string& a_sUrl, T a_pMemberFunction, void* a_pUserData)
+	CUrl* HttpsGet(const string& a_sUrl, void(*a_pFunction)(CUrl*, void*), void* a_pUserData)
 	{
 		if (!s_bInitialized && !Initialize())
 		{
 			return nullptr;
 		}
-		CUrl* pUrl = new CFunctionUrl<T>(a_pMemberFunction, a_pUserData);
+		CUrl* pUrl = new CFunctionUrl(a_pFunction, a_pUserData);
 		if (pUrl == nullptr)
 		{
 			return nullptr;
